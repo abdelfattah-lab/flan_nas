@@ -4,8 +4,8 @@ import json
 import numpy as np
 from collections import OrderedDict
 from tqdm import tqdm
-import sys
-sys.path.append('/home/ya255/projects/nas_embedding_suite/nas_embedding_suite')
+import sys, os
+sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 from nds_ss import NDS
 # Amoeba :  (13, 11)
 # PNAS_fix-w-d :  (13, 11)

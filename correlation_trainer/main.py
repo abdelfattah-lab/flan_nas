@@ -6,7 +6,7 @@ from models import FullyConnectedNN, GIN_Model, \
                     GIN_ZCP_Model, GIN_Emb_Model, \
                     GIN_Emb_Model_NDS, GIN_Emb_ZCP_Model, \
                     GIN_Emb_ZCP_Model_NDS
-import argparse, sys, time, random
+import argparse, sys, time, random, os
 import numpy as np
 from pprint import pprint
 from tqdm import tqdm
@@ -120,17 +120,17 @@ test_tagates = args.test_tagates
 if args.space == 'nb101' and test_tagates:
     print("Explicit TAGATES comparision")
     import sys
-    sys.path.append('/home/ya255/projects/nas_embedding_suite/nas_embedding_suite')
+    sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
     from nb123.nas_bench_101.cell_101 import Cell101
     from nasbench import api as NB1API
     import pickle
-    BASE_PATH = '/home/ya255/projects/nas_embedding_suite/nas_embedding_suite/embedding_datasets/'
+    BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_datasets/'
     nb1_api = NB1API.NASBench(BASE_PATH + 'nasbench_only108_caterec.tfrecord')
     hash_to_idx = {v: idx for idx,v in enumerate(list(nb1_api.hash_iterator()))}
-    with open("/home/ya255/projects/nas_embedding_suite/tagates_replication/nb101_hash.txt", "rb") as fp:
+    with open(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite' + "tagates_replication/nb101_hash.txt", "rb") as fp:
         nb101_hash = pickle.load(fp)
     nb101_tagates_sample_indices = [hash_to_idx[hash_] for hash_ in nb101_hash]
-    with open("/home/ya255/projects/nas_embedding_suite/tagates_replication/nb101_hash_train.txt", "rb") as fp:
+    with open(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite' + "tagates_replication/nb101_hash_train.txt", "rb") as fp:
         nb101_train_hash = pickle.load(fp)
     nb101_train_tagates_sample_indices = [hash_to_idx[hash_] for hash_ in nb101_train_hash]
 

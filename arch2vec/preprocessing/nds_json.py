@@ -8,7 +8,7 @@ import numpy as np
 from collections import OrderedDict
 from tqdm import tqdm
 import sys
-sys.path.append('/home/ya255/projects/nas_embedding_suite/nas_embedding_suite')
+sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 from nds_ss import NDS
 
 # Create a argparser for 2 integers

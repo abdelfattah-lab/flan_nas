@@ -16,7 +16,7 @@ import time
 import dill as pickle
 import sys
 
-sys.path.append("/home/ya255/projects/nas_embedding_suite/nas_embedding_suite/")
+sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 
 from nb101_ss import NASBench101
 from nb201_ss import NASBench201

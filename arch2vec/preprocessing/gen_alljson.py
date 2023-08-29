@@ -3,7 +3,8 @@ from __future__ import division
 from __future__ import print_function
 
 import sys
-sys.path.append("/home/ya255/projects/nas_embedding_suite/")
+import os
+sys.path.append(os.environ['PROJ_BPATH'] + "/")
 from random import randint
 import json
 import numpy as np

@@ -27,7 +27,6 @@ def _build_dataset(dataset, list):
 
 
 def pretraining_model(dataset, cfg, args, text_signature):
-    # nasbench = NASBench301(path='/home/ya255/projects/nas_embedding_suite/', use_nb3_performance_model=True)
     train_ind_list, val_ind_list = range(int(len(dataset)*0.9)), range(int(len(dataset)*0.9), len(dataset))
     X_adj_train, X_ops_train, indices_train = _build_dataset(dataset, train_ind_list)
     X_adj_val, X_ops_val, indices_val = _build_dataset(dataset, val_ind_list)

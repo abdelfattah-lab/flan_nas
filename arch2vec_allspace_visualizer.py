@@ -1,10 +1,10 @@
-import torch
+import torch, os
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import numpy as np
 
 # 1. Load the dictionary
-data_dict = torch.load("/home/ya255/projects/nas_embedding_suite/arch2vec/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt")
+data_dict = torch.load(os.environ['PROJ_BPATH'] + "/" + "nas_embedding_suite/arch2vec/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt")
 
 # 2. Prepare your data and labels for the T-SNE
 ranges = {0: 'nb101', 423624: 'nb201', 439249: 'nb301', 1439249: 'Amoeba', 1444232: 'PNAS_fix-w-d', 1448791: 'ENAS_fix-w-d', 1453791: 'NASNet', 1458637: 'DARTS', 1463637: 'ENAS', 1468636: 'PNAS', 1473635: 'DARTS_lr-wd', 1478635: 'DARTS_fix-w-d', 1483635: 'tb101'}

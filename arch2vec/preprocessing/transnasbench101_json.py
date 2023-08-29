@@ -8,7 +8,7 @@ import numpy as np
 from collections import OrderedDict
 from tqdm import tqdm
 import sys
-sys.path.append('/home/ya255/projects/nas_embedding_suite/nas_embedding_suite')
+sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 from tb101_micro_ss import TransNASBench101Micro
 
 # Create a argparser for 2 integers
@@ -35,7 +35,7 @@ def gen_data_point(nasbench, args):
                  'training_time': 0}}
 
 # def gen_json_file():
-tb101mic = TransNASBench101Micro(path='/home/ya255/projects/nas_embedding_suite/nas_embedding_suite/')
+tb101mic = TransNASBench101Micro(path=os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/')
 nas_gen = gen_data_point(tb101mic, args)
 data_dict = OrderedDict()
 for data_point in nas_gen:

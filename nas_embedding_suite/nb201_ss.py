@@ -10,13 +10,13 @@ import pandas as pd
 from sklearn import preprocessing
 import random, time
 
-import sys
+import sys, os
 
-sys.path.append('/home/ya255/projects/nas_embedding_suite/nas_embedding_suite')
+sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 from nb123.nas_bench_201.cell_201 import Cell201
 from nas_201_api import NASBench201API as NB2API
 
-BASE_PATH = '/home/ya255/projects/nas_embedding_suite/nas_embedding_suite/embedding_datasets/'
+BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_datasets/'
 
 
 class NASBench201:

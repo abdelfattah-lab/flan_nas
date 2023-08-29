@@ -9,12 +9,12 @@ import torch.nn.functional as F
 import pandas as pd
 from sklearn import preprocessing
 import random, time
-import sys
+import sys, os
 
-sys.path.append('/home/ya255/projects/nas_embedding_suite/nas_embedding_suite')
+sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 
-BASE_PATH = '/home/ya255/projects/nas_embedding_suite/nas_embedding_suite/embedding_datasets/'
-NDS_DPATH = '/home/ya255/projects/nas_embedding_suite/nas_embedding_suite/NDS/nds_data/'
+BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_datasets/'
+NDS_DPATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/NDS/nds_data/'
 
 class NDS:
     def __init__(self, path=None, zcp_dict=False, normalize_zcp=True, log_synflow=True, embedding_list = ['adj',

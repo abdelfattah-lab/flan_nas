@@ -9,9 +9,9 @@ import torch.nn.functional as F
 import pandas as pd
 from sklearn import preprocessing
 import random, time
-import sys
+import sys, os
 
-BASE_PATH = '/home/ya255/projects/nas_embedding_suite/nas_embedding_suite/embedding_datasets/'
+BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_datasets/'
 
 class TransNASBench101Micro:
     def __init__(self, path=None, zcp_dict=False, normalize_zcp=True, log_synflow=True, embedding_list = ['adj',

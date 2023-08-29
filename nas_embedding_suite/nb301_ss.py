@@ -10,14 +10,14 @@ import pandas as pd
 from sklearn import preprocessing
 import random, time
 
-import sys
+import sys, os
 
-sys.path.append('/home/ya255/projects/nas_embedding_suite/nas_embedding_suite')
+sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 from nb123.nas_bench_301.cell_301 import Cell301
 from nb123.nb301_arch_tuple_to_nb101 import convert_arch_tuple_to_idx
 import nasbench301 as nb3_api
 
-BASE_PATH = '/home/ya255/projects/nas_embedding_suite/nas_embedding_suite/embedding_datasets/'
+BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_datasets/'
 
 class NASBench301:
     def __init__(self, use_nb3_performance_model=False, zcp_dict=False, normalize_zcp=True, log_synflow=True,

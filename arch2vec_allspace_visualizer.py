@@ -1,19 +1,38 @@
-import torch, os
+import torch
+import os
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import numpy as np
 
 # 1. Load the dictionary
-data_dict = torch.load(os.environ['PROJ_BPATH'] + "/" + "nas_embedding_suite/arch2vec/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt")
+data_dict = torch.load(
+    os.environ["PROJ_BPATH"]
+    + "/"
+    + "nas_embedding_suite/arch2vec/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt"
+)
 
 # 2. Prepare your data and labels for the T-SNE
-ranges = {0: 'nb101', 423624: 'nb201', 439249: 'nb301', 1439249: 'Amoeba', 1444232: 'PNAS_fix-w-d', 1448791: 'ENAS_fix-w-d', 1453791: 'NASNet', 1458637: 'DARTS', 1463637: 'ENAS', 1468636: 'PNAS', 1473635: 'DARTS_lr-wd', 1478635: 'DARTS_fix-w-d', 1483635: 'tb101'}
+ranges = {
+    0: "nb101",
+    423624: "nb201",
+    439249: "nb301",
+    1439249: "Amoeba",
+    1444232: "PNAS_fix-w-d",
+    1448791: "ENAS_fix-w-d",
+    1453791: "NASNet",
+    1458637: "DARTS",
+    1463637: "ENAS",
+    1468636: "PNAS",
+    1473635: "DARTS_lr-wd",
+    1478635: "DARTS_fix-w-d",
+    1483635: "tb101",
+}
 
 features = []
 labels = []
 
 for key, val in data_dict.items():
-    feature_val = val['feature']
+    feature_val = val["feature"]
     class_idx = None
     for r in sorted(ranges):
         if key >= r:
@@ -51,11 +70,19 @@ fig, ax = plt.subplots(figsize=(10, 10))  # Adjust as needed
 for i, c, label in zip(target_ids, colors, ranges.values()):
     idx = sampled_labels == i
     for x, y in zip(X_2d[idx, 0], X_2d[idx, 1]):
-        plt.text(x, y, i, fontsize=4, ha='center', va='center', color=c)
+        plt.text(x, y, i, fontsize=4, ha="center", va="center", color=c)
 plt.xlim(X_2d[:, 0].min(), X_2d[:, 0].max())
 plt.ylim(X_2d[:, 1].min(), X_2d[:, 1].max())
 
-plt.legend(loc='center left', bbox_to_anchor=(1, 0.5), handles=[plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=c, markersize=10) for c in colors], labels=list(ranges.values()))
+plt.legend(
+    loc="center left",
+    bbox_to_anchor=(1, 0.5),
+    handles=[
+        plt.Line2D([0], [0], marker="o", color="w", markerfacecolor=c, markersize=10)
+        for c in colors
+    ],
+    labels=list(ranges.values()),
+)
 plt.subplots_adjust(right=0.8)  # Adjust as needed
 
-plt.savefig('tsne_arch2vec_5000_nums.png', dpi=500)
+plt.savefig("tsne_arch2vec_5000_nums.png", dpi=500)

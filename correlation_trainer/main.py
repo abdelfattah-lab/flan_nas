@@ -127,10 +127,10 @@ if args.space == 'nb101' and test_tagates:
     BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_datasets/'
     nb1_api = NB1API.NASBench(BASE_PATH + 'nasbench_only108_caterec.tfrecord')
     hash_to_idx = {v: idx for idx,v in enumerate(list(nb1_api.hash_iterator()))}
-    with open(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite' + "tagates_replication/nb101_hash.txt", "rb") as fp:
+    with open(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite' + "/correlation_trainer/tagates_replication/nb101_hash.txt", "rb") as fp:
         nb101_hash = pickle.load(fp)
     nb101_tagates_sample_indices = [hash_to_idx[hash_] for hash_ in nb101_hash]
-    with open(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite' + "tagates_replication/nb101_hash_train.txt", "rb") as fp:
+    with open(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite' + "/correlation_trainer/tagates_replication/nb101_hash_train.txt", "rb") as fp:
         nb101_train_hash = pickle.load(fp)
     nb101_train_tagates_sample_indices = [hash_to_idx[hash_] for hash_ in nb101_train_hash]
 
@@ -138,6 +138,10 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
     model.train()
     running_loss = 0.0
     for inputs, targets in dataloader:
+        if inputs[0].shape[0] == 1 and args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+            continue
+        elif inputs[0].shape[0] == 2 and args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+            continue
         #### Params for PWL Loss
         accs = targets
         max_compare_ratio = 4
@@ -202,6 +206,7 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
                            torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[0]))), 
                            torch.stack(list((inputs[4][indx] for indx in ex_thresh_inds[0])))]
                 X_adj_a_1, X_ops_a_1, X_adj_b_1, X_ops_b_1, zcp_1_ = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device), archs_1[4].to(device)
+                # print(X_adj_a_1.shape, X_ops_a_1.shape, X_adj_b_1.shape, X_ops_b_1.shape, zcp_1_.shape)
                 s_1 = model(X_ops_a_1, X_adj_a_1.to(torch.long), X_ops_b_1, X_adj_b_1.to(torch.long), zcp_1_).squeeze()
                 X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, zcp_2_ = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device)
                 s_2 = model(X_ops_a_2, X_adj_a_2.to(torch.long), X_ops_b_2, X_adj_b_2.to(torch.long), zcp_2_).squeeze()
@@ -515,6 +520,7 @@ for sample_count in sample_counts:
             input_dim = len(list(embedding_gen.get_adj_op(0).values())[1][0])
         else:
             input_dim = next(iter(train_dataloader))[0][1].shape[2]
+        input_dim = next(iter(train_dataloader))[0][1].shape[2]
         if space in ['nb101', 'nb201', 'nb301', 'tb101']:
             model = GIN_ZCP_Model(input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
                             zcp_dim=next(iter(train_dataloader))[0][-1].shape[1], zcp_gin_dim=args.zcp_gin_dim,
@@ -564,32 +570,32 @@ filename = f'correlation_results/{args.space}_samp_eff.csv'
 
 header = "seed,batch_size,hidden_size,num_layers,epochs,space,representation,pwl_mse,test_tagates,key,spr,kdt"
 
-# if not os.path.isfile(filename):
-#     with open(filename, 'w') as f:
-#         f.write(header + "\n")
+if not os.path.isfile(filename):
+    with open(filename, 'w') as f:
+        f.write(header + "\n")
 
-# with open(filename, 'a') as f:
-#     for key in samp_eff.keys():
-#         f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
-#                 (
-#                 str(args.seed),
-#                 str(args.batch_size),
-#                 str(args.hidden_size),
-#                 str(args.num_layers),
-#                 str(args.epochs),
-#                 str(args.space),
-#                 str(args.representation),
-#                 str(args.loss_type),
-#                 str(args.test_tagates),
-#                 str(key),
-#                 str(samp_eff[key][0]),
-#                 str(samp_eff[key][1]))
-#                 )
+with open(filename, 'a') as f:
+    for key in samp_eff.keys():
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+                (
+                str(args.seed),
+                str(args.batch_size),
+                str(args.hidden_size),
+                str(args.num_layers),
+                str(args.epochs),
+                str(args.space),
+                str(args.representation),
+                str(args.loss_type),
+                str(args.test_tagates),
+                str(key),
+                str(samp_eff[key][0]),
+                str(samp_eff[key][1]))
+                )
         
 # make trial folder if it doesnt exist
-if not os.path.exists('trial'):
-    os.makedirs('trial')
+# if not os.path.exists('trial'):
+#     os.makedirs('trial')
 
-with open('./trial/trial_%s.txt' % (args.id,), 'w') as f:
-    f.write(str(samp_eff[364][1]))
-    f.write("\n")
+# with open('./trial/trial_%s.txt' % (args.id,), 'w') as f:
+#     f.write(str(samp_eff[364][1]))
+#     f.write("\n")

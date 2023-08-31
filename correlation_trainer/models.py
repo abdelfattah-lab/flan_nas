@@ -173,6 +173,8 @@ class GIN_Emb_Model_NDS(nn.Module):
         mu = torch.nn.functional.adaptive_avg_pool2d(mu, (1, 1))
         
         return mu
+
+
 class GIN_Model_NDS(nn.Module):
     def __init__(self, input_dim, hidden_dim, latent_dim, num_hops, num_mlp_layers, readout, dropout, **kwargs):
         super(GIN_Model_NDS, self).__init__()
@@ -233,6 +235,222 @@ class GIN_Model_NDS(nn.Module):
         return self._encoder(ops1, adj1, ops2, adj2)
 
 
+# class GIN_ZCP_Model(nn.Module):
+#     def __init__(self, input_dim, hidden_dim, latent_dim, zcp_dim, zcp_gin_dim, num_hops, num_mlp_layers, readout, dropout, **kwargs):
+#         super(GIN_ZCP_Model, self).__init__()
+        
+#         self.input_dim = input_dim
+#         self.hidden_dim = hidden_dim
+#         self.latent_dim = latent_dim
+#         self.zcp_dim = zcp_dim
+#         self.zcp_gin_dim = zcp_gin_dim
+#         self.num_layers = num_hops
+#         self.emb_dim = 16
+        
+#         self.eps = nn.Parameter(torch.zeros(self.num_layers - 1))
+        
+#         self.mlps = self._build_mlp_layers(num_mlp_layers)
+#         self.batch_norms = self._build_batch_norm_layers()
+        
+#         self.fc1 = nn.Linear(self.hidden_dim, self.zcp_gin_dim)
+#         self.fc1_zcp = nn.Linear(self.zcp_dim, 64)
+#         self.bn1_zcp = nn.BatchNorm1d(64)
+#         self.fc2_zcp = nn.Linear(64 + self.zcp_gin_dim, 64 + self.zcp_gin_dim)
+#         self.bn2_zcp = nn.BatchNorm1d(64 + self.zcp_gin_dim)
+#         self.fcout = nn.Linear(self.zcp_gin_dim + 64, self.latent_dim)
+
+#     def _build_mlp_layers(self, num_mlp_layers):
+#         mlps = torch.nn.ModuleList()
+#         for layer in range(self.num_layers - 1):
+#             input_dim = self.input_dim if layer == 0 else self.hidden_dim
+#             mlps.append(MLP(num_mlp_layers, input_dim, self.hidden_dim, self.hidden_dim))
+#         return mlps
+
+#     def _build_batch_norm_layers(self):
+#         return torch.nn.ModuleList([nn.BatchNorm1d(self.hidden_dim) for _ in range(self.num_layers - 1)])
+
+#     def _encoder(self, ops, adj, zcp):
+#         batch_size, node_num, _ = ops.shape
+#         x = ops
+        
+#         for l in range(self.num_layers - 1):
+#             neighbor = torch.matmul(adj.float(), x)
+#             agg = (1 + self.eps[l]) * x.view(batch_size * node_num, -1) + neighbor.view(batch_size * node_num, -1)
+#             x = F.relu(self.batch_norms[l](self.mlps[l](agg)).view(batch_size, node_num, -1))
+        
+#         mu = self.fc1(x)
+#         mu = torch.nn.functional.adaptive_avg_pool2d(mu, (1, self.zcp_gin_dim))
+        
+#         zcp = F.relu(self.bn1_zcp(self.fc1_zcp(zcp)))
+#         zcp = torch.cat((mu, zcp.unsqueeze(1)), dim=2).squeeze(1)
+#         zcp = self.fcout(F.relu(self.bn2_zcp(self.fc2_zcp(zcp))))
+        
+#         return zcp
+    
+#     def forward(self, ops, adj, zcp):
+#         return self._encoder(ops, adj, zcp)
+
+import torch.nn as nn
+import torch.nn.functional as F
+
+
+
+class GATLayer(nn.Module):
+    """
+    Simple GAT layer, similar to https://arxiv.org/abs/1710.10903
+    """
+    def __init__(self, in_features, out_features, dropout, alpha, concat=True):
+        super(GATLayer, self).__init__()
+        self.dropout = dropout
+        self.in_features = in_features
+        self.out_features = out_features
+        self.alpha = alpha
+        self.concat = concat
+
+        self.W = nn.Parameter(torch.empty(size=(in_features, out_features)))
+        nn.init.xavier_uniform_(self.W.data, gain=1.414)
+        self.a = nn.Parameter(torch.empty(size=(2*out_features, 1)))
+        nn.init.xavier_uniform_(self.a.data, gain=1.414)
+
+        self.leakyrelu = nn.LeakyReLU(self.alpha)
+
+    def forward(self, h, adj):
+        Wh = torch.matmul(h, self.W) # h.shape: (N, in_features), Wh.shape: (N, out_features)
+        e = self._prepare_attentional_mechanism_input(Wh)
+
+        zero_vec = -9e15*torch.ones_like(e)
+        attention = torch.where(adj > 0, e, zero_vec)
+        attention = F.softmax(attention, dim=1)
+        attention = F.dropout(attention, self.dropout, training=self.training)
+        h_prime = torch.matmul(attention, Wh)
+
+        if self.concat:
+            return F.elu(h_prime)
+        else:
+            return h_prime
+
+    def _prepare_attentional_mechanism_input(self, Wh):
+        # Wh.shape (N, out_feature)
+        # self.a.shape (2 * out_feature, 1)
+        # Wh1&2.shape (N, 1)
+        # e.shape (N, N)
+        Wh1 = torch.matmul(Wh, self.a[:self.out_features, :])
+        Wh2 = torch.matmul(Wh, self.a[self.out_features:, :])
+        # broadcast add
+        e = Wh1 + torch.transpose(Wh2, -2, -1)
+        return self.leakyrelu(e)
+
+    def __repr__(self):
+        return self.__class__.__name__ + ' (' + str(self.in_features) + ' -> ' + str(self.out_features) + ')'
+
+# class GATLayer(nn.Module):
+#     def __init__(self, in_features, out_features, dropout, alpha, concat=True):
+#         super(GATLayer, self).__init__()
+#         self.dropout = dropout
+#         self.in_features = in_features
+#         self.out_features = out_features
+#         self.alpha = alpha
+#         self.concat = concat
+
+#         self.W = nn.Parameter(torch.zeros(size=(in_features, out_features)))
+#         nn.init.xavier_uniform_(self.W.data, gain=1.414)
+#         self.a = nn.Parameter(torch.zeros(size=(2*out_features, 1)))
+#         nn.init.xavier_uniform_(self.a.data, gain=1.414)
+#         self.leakyrelu = nn.LeakyReLU(self.alpha)
+
+#     def forward(self, input, adj):
+#         h = torch.matmul(input, self.W)
+#         N = h.size()[0]
+#         import pdb; pdb.set_trace()
+#                             # 4096, 3584        
+#         a_input = torch.cat([h.repeat(1, N, 1).view(N * N, -1), h.repeat(N, 1, 1).view(N * N, -1)], dim=1).view(N, N, 2 * self.out_features)
+#         e = self.leakyrelu(torch.matmul(a_input, self.a).squeeze(2))
+
+#         zero_vec = -9e15*torch.ones_like(e)
+#         attention = torch.where(adj > 0, e, zero_vec)
+#         attention = F.softmax(attention, dim=1)
+#         attention = F.dropout(attention, self.dropout, training=self.training)
+#         h_prime = torch.matmul(attention, h)
+
+#         if self.concat:
+#             return F.elu(h_prime)
+#         else:
+#             return h_prime
+
+
+class GAT_ZCP_Model(nn.Module):
+    def __init__(self, input_dim, hidden_dim, latent_dim, zcp_dim, zcp_gin_dim, num_hops, num_mlp_layers, readout, dropout, **kwargs):
+        super(GAT_ZCP_Model, self).__init__()
+        
+        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
+        self.latent_dim = latent_dim
+        self.zcp_dim = zcp_dim
+        self.zcp_gin_dim = zcp_gin_dim
+        self.num_layers = num_hops
+        self.emb_dim = 16
+        
+        self.eps = nn.Parameter(torch.zeros(self.num_layers - 1))
+        
+        self.mlps = self._build_mlp_layers(num_mlp_layers)
+        self.batch_norms = self._build_batch_norm_layers()
+        self.gat_layers = self._build_gat_layers()
+        
+        self.fc1 = nn.Linear(self.hidden_dim, self.zcp_gin_dim)
+        self.dropout = nn.Dropout(dropout)  # Dropout layer
+
+        # New layers for processing mu
+        self.flatten_dim = input_dim * self.zcp_gin_dim 
+        self.fc_mu = nn.Linear(self.flatten_dim, self.zcp_gin_dim)
+        self.bn_mu = nn.BatchNorm1d(1)  # 1 for the number of channels
+        
+        self.fc1_zcp = nn.Linear(self.zcp_dim, 64)
+        self.bn1_zcp = nn.BatchNorm1d(64)
+        self.fc2_zcp = nn.Linear(64 + self.zcp_gin_dim, 64 + self.zcp_gin_dim)
+        self.bn2_zcp = nn.BatchNorm1d(64 + self.zcp_gin_dim)
+        self.fcout = nn.Linear(self.zcp_gin_dim + 64, self.latent_dim)
+
+    def _build_mlp_layers(self, num_mlp_layers):
+        mlps = torch.nn.ModuleList()
+        for layer in range(self.num_layers - 1):
+            input_dim = self.input_dim if layer == 0 else self.hidden_dim
+            mlps.append(MLP(num_mlp_layers, input_dim, self.hidden_dim, self.hidden_dim))
+        return mlps
+
+    def _build_batch_norm_layers(self):
+        return torch.nn.ModuleList([nn.BatchNorm1d(self.hidden_dim) for _ in range(self.num_layers - 1)])
+
+    def _build_gat_layers(self):
+        gat_layers = torch.nn.ModuleList()
+        for layer in range(self.num_layers - 1):
+            input_dim = self.input_dim if layer == 0 else self.hidden_dim
+            gat_layers.append(GATLayer(input_dim, self.hidden_dim, dropout=0.6, alpha=0.2))
+        return gat_layers
+
+    def _encoder(self, ops, adj, zcp):
+        batch_size, node_num, _ = ops.shape
+        x = ops
+        
+        for l in range(self.num_layers - 1):
+            x = self.gat_layers[l](x, adj)
+            x = self.dropout(x)  # Apply dropout after activation
+        
+        mu = self.fc1(x)
+        mu = self.dropout(mu)  # Apply dropout after linear layer
+        mu = torch.nn.functional.adaptive_avg_pool2d(mu, (1, self.zcp_gin_dim))
+        
+        zcp = F.relu(self.bn1_zcp(self.fc1_zcp(zcp)))
+        zcp = self.dropout(zcp)  # Apply dropout after activation
+        zcp = torch.cat((mu, zcp.unsqueeze(1)), dim=2).squeeze(1)
+        zcp = torch.sigmoid(self.fcout(F.relu(self.bn2_zcp(self.fc2_zcp(zcp)))))
+        
+        return zcp
+    
+    def forward(self, ops, adj, zcp):
+        return self._encoder(ops, adj, zcp)
+
+
+
 class GIN_ZCP_Model(nn.Module):
     def __init__(self, input_dim, hidden_dim, latent_dim, zcp_dim, zcp_gin_dim, num_hops, num_mlp_layers, readout, dropout, **kwargs):
         super(GIN_ZCP_Model, self).__init__()
@@ -251,6 +469,13 @@ class GIN_ZCP_Model(nn.Module):
         self.batch_norms = self._build_batch_norm_layers()
         
         self.fc1 = nn.Linear(self.hidden_dim, self.zcp_gin_dim)
+        self.dropout = nn.Dropout(dropout)  # Dropout layer
+        
+        # New layers for processing mu
+        self.flatten_dim = input_dim * self.zcp_gin_dim 
+        self.fc_mu = nn.Linear(self.flatten_dim, self.zcp_gin_dim)
+        self.bn_mu = nn.BatchNorm1d(1)  # 1 for the number of channels
+        
         self.fc1_zcp = nn.Linear(self.zcp_dim, 64)
         self.bn1_zcp = nn.BatchNorm1d(64)
         self.fc2_zcp = nn.Linear(64 + self.zcp_gin_dim, 64 + self.zcp_gin_dim)
@@ -275,18 +500,88 @@ class GIN_ZCP_Model(nn.Module):
             neighbor = torch.matmul(adj.float(), x)
             agg = (1 + self.eps[l]) * x.view(batch_size * node_num, -1) + neighbor.view(batch_size * node_num, -1)
             x = F.relu(self.batch_norms[l](self.mlps[l](agg)).view(batch_size, node_num, -1))
+            x = self.dropout(x)  # Apply dropout after activation
         
         mu = self.fc1(x)
+        mu = self.dropout(mu)  # Apply dropout after linear layer
         mu = torch.nn.functional.adaptive_avg_pool2d(mu, (1, self.zcp_gin_dim))
         
         zcp = F.relu(self.bn1_zcp(self.fc1_zcp(zcp)))
+        zcp = self.dropout(zcp)  # Apply dropout after activation
         zcp = torch.cat((mu, zcp.unsqueeze(1)), dim=2).squeeze(1)
-        zcp = self.fcout(F.relu(self.bn2_zcp(self.fc2_zcp(zcp))))
+        zcp = torch.sigmoid(self.fcout(F.relu(self.bn2_zcp(self.fc2_zcp(zcp)))))
         
         return zcp
     
     def forward(self, ops, adj, zcp):
         return self._encoder(ops, adj, zcp)
+
+
+# class GIN_ZCP_Model(nn.Module):
+#     def __init__(self, input_dim, hidden_dim, latent_dim, zcp_dim, zcp_gin_dim, num_hops, num_mlp_layers, readout, dropout, **kwargs):
+#         super(GIN_ZCP_Model, self).__init__()
+        
+#         self.input_dim = input_dim
+#         self.hidden_dim = hidden_dim
+#         self.latent_dim = latent_dim
+#         self.zcp_dim = zcp_dim
+#         self.zcp_gin_dim = zcp_gin_dim
+#         self.num_layers = num_hops
+#         self.emb_dim = 16
+        
+#         self.eps = nn.Parameter(torch.zeros(self.num_layers - 1))
+        
+#         self.mlps = self._build_mlp_layers(num_mlp_layers)
+#         self.batch_norms = self._build_batch_norm_layers()
+        
+#         self.fc1 = nn.Linear(self.hidden_dim, self.zcp_gin_dim)
+        
+#         # New layers for processing mu
+#         self.flatten_dim = input_dim * self.zcp_gin_dim 
+#         self.fc_mu = nn.Linear(self.flatten_dim, self.zcp_gin_dim)
+#         self.bn_mu = nn.BatchNorm1d(1)  # 1 for the number of channels
+        
+#         self.fc1_zcp = nn.Linear(self.zcp_dim, 64)
+#         self.bn1_zcp = nn.BatchNorm1d(64)
+#         self.fc2_zcp = nn.Linear(64 + self.zcp_gin_dim, 64 + self.zcp_gin_dim)
+#         self.bn2_zcp = nn.BatchNorm1d(64 + self.zcp_gin_dim)
+#         self.fcout = nn.Linear(self.zcp_gin_dim + 64, self.latent_dim)
+
+#     def _build_mlp_layers(self, num_mlp_layers):
+#         mlps = torch.nn.ModuleList()
+#         for layer in range(self.num_layers - 1):
+#             input_dim = self.input_dim if layer == 0 else self.hidden_dim
+#             mlps.append(MLP(num_mlp_layers, input_dim, self.hidden_dim, self.hidden_dim))
+#         return mlps
+
+#     def _build_batch_norm_layers(self):
+#         return torch.nn.ModuleList([nn.BatchNorm1d(self.hidden_dim) for _ in range(self.num_layers - 1)])
+
+#     def _encoder(self, ops, adj, zcp):
+#         batch_size, node_num, _ = ops.shape
+#         x = ops
+        
+#         for l in range(self.num_layers - 1):
+#             neighbor = torch.matmul(adj.float(), x)
+#             agg = (1 + self.eps[l]) * x.view(batch_size * node_num, -1) + neighbor.view(batch_size * node_num, -1)
+#             x = F.relu(self.batch_norms[l](self.mlps[l](agg)).view(batch_size, node_num, -1))
+        
+#         mu = self.fc1(x)
+#         # mu = torch.nn.functional.adaptive_avg_pool2d(mu, (self.input_dim, self.zcp_gin_dim))
+#         # mu = mu.view(-1, self.flatten_dim)  # Flatten the tensor
+#         # mu = F.relu(self.bn_mu(self.fc_mu(mu).unsqueeze(1)))  # Pass through Linear, BatchNorm2d, and ReLU
+#         # mu = mu.squeeze(1)  # Remove the channel dimension
+#         mu = torch.nn.functional.adaptive_avg_pool2d(mu, (1, self.zcp_gin_dim))
+        
+#         # import pdb; pdb.set_trace()
+#         zcp = F.relu(self.bn1_zcp(self.fc1_zcp(zcp)))
+#         zcp = torch.cat((mu, zcp.unsqueeze(1)), dim=2).squeeze(1)
+#         zcp = torch.sigmoid(self.fcout(F.relu(self.bn2_zcp(self.fc2_zcp(zcp)))))
+        
+#         return zcp
+    
+#     def forward(self, ops, adj, zcp):
+#         return self._encoder(ops, adj, zcp)
 
 class GIN_ZCP_Model_NDS(nn.Module):
     def __init__(self, input_dim, hidden_dim, latent_dim, zcp_dim, zcp_gin_dim, num_hops, 
@@ -339,6 +634,7 @@ class GIN_ZCP_Model_NDS(nn.Module):
         mu = torch.cat((mu_1, mu_2), dim=2)
         mu = F.relu(self.fc_comb_a(mu))
         mu = F.relu(self.fc_comb_b(mu))
+        mu = torch.nn.functional.adaptive_avg_pool2d(mu, (self.input_dim, self.zcp_gin_dim))
         mu = mu.view(-1, self.flatten_dim)  
         mu = self.fc_mu(mu).unsqueeze(1)  
         

@@ -5,7 +5,7 @@ from models import FullyConnectedNN, GIN_Model, \
                     GIN_Model_NDS, GIN_ZCP_Model_NDS, \
                     GIN_ZCP_Model, GIN_Emb_Model, \
                     GIN_Emb_Model_NDS, GIN_Emb_ZCP_Model, \
-                    GIN_Emb_ZCP_Model_NDS
+                    GIN_Emb_ZCP_Model_NDS, GAT_ZCP_Model
 import argparse, sys, time, random, os
 import numpy as np
 from pprint import pprint
@@ -19,6 +19,7 @@ wandb = False
 if wandb:
     import wandb
 
+BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_datasets/'
 '''
 If representation is adj, we can either use a GIN or MLP.
 
@@ -27,13 +28,14 @@ This will be indicated as "adj_gin" or "adj_mlp" respectively.
 For adj_mlp, convert the ops matrix into its index and append it to flattened adjacency matrix.
 
 '''
+# execute bash command: export PROJ_BPATH="/home/ya255/projects/iclr_nas_embedding"
 
 # Create argparser
 parser = argparse.ArgumentParser()
 ####################################################### Search Space Choices #######################################################
 parser.add_argument('--space', type=str, default='Amoeba')        # nb101, nb201, nb301, tb101, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d supported
 parser.add_argument('--task', type=str, default='class_scene')    # all tb101 tasks supported
-parser.add_argument('--representation', type=str, default='cate') # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adjmlp_zcp and adjgin_zcp supported.
+parser.add_argument('--representation', type=str, default='cate') # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adjmlp_zcp, adjgin_zcp, adjgat_zcp supported.
 parser.add_argument('--test_tagates', action='store_true')        # Currently only supports testing on NB101 networks. Easy to extend.
 parser.add_argument('--loss_type', type=str, default='mse')       # mse, pwl supported
 parser.add_argument('--op_emb', action='store_true')              # with or without operation embedding table.
@@ -42,20 +44,20 @@ parser.add_argument('--no-norm_adj_op', action='store_false')
 parser.add_argument('--gin_readout', type=str, default='mean')
 parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--device', type=str, default='cuda:0')
-parser.add_argument('--batch_size', type=int, default=8)
-parser.add_argument('--num_hops', type=int, default=5)
+parser.add_argument('--batch_size', type=int, default=16)
+parser.add_argument('--num_hops', type=int, default=4)
 parser.add_argument('--num_mlp_layers', type=int, default=3)
 parser.add_argument('--num', type=int, default=8)
 parser.add_argument('--zcp_gin_dim', type=int, default=64)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--test_size', type=int, default=None)
-parser.add_argument('--epochs', type=int, default=100)
+parser.add_argument('--epochs', type=int, default=150)
 parser.add_argument('--lr_step', type=int, default=10)
 parser.add_argument('--lr_gamma', type=float, default=0.6)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--eta_min', type=float, default=1e-6)
 parser.add_argument('--weight_decay', type=float, default=1e-5)
-parser.add_argument('--hidden_size', type=int, default=128)
+parser.add_argument('--hidden_size', type=int, default=512)
 parser.add_argument('--num_layers', type=int, default=2)
 parser.add_argument('--seed', type=int, default=None)
 parser.add_argument('--id', type=int, default=0)
@@ -109,8 +111,10 @@ sample_tests = {# NDS
                 'PNAS_fix-w-d': [227, 455, 1139, 2279],
                 # NASBench
                 # 'nb101': [72, 364, 728, 3645, 7280],
-                'nb101': [7280],
-                'nb201': [7, 39, 78, 390, 781],
+                # 'nb101': [7280],
+                'nb101': [364],
+                # 'nb201': [7, 39, 78, 390, 781],
+                'nb201': [7812],
                 'nb301': [29, 58, 294, 589, 2948],
                 # TransNASBench101
                 'tb101': [40, 204, 409, 2048]}
@@ -127,12 +131,13 @@ if args.space == 'nb101' and test_tagates:
     BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_datasets/'
     nb1_api = NB1API.NASBench(BASE_PATH + 'nasbench_only108_caterec.tfrecord')
     hash_to_idx = {v: idx for idx,v in enumerate(list(nb1_api.hash_iterator()))}
-    with open(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite' + "/correlation_trainer/tagates_replication/nb101_hash.txt", "rb") as fp:
+    with open(os.environ['PROJ_BPATH'] + "/" + "/correlation_trainer/tagates_replication/nb101_hash.txt", "rb") as fp:
         nb101_hash = pickle.load(fp)
     nb101_tagates_sample_indices = [hash_to_idx[hash_] for hash_ in nb101_hash]
-    with open(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite' + "/correlation_trainer/tagates_replication/nb101_hash_train.txt", "rb") as fp:
+    with open(os.environ['PROJ_BPATH'] + "/" + "/correlation_trainer/tagates_replication/nb101_hash_train.txt", "rb") as fp:
         nb101_train_hash = pickle.load(fp)
     nb101_train_tagates_sample_indices = [hash_to_idx[hash_] for hash_ in nb101_train_hash]
+
 
 def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloader, epoch):
     model.train()
@@ -206,7 +211,6 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
                            torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[0]))), 
                            torch.stack(list((inputs[4][indx] for indx in ex_thresh_inds[0])))]
                 X_adj_a_1, X_ops_a_1, X_adj_b_1, X_ops_b_1, zcp_1_ = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device), archs_1[4].to(device)
-                # print(X_adj_a_1.shape, X_ops_a_1.shape, X_adj_b_1.shape, X_ops_b_1.shape, zcp_1_.shape)
                 s_1 = model(X_ops_a_1, X_adj_a_1.to(torch.long), X_ops_b_1, X_adj_b_1.to(torch.long), zcp_1_).squeeze()
                 X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, zcp_2_ = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device)
                 s_2 = model(X_ops_a_2, X_adj_a_2.to(torch.long), X_ops_b_2, X_adj_b_2.to(torch.long), zcp_2_).squeeze()
@@ -529,7 +533,15 @@ for sample_count in sample_counts:
             model = GIN_ZCP_Model_NDS(input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
                             zcp_dim=next(iter(train_dataloader))[0][-1].shape[1], zcp_gin_dim=args.zcp_gin_dim,
                             num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
-        
+    elif representation == 'adjgat_zcp':
+        cfg - configs[4]
+        input_dim = next(iter(train_dataloader))[0][1].shape[2]
+        if space in ['nb101', 'nb201', 'nb301', 'tb101']:
+            model = GAT_ZCP_Model(input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
+                            zcp_dim=next(iter(train_dataloader))[0][-1].shape[1], zcp_gin_dim=args.zcp_gin_dim,
+                            num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
+        else:
+            raise NotImplementedError
     else:
         representation_size = next(iter(train_dataloader))[0].shape[1]
         model = FullyConnectedNN(layer_sizes = [representation_size] + [args.hidden_size] * args.num_layers + [1]).to(device)
@@ -537,19 +549,23 @@ for sample_count in sample_counts:
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     # scheduler = StepLR(optimizer, step_size=args.lr_step, gamma=args.lr_gamma)
-    scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=args.eta_min)
+    scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs//5, eta_min=args.eta_min)
     # Train model
     kdt_l5, spr_l5 = [], []
     for epoch in range(epochs):
+        start_time = time.time()
         if args.loss_type == 'mse':
             model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
         else:
             model, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
+        test_loss = test(args, model, test_dataloader, criterion)
+        end_time = time.time()
         if epoch > epochs - 5:
             kdt_l5.append(kdt)
             spr_l5.append(spr)
-        test_loss = test(args, model, test_dataloader, criterion)
-        print(f'Epoch {epoch + 1}/{epochs} | Train Loss: {mse_loss:.4f} | Test Loss: {test_loss:.4f}')
+            print(f'Epoch {epoch + 1}/{epochs} | Train Loss: {mse_loss:.4f} | Test Loss: {test_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman: {spr:.4f} | Kendall: {kdt:.4f}')
+        else:
+            print(f'Epoch {epoch + 1}/{epochs} | Train Loss: {mse_loss:.4f} | Test Loss: {test_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s')
         # samp_eff[sample_count] = (max(spr_l5), max(kdt_l5))
         if wandb:
             wandb.log({"epoch": epoch + 1, "train_loss": mse_loss, "test_loss": test_loss})
@@ -576,7 +592,7 @@ if not os.path.isfile(filename):
 
 with open(filename, 'a') as f:
     for key in samp_eff.keys():
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                 (
                 str(args.seed),
                 str(args.batch_size),

@@ -17,6 +17,274 @@ from torch_geometric.nn import GCNConv, GINConv
 from torch_geometric.nn import global_mean_pool, global_add_pool
 
 
+# =============================================================================
+
+import math
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.nn.modules.module import Module
+from torch.nn.parameter import Parameter
+
+
+def init_tensor(tensor, init_type, nonlinearity):
+    if tensor is None or init_type is None:
+        return
+
+    if init_type =='thomas':
+        size = tensor.size(-1)
+        stdv = 1. / math.sqrt(size)
+        nn.init.uniform_(tensor, -stdv, stdv)
+    elif init_type == 'kaiming_normal_in':
+        nn.init.kaiming_normal_(tensor, mode='fan_in', nonlinearity=nonlinearity)
+    elif init_type == 'kaiming_normal_out':
+        nn.init.kaiming_normal_(tensor, mode='fan_out', nonlinearity=nonlinearity)
+    elif init_type == 'kaiming_uniform_in':
+        nn.init.kaiming_uniform_(tensor, mode='fan_in', nonlinearity=nonlinearity)
+    elif init_type == 'kaiming_uniform_out':
+        nn.init.kaiming_uniform_(tensor, mode='fan_out', nonlinearity=nonlinearity)
+    elif init_type == 'orthogonal':
+        nn.init.orthogonal_(tensor, gain=nn.init.calculate_gain(nonlinearity))
+    else:
+        raise ValueError(f'Unknown initialization type: {init_type}')
+
+
+class GraphConvolution(Module):
+    def __init__(self, in_features, out_features, bias=True, weight_init='thomas', bias_init='thomas'):
+        super(GraphConvolution, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.weight = Parameter(torch.DoubleTensor(in_features, out_features))
+        if bias:
+            self.bias = Parameter(torch.DoubleTensor(out_features))
+        else:
+            self.register_parameter('bias', None)
+
+        self.weight_init = weight_init
+        self.bias_init = bias_init
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        init_tensor(self.weight, self.weight_init, 'relu')
+        init_tensor(self.bias, self.bias_init, 'relu')
+
+    def forward(self, adjacency, features):
+        support = torch.matmul(features, self.weight)
+        output = torch.bmm(adjacency, support)
+        if self.bias is not None:
+            return output + self.bias
+        else:
+            return output
+
+    def __repr__(self):
+        return self.__class__.__name__ + ' (' \
+               + str(self.in_features) + ' -> ' \
+               + str(self.out_features) + ')'
+
+class EAGLE_M_GINADJ(Module):
+    def __init__(self,
+                num_features=0, 
+                num_layers=5,
+                num_hidden=512,
+                dropout_ratio=0,
+                weight_init='thomas',
+                bias_init='thomas',
+                binary_classifier=False,
+                augments=0):
+
+        super(EAGLE_M_GINADJ, self).__init__()
+        self.nfeat = num_features
+        self.nlayer = num_layers
+        self.nhid = num_hidden
+        self.dropout_ratio = dropout_ratio
+        self.gc = nn.ModuleList([GraphConvolution(self.nfeat if i==0 else self.nhid, self.nhid, bias=True, weight_init=weight_init, bias_init=bias_init) for i in range(self.nlayer)])
+        self.bn = nn.ModuleList([nn.LayerNorm(self.nhid).double() for i in range(self.nlayer)])
+        self.relu = nn.ModuleList([nn.ReLU().double() for i in range(self.nlayer)])
+        if not binary_classifier:
+            self.fc = nn.Linear(self.nhid + augments, 1).double()
+        else:
+            if binary_classifier == 'naive':
+                self.fc = nn.Linear(self.nhid + augments, 1).double()
+            elif binary_classifier == 'oneway' or binary_classifier == 'oneway-hard':
+                self.fc = nn.Linear((self.nhid + augments) * 2, 1).double()
+            else:
+                self.fc = nn.Linear((self.nhid + augments) * 2, 2).double()
+
+            if binary_classifier != 'oneway' and binary_classifier != 'oneway-hard':
+                self.final_act = nn.LogSoftmax(dim=1)
+            else:
+                self.final_act = nn.Sigmoid()
+
+        self.dropout = nn.ModuleList([nn.Dropout(self.dropout_ratio).double() for i in range(self.nlayer)])
+
+        self.binary_classifier = binary_classifier
+
+    def forward_single_model(self, adjacency, features):
+        x = self.relu[0](self.bn[0](self.gc[0](adjacency, features)))
+        x = self.dropout[0](x)
+        for i in range(1,self.nlayer):
+            x = self.relu[i](self.bn[i](self.gc[i](adjacency, x)))
+            x = self.dropout[i](x)
+
+        return x
+
+    def extract_features(self, adjacency, features, augments=None):
+        x = self.forward_single_model(adjacency, features)
+        x = x[:,0] # use global node
+        if augments is not None:
+            x = torch.cat([x, augments], dim=1)
+        return x
+
+    def regress(self, features, features2=None):
+        if not self.binary_classifier:
+            assert features2 is None
+            return self.fc(features)
+
+        assert features2 is not None
+        if self.binary_classifier == 'naive':
+            x1 = self.fc(features)
+            x2 = self.fc(features2)
+        else:
+            x1 = features
+            x2 = features2
+
+        x = torch.cat([x1, x2], dim=1)
+        if self.binary_classifier != 'naive':
+            x = self.fc(x)
+
+        x = self.final_act(x)
+        return x
+
+    def forward(self, features, adjacency, augments=None):
+        adjacency, features = adjacency.double(), features.double()
+        x = self.forward_single_model(adjacency, features)
+        x = x[:,0] # use global node
+        if augments is not None:
+            x = torch.cat([x, augments], dim=1)
+        return self.fc(x)
+
+    def reset_last(self):
+        self.fc.reset_parameters()
+
+    def final_params(self):
+        return self.fc.parameters()
+    
+class EAGLE_M(Module):
+    def __init__(self,
+                num_features=0, 
+                num_layers=5,
+                num_hidden=512,
+                dropout_ratio=0,
+                weight_init='thomas',
+                bias_init='thomas',
+                binary_classifier=False,
+                augments=0):
+
+        super(EAGLE_M, self).__init__()
+        self.nfeat = num_features
+        self.nlayer = num_layers
+        self.nhid = num_hidden
+        self.dropout_ratio = dropout_ratio
+        self.gc = nn.ModuleList([GraphConvolution(self.nfeat if i==0 else self.nhid, self.nhid, bias=True, weight_init=weight_init, bias_init=bias_init) for i in range(self.nlayer)])
+        self.bn = nn.ModuleList([nn.LayerNorm(self.nhid).double() for i in range(self.nlayer)])
+        self.relu = nn.ModuleList([nn.ReLU().double() for i in range(self.nlayer)])
+        if not binary_classifier:
+            self.fc = nn.Linear(self.nhid + augments, 1).double()
+        else:
+            if binary_classifier == 'naive':
+                self.fc = nn.Linear(self.nhid + augments, 1).double()
+            elif binary_classifier == 'oneway' or binary_classifier == 'oneway-hard':
+                self.fc = nn.Linear((self.nhid + augments) * 2, 1).double()
+            else:
+                self.fc = nn.Linear((self.nhid + augments) * 2, 2).double()
+
+            if binary_classifier != 'oneway' and binary_classifier != 'oneway-hard':
+                self.final_act = nn.LogSoftmax(dim=1)
+            else:
+                self.final_act = nn.Sigmoid()
+
+        self.dropout = nn.ModuleList([nn.Dropout(self.dropout_ratio).double() for i in range(self.nlayer)])
+
+        self.binary_classifier = binary_classifier
+        
+        # Add fully connected layers for zcp tensor
+        self.zcp_fc1 = nn.Linear(13, 512).double()  # Assuming 32 as the hidden size for the first layer
+        self.zcp_relu1 = nn.ReLU().double()
+        self.zcp_fc2 = nn.Linear(512, 16).double()  # Assuming 16 as the hidden size for the second layer
+        self.zcp_relu2 = nn.ReLU().double()
+
+        # Add an additional fc-relu layer before the final fc
+        self.pre_final_fc = nn.Linear(self.nhid + 16 + augments, self.nhid).double()  # Assuming nhid as the output size
+        self.pre_final_relu = nn.ReLU().double()
+
+    def forward_single_model(self, adjacency, features):
+        x = self.relu[0](self.bn[0](self.gc[0](adjacency, features)))
+        x = self.dropout[0](x)
+        for i in range(1,self.nlayer):
+            x = self.relu[i](self.bn[i](self.gc[i](adjacency, x)))
+            x = self.dropout[i](x)
+
+        return x
+
+    def extract_features(self, adjacency, features, augments=None):
+        x = self.forward_single_model(adjacency, features)
+        x = x[:,0] # use global node
+        if augments is not None:
+            x = torch.cat([x, augments], dim=1)
+        return x
+
+    def regress(self, features, features2=None):
+        if not self.binary_classifier:
+            assert features2 is None
+            return self.fc(features)
+
+        assert features2 is not None
+        if self.binary_classifier == 'naive':
+            x1 = self.fc(features)
+            x2 = self.fc(features2)
+        else:
+            x1 = features
+            x2 = features2
+
+        x = torch.cat([x1, x2], dim=1)
+        if self.binary_classifier != 'naive':
+            x = self.fc(x)
+
+        x = self.final_act(x)
+        return x
+
+    def forward(self, features, adjacency, zcp, augments=None):
+        features, adjacency, zcp = features.double(), adjacency.double(), zcp.double()
+        x = self.forward_single_model(adjacency, features)
+        x = x[:,0]  # use global node
+
+        # Process zcp tensor through the fully connected layers
+        zcp = self.zcp_relu1(self.zcp_fc1(zcp))
+        zcp = self.zcp_relu2(self.zcp_fc2(zcp))
+        # Concatenate processed zcp tensor with x
+        x = torch.cat([x, zcp], dim=1)
+        if augments is not None:
+            x = torch.cat([x, augments], dim=1)
+
+        # Pass through the additional fc-relu layer
+        x = self.pre_final_relu(self.pre_final_fc(x))
+
+        return self.fc(x)
+        # # if not self.binary_classifier:
+        # x = self.forward_single_model(adjacency, features)
+        # x = x[:,0] # use global node
+        # if augments is not None:
+        #     x = torch.cat([x, augments], dim=1)
+        # return self.fc(x)
+
+    def reset_last(self):
+        self.fc.reset_parameters()
+
+    def final_params(self):
+        return self.fc.parameters()
+
+# =============================================================================
 
 class FullyConnectedNN(nn.Module):
     def __init__(self, layer_sizes):
@@ -359,10 +627,11 @@ class GAT_ZCP_Model(nn.Module):
 
 
 class GIN_ZCP_Model(nn.Module):
-    def __init__(self, input_dim, hidden_dim, latent_dim, zcp_dim, zcp_gin_dim, num_hops, num_mlp_layers, readout, dropout, **kwargs):
+    def __init__(self, op_emb, input_dim, hidden_dim, latent_dim, zcp_dim, zcp_gin_dim, num_hops, num_mlp_layers, readout, dropout, **kwargs):
         super(GIN_ZCP_Model, self).__init__()
         
         self.input_dim = input_dim
+        self.op_emb = op_emb
         self.hidden_dim = hidden_dim
         self.latent_dim = latent_dim
         self.zcp_dim = zcp_dim
@@ -370,6 +639,8 @@ class GIN_ZCP_Model(nn.Module):
         self.num_layers = num_hops
         self.emb_dim = 16
         
+        self.op_emb_table = nn.Embedding(16, 48)
+
         self.eps = nn.Parameter(torch.zeros(self.num_layers - 1))
         
         self.mlps = self._build_mlp_layers(num_mlp_layers)
@@ -379,9 +650,9 @@ class GIN_ZCP_Model(nn.Module):
         self.dropout = nn.Dropout(dropout)  # Dropout layer
         
         # New layers for processing mu
-        self.flatten_dim = input_dim * self.zcp_gin_dim 
-        self.fc_mu = nn.Linear(self.flatten_dim, self.zcp_gin_dim)
-        self.bn_mu = nn.BatchNorm1d(1)  # 1 for the number of channels
+        # self.flatten_dim = input_dim * self.zcp_gin_dim 
+        # self.fc_mu = nn.Linear(self.flatten_dim, self.zcp_gin_dim)
+        # self.bn_mu = nn.BatchNorm1d(1)  # 1 for the number of channels
         
         self.fc1_zcp = nn.Linear(self.zcp_dim, 64)
         self.bn1_zcp = nn.BatchNorm1d(64)
@@ -389,20 +660,41 @@ class GIN_ZCP_Model(nn.Module):
         self.bn2_zcp = nn.BatchNorm1d(64 + self.zcp_gin_dim)
         self.fcout = nn.Linear(self.zcp_gin_dim + 64, self.latent_dim)
 
+        self.new_fc = nn.Linear(self.zcp_gin_dim, 128)
+        self.new_fcf = nn.Linear(128, 1)
+        
+        # Create mlp
+        # nn Linear 7 to 64
+        self.fc1_zsp = nn.Linear(7, 64)
+        # nn Linear 64 to 128
+        self.fc2_zsp = nn.Linear(64, 128)
+        # nn Linear 128 to 48
+        self.fc3_zsp = nn.Linear(128, 48)
+
     def _build_mlp_layers(self, num_mlp_layers):
         mlps = torch.nn.ModuleList()
         for layer in range(self.num_layers - 1):
-            input_dim = self.input_dim if layer == 0 else self.hidden_dim
+            input_dim = 48 if layer == 0 else self.hidden_dim
             mlps.append(MLP(num_mlp_layers, input_dim, self.hidden_dim, self.hidden_dim))
         return mlps
 
     def _build_batch_norm_layers(self):
         return torch.nn.ModuleList([nn.BatchNorm1d(self.hidden_dim) for _ in range(self.num_layers - 1)])
 
-    def _encoder(self, ops, adj, zcp):
-        batch_size, node_num, _ = ops.shape
-        x = ops
-        
+    def _encoder(self, ops, adj, zsp_, zcp):
+        # import pdb; pdb.set_trace()
+        if self.op_emb:
+            batch_size, node_num = ops.shape
+            x = ops
+            x = self.op_emb_table(x).squeeze()
+        else:
+            batch_size, node_num, _ = ops.shape
+            x = ops
+
+        zsp_ = self.fc3_zsp(F.relu(self.fc2_zsp(F.relu(self.fc1_zsp(zsp_)))))
+
+        x += 0.1*zsp_
+
         for l in range(self.num_layers - 1):
             neighbor = torch.matmul(adj.float(), x)
             agg = (1 + self.eps[l]) * x.view(batch_size * node_num, -1) + neighbor.view(batch_size * node_num, -1)
@@ -412,16 +704,102 @@ class GIN_ZCP_Model(nn.Module):
         mu = self.fc1(x)
         mu = self.dropout(mu)  # Apply dropout after linear layer
         mu = torch.nn.functional.adaptive_avg_pool2d(mu, (1, self.zcp_gin_dim))
-        
-        zcp = F.relu(self.bn1_zcp(self.fc1_zcp(zcp)))
-        zcp = self.dropout(zcp)  # Apply dropout after activation
-        zcp = torch.cat((mu, zcp.unsqueeze(1)), dim=2).squeeze(1)
-        zcp = torch.sigmoid(self.fcout(F.relu(self.bn2_zcp(self.fc2_zcp(zcp)))))
-        
-        return zcp
+        mu = self.new_fc(mu)
+        mu = self.new_fcf(F.relu(mu))
+        return mu 
+        # zcp = F.relu(self.bn1_zcp(self.fc1_zcp(zcp)))
+        # zcp = self.dropout(zcp)  # Apply dropout after activation
+        # zcp = torch.cat((mu, zcp.unsqueeze(1)), dim=2).squeeze(1)
+        # zcp = torch.sigmoid(self.fcout(F.relu(self.bn2_zcp(self.fc2_zcp(zcp)))))
+        # return zcp
     
-    def forward(self, ops, adj, zcp):
-        return self._encoder(ops, adj, zcp)
+    def forward(self, ops, adj, zsp_, zcp):
+        return self._encoder(ops, adj, zsp_, zcp)
+
+# class GIN_ZCP_Final_Model(nn.Module):
+#     def __init__(self, op_emb, input_dim, hidden_dim, latent_dim, zcp_dim, zcp_gin_dim, num_hops, num_mlp_layers, readout, dropout, **kwargs):
+#         super(GIN_ZCP_Model, self).__init__()
+        
+#         self.input_dim = input_dim
+#         self.op_emb = op_emb
+#         self.hidden_dim = hidden_dim
+#         self.latent_dim = latent_dim
+#         self.zcp_dim = zcp_dim
+#         self.zcp_gin_dim = zcp_gin_dim
+#         self.num_layers = num_hops
+#         self.emb_dim = 16
+        
+#         self.op_emb_table = nn.Embedding(16, 48)
+
+#         self.eps = nn.Parameter(torch.zeros(self.num_layers - 1))
+        
+#         self.mlps = self._build_mlp_layers(num_mlp_layers)
+#         self.batch_norms = self._build_batch_norm_layers()
+        
+#         self.fc1 = nn.Linear(self.hidden_dim, self.zcp_gin_dim)
+#         self.dropout = nn.Dropout(dropout)  # Dropout layer
+        
+#         # New layers for processing mu
+#         self.flatten_dim = input_dim * self.zcp_gin_dim 
+#         self.fc_mu = nn.Linear(self.flatten_dim, self.zcp_gin_dim)
+#         self.bn_mu = nn.BatchNorm1d(1)  # 1 for the number of channels
+        
+#         self.fc1_zcp = nn.Linear(self.zcp_dim, 64)
+#         self.bn1_zcp = nn.BatchNorm1d(64)
+#         self.fc2_zcp = nn.Linear(64 + self.zcp_gin_dim, 64 + self.zcp_gin_dim)
+#         self.bn2_zcp = nn.BatchNorm1d(64 + self.zcp_gin_dim)
+#         self.fcout = nn.Linear(self.zcp_gin_dim + 64, self.latent_dim)
+        
+#         # Create mlp
+#         # nn Linear 7 to 64
+#         self.fc1_zsp = nn.Linear(7, 64)
+#         # nn Linear 64 to 128
+#         self.fc2_zsp = nn.Linear(64, 128)
+#         # nn Linear 128 to 48
+#         self.fc3_zsp = nn.Linear(128, 48)
+
+
+
+#     def _build_mlp_layers(self, num_mlp_layers):
+#         mlps = torch.nn.ModuleList()
+#         for layer in range(self.num_layers - 1):
+#             input_dim = self.input_dim if layer == 0 else self.hidden_dim
+#             mlps.append(MLP(num_mlp_layers, input_dim, self.hidden_dim, self.hidden_dim))
+#         return mlps
+
+#     def _build_batch_norm_layers(self):
+#         return torch.nn.ModuleList([nn.BatchNorm1d(self.hidden_dim) for _ in range(self.num_layers - 1)])
+
+#     def _encoder(self, ops, adj, zsp_, zcp):
+#         batch_size, node_num, _ = ops.shape
+#         x = ops
+
+#         if self.op_emb:
+#             x = self.op_emb_table(x).squeeze()
+        
+#         zsp_ = self.fc3_zsp(F.relu(self.fc2_zsp(F.relu(self.fc1_zsp(zsp_)))))
+
+#         x += 0.1*zsp_
+
+#         for l in range(self.num_layers - 1):
+#             neighbor = torch.matmul(adj.float(), x)
+#             agg = (1 + self.eps[l]) * x.view(batch_size * node_num, -1) + neighbor.view(batch_size * node_num, -1)
+#             x = F.relu(self.batch_norms[l](self.mlps[l](agg)).view(batch_size, node_num, -1))
+#             x = self.dropout(x)  # Apply dropout after activation
+        
+#         mu = self.fc1(x)
+#         mu = self.dropout(mu)  # Apply dropout after linear layer
+#         mu = torch.nn.functional.adaptive_avg_pool2d(mu, (1, self.zcp_gin_dim))
+        
+#         zcp = F.relu(self.bn1_zcp(self.fc1_zcp(zcp)))
+#         zcp = self.dropout(zcp)  # Apply dropout after activation
+#         zcp = torch.cat((mu, zcp.unsqueeze(1)), dim=2).squeeze(1)
+#         zcp = torch.sigmoid(self.fcout(F.relu(self.bn2_zcp(self.fc2_zcp(zcp)))))
+        
+#         return zcp
+    
+#     def forward(self, ops, adj, zcp):
+#         return self._encoder(ops, adj, zcp)
 
 
 

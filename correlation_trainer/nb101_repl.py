@@ -3,9 +3,10 @@ import torch
 from torch.utils.data import DataLoader
 from models import FullyConnectedNN, GIN_Model, \
                     GIN_Model_NDS, GIN_ZCP_Model_NDS, \
-                    GIN_ZCP_Model, GIN_Emb_Model, \
+                    GIN_Emb_Model, \
                     GIN_Emb_Model_NDS, GIN_Emb_ZCP_Model, \
                     GIN_Emb_ZCP_Model_NDS, GAT_ZCP_Model, EAGLE_M, EAGLE_M_GINADJ
+from tagates_model import GIN_ZCP_Model
 import argparse, sys, time, random, os
 import numpy as np
 from pprint import pprint
@@ -39,6 +40,10 @@ parser.add_argument('--representation', type=str, default='cate') # adj_mlp, adj
 parser.add_argument('--test_tagates', action='store_true')        # Currently only supports testing on NB101 networks. Easy to extend.
 parser.add_argument('--loss_type', type=str, default='mse')       # mse, pwl supported
 parser.add_argument('--op_emb', action='store_true')              # with or without operation embedding table.
+parser.add_argument("--num_trials", type=int, default=1)          # Number of trials to run for each sample count.
+# Convert adj_tagates, op_tagates, opmat_tagates, zcp_tagates, accs_tagates into parser boolean arguments
+for arg in ['adj_tagates', 'op_tagates', 'opmat_tagates', 'opmat_only', 'zcp_tagates', 'accs_tagates']:
+    parser.add_argument('--'+arg, action='store_true')
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--no-norm_adj_op', action='store_false')
 parser.add_argument('--gin_readout', type=str, default='mean')
@@ -99,6 +104,7 @@ if args.name_desc is not None:
 if wandb:
     wandb.init(project="RankCorrelationTests", name=run_name, config=args, allow_val_change=True)
 
+num_trials = args.num_trials
 sample_tests = {# NDS
                 'Amoeba': [249, 498, 1245, 2491],
                 'DARTS': [250, 500, 1250, 2500],
@@ -111,9 +117,9 @@ sample_tests = {# NDS
                 'PNAS_fix-w-d': [227, 455, 1139, 2279],
                 # NASBench
                 # 'nb101': [72, 364, 728, 3645, 7280],
-                'nb101': [72],
                 # 'nb101': [7280],
-                # 'nb101': [364],
+                # 'nb101': [72],
+                'nb101': [364],
                 # 'nb201': [7, 39, 78, 390, 781],
                 'nb201': [7812],
                 'nb301': [29, 58, 294, 589, 2948],
@@ -138,10 +144,15 @@ if args.space == 'nb101' and test_tagates:
     with open(os.environ['PROJ_BPATH'] + "/" + "/correlation_trainer/tagates_replication/nb101_hash_train.txt", "rb") as fp:
         nb101_train_hash = pickle.load(fp)
     nb101_train_tagates_sample_indices = [hash_to_idx[hash_] for hash_ in nb101_train_hash]
+    with open(os.environ['PROJ_BPATH'] + "/correlation_trainer/tagates_replication/nasbench101_zsall_train.pkl", "rb") as fp:
+        tagates_train = pickle.load(fp)
+    with open(os.environ['PROJ_BPATH'] + "/correlation_trainer/tagates_replication/nasbench101_zsall_valid.pkl", "rb") as fp:
+        tagates_val = pickle.load(fp)
 
 
 def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloader, epoch):
-    model.train()
+    # model.train()
+    model.training = True
     running_loss = 0.0
     for inputs, targets in dataloader:
         if inputs[0].shape[0] == 1 and args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
@@ -168,9 +179,11 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         if args.representation == 'adj_gin':
             if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))), 
-                           torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1])))]
+                           torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))), 
+                           torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[1])))]
                 archs_2 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[0]))), 
-                           torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[0])))]
+                           torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[0]))), 
+                           torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[0])))]
                 X_adj_1, X_ops_1 = archs_1[0].to(device), archs_1[1].to(device)
                 s_1 = model(X_ops_1, X_adj_1.to(torch.long)).squeeze()
                 X_adj_2, X_ops_2 = archs_2[0].to(device), archs_2[1].to(device)
@@ -190,16 +203,20 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
                 s_2 = model(X_ops_a_2, X_adj_a_2.to(torch.long), X_ops_b_2, X_adj_b_2.to(torch.long)).squeeze()
         elif args.representation == 'adjgin_zcp':
             if space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                # import pdb; pdb.set_trace()
                 archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))), 
                            torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))), 
-                           torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[1])))]
+                           torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[1]))), 
+                           torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[1])))]
                 archs_2 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[0]))), 
                            torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[0]))), 
-                           torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[0])))]
-                X_adj_1, X_ops_1, zcp_1_ = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device)
-                s_1 = model(X_ops_1, X_adj_1.to(torch.long), zcp_1_).squeeze()
-                X_adj_2, X_ops_2, zcp_2_ = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device)
-                s_2 = model(X_ops_2, X_adj_2.to(torch.long), zcp_2_).squeeze()
+                           torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[0]))), 
+                           torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[0])))]
+                # import pdb; pdb.set_trace()
+                X_adj_1, X_ops_1, zsp_1_, zcp_1_ = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device)
+                s_1 = model.forward(X_ops_1, X_adj_1.to(torch.long), zsp_1_, zcp_1_).squeeze()
+                X_adj_2, X_ops_2, zsp_2_, zcp_2_ = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device)
+                s_2 = model.forward(X_ops_2, X_adj_2.to(torch.long), zsp_2_, zcp_2_).squeeze()
             else:
                 archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))), 
                            torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))), 
@@ -244,7 +261,8 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
     if epoch < epochs - 5:
         return model, running_loss / len(dataloader), 0, 0
     else:
-        model.eval()
+        # model.eval()
+        model.training = False
         pred_scores, true_scores = [], []
         for reprs, scores in test_dataloader:
             if args.representation == 'adj_gin':
@@ -254,7 +272,7 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
                     pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[3].cuda(), reprs[2].cuda().to(torch.long)).squeeze().detach().cpu().tolist())
             elif args.representation == 'adjgin_zcp':
                 if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                    pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[2].cuda()).squeeze().detach().cpu().tolist())
+                    pred_scores.append(model.forward(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[2].cuda(), reprs[3].cuda()).squeeze().detach().cpu().tolist())
                 else:
                     pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[3].cuda(), reprs[2].cuda().to(torch.long), reprs[4].cuda()).squeeze().detach().cpu().tolist())
             else:
@@ -271,7 +289,8 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
 
 
 def train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloader, epoch):
-    model.train()
+    # model.train()
+    model.training = True
     running_loss = 0.0
     for inputs, targets in dataloader:
         if args.representation not in ['adj_gin', 'adjgin_zcp']:
@@ -286,8 +305,8 @@ def train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloa
                 outputs = model(X_ops_1, X_adj_1.to(torch.long), X_ops_2, X_adj_2.to(torch.long))
         elif args.representation == 'adjgin_zcp':
             if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                X_adj, X_ops, zcp_, targets = inputs[0].to(device), inputs[1].to(device), inputs[2].to(device), targets.float().to(device)
-                outputs = model(X_ops, X_adj.to(torch.long), zcp_).squeeze()
+                X_adj, X_ops, zsp_, zcp_, targets = inputs[0].to(device), inputs[1].to(device), inputs[2].to(device), inputs[3].to(device), targets.float().to(device)
+                outputs = model.forward(X_ops, X_adj.to(torch.long), zsp_, zcp_).squeeze()
             else:
                 X_adj_1, X_ops_1, X_adj_2, X_ops_2, zcp_, targets = inputs[0].to(device), inputs[1].to(device), inputs[2].to(device), inputs[3].to(device), inputs[4].to(device), targets.float().to(device)
                 outputs = model(X_ops_1, X_adj_1.to(torch.long), X_ops_2, X_adj_2.to(torch.long), zcp_).squeeze()
@@ -303,7 +322,8 @@ def train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloa
     if epoch < epochs - 5:
         return model, running_loss / len(dataloader), 0, 0
     else:
-        model.eval()
+        # model.eval()
+        model.training = False
         pred_scores, true_scores = [], []
         for reprs, scores in test_dataloader:
             if args.representation == 'adj_gin':
@@ -313,7 +333,7 @@ def train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloa
                     pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[3].cuda(), reprs[2].cuda().to(torch.long)).squeeze().detach().cpu().tolist())
             elif args.representation == 'adjgin_zcp':
                 if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                    pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[2].cuda()).squeeze().detach().cpu().tolist())
+                    pred_scores.append(model.forward(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[2].cuda()).squeeze().detach().cpu().tolist())
                 else:
                     pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[3].cuda(), reprs[2].cuda().to(torch.long), reprs[4].cuda()).squeeze().detach().cpu().tolist())
             else:
@@ -329,7 +349,8 @@ def train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloa
 
 
 def test(args, model, dataloader, criterion):
-    model.eval()
+    # model.eval()
+    model.training = False
     running_loss = 0.0
     numitems = 0
     with torch.no_grad():
@@ -346,9 +367,9 @@ def test(args, model, dataloader, criterion):
                         outputs = model(X_ops_1, X_adj_1.to(torch.long), X_ops_2, X_adj_2.to(torch.long))
                 elif args.representation == 'adjgin_zcp':
                     if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                        X_adj, X_ops, zcp_, targets = inputs[0].to(device), inputs[1].to(device), inputs[2].to(device), targets.float().to(device)
+                        X_adj, X_ops, zsp_, zcp_, targets = inputs[0].to(device), inputs[1].to(device), inputs[2].to(device), inputs[3].to(device), targets.float().to(device)
                         optimizer.zero_grad()
-                        outputs = model(X_ops, X_adj.to(torch.long), zcp_).squeeze()
+                        outputs = model.forward(X_ops, X_adj.to(torch.long), zsp_, zcp_).squeeze()
                     else:
                         X_adj_1, X_ops_1, X_adj_2, X_ops_2, zcp_, targets = inputs[0].to(device), inputs[1].to(device), inputs[2].to(device), inputs[3].to(device), inputs[4].to(device), targets.float().to(device)
                         optimizer.zero_grad()
@@ -373,6 +394,16 @@ elif space in ['nb101', 'nb201', 'nb301']:
 elif space in ['tb101']:
     from nas_embedding_suite.tb101_micro_ss import TransNASBench101Micro as EmbGenClass
 embedding_gen = EmbGenClass(normalize_zcp=True, log_synflow=True)
+
+def one_hot_encode(arr, vlmax):
+    # Create an array of zeros with shape (len(arr), vlmax)
+    one_hot = np.zeros((len(arr), vlmax))
+    
+    # For each index and value in the list, set the corresponding one-hot position to 1
+    for i, val in enumerate(arr):
+        one_hot[i, val] = 1
+        
+    return one_hot
 
 def get_dataloader(args, embedding_gen, space, sample_count, representation, mode, train_indexes=None, test_size=None):
     representations = []
@@ -403,9 +434,13 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                 sample_indexes = random.sample(remaining_indexes, test_size)
             else:
                 sample_indexes = remaining_indexes
+    dtlen = len(embedding_gen.get_adj_op(0).values())
+    if dtlen == 2:
+        adj_mat, op_mat = embedding_gen.get_adj_op(0).values()
+        vlmax = np.asarray(op_mat).shape[1]
     if representation.__contains__("gin")==False:
         if representation == 'adj_mlp':
-            for i in tqdm(sample_indexes):
+            for idxlx_, i in tqdm(enumerate(sample_indexes)):
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                     adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=args.space).values()
                     accs.append(embedding_gen.get_valacc(i, space=args.space))
@@ -422,7 +457,16 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                         op_mat_red = op_mat_red/np.max(op_mat_red)
                     representations.append(np.concatenate((adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red)).tolist())
                 else:
-                    adj_mat, op_mat = embedding_gen.get_adj_op(i).values()
+                    # adj_mat, op_mat = embedding_gen.get_adj_op(i).values()
+                    if mode == 'train':
+                        adj_mat = tagates_train[idxlx_][0][0]
+                        op_mat = one_hot_encode(tagates_train[idxlx_][0][1], vlmax)
+                        # op_mat = tagates_train[idxlx_][0][1]
+                    else:
+                        adj_mat = tagates_val[idxlx_][0][0]
+                        op_mat = one_hot_encode(tagates_val[idxlx_][0][1], vlmax)
+                        # op_mat = tagates_train[idxlx_][0][1]
+                    # import pdb; pdb.set_trace()
                     if space == 'tb101':
                         accs.append(embedding_gen.get_valacc(i, task=args.task))
                     else:
@@ -437,7 +481,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                         op_mat = op_mat/np.max(op_mat)
                     representations.append(np.concatenate((adj_mat, op_mat)).tolist())
         else:
-            for i in tqdm(sample_indexes):
+            for idxlx_, i in tqdm(enumerate(sample_indexes)):
                 if space in ['nb101', 'nb201', 'nb301']:
                     exec('representations.append(embedding_gen.get_{}(i))'.format(representation))
                 elif space=='tb101':
@@ -455,39 +499,92 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
         assert representation in ['adj_gin', 'adjgin_zcp'],  "Only adj_gin, adjgin_zcp is supported for GIN"
         representations = []
         if args.representation == 'adj_gin':
-            for i in tqdm(sample_indexes):
+            for idxlx_, i in tqdm(enumerate(sample_indexes)):
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                     adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=args.space).values()
                     accs.append(embedding_gen.get_valacc(i, space=args.space))
                     representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red)))
                 else:
+                    if mode == 'train':
+                        tagates_samps = tagates_train
+                    else:
+                        tagates_samps = tagates_val
                     adj_mat, op_mat = embedding_gen.get_adj_op(i).values()
+                    # adj_mat = tagates_samps[idxlx_][0][0]
+                    # op_mat = one_hot_encode(tagates_train[idxlx_][0][1], vlmax)
+                    # op_mat = one_hot_encode([0] + [xlz + 2 for xlz in tagates_samps[idxlx_][0][1]] + [1], 5)
+                    # op_mat = tagates_samps[idxlx_][1]
                     ## If adding ZCPs, add them here.
                     if space == 'tb101':
                         accs.append(embedding_gen.get_valacc(i, task=args.task))
                     else:
                         accs.append(embedding_gen.get_valacc(i))
+                        # accs.append(tagates_samps[idxlx_][-3])
                     representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat)))
         else:
-            for i in tqdm(sample_indexes):
+            for idxlx_, i in tqdm(enumerate(sample_indexes)):
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                     adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=args.space).values()
                     zcp_ = embedding_gen.get_zcp(i, space=args.space)
                     accs.append(embedding_gen.get_valacc(i, space=args.space))
                     representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red), torch.Tensor(zcp_)))
                 else:
-                    adj_mat, op_mat = embedding_gen.get_adj_op(i).values()
-                    # print(op_mat)
-                    # op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
-                    zcp_ = embedding_gen.get_zcp(i)
+                    if mode == 'train':
+                        tagates_samps = tagates_train
+                        nb101_idx_converter = nb101_train_tagates_sample_indices
+                    else:
+                        tagates_samps = tagates_val
+                        nb101_idx_converter = nb101_tagates_sample_indices
+                    if args.adj_tagates:
+                        print("Using TAGATES Adjacency Matrix")
+                        adj_mat = tagates_samps[idxlx_][0][0]
+                    else:
+                        print("Using NASBench Adjacency Matrix")
+                        adj_mat, _ = embedding_gen.get_adj_op(nb101_idx_converter[idxlx_]).values()
+                    if args.op_tagates:
+                        print("Using TAGATES Operation Matrix")
+                        # op_mat = one_hot_encode([0] + [xlz + 2 for xlz in tagates_samps[idxlx_][0][1]] + [1], 5)
+                        op_mat = tagates_samps[idxlx_][0][1]
+                    else:
+                        print("Using NASBench Operation Matrix")
+                        _, op_mat = embedding_gen.get_adj_op(nb101_idx_converter[idxlx_]).values()
+                    # import pdb; pdb.set_trace()
+                    if args.opmat_tagates:
+                        print("Using TAGATES OPMAT")
+                        if args.opmat_only:
+                            print("Using TAGATES OPMAT ONLY")
+                            zsp_ = np.asarray(tagates_samps[idxlx_][1])
+                        else:
+                            if args.op_tagates:
+                                print("Using TAGATES OPMAT CONCAT TAGATES Operation Matrix")
+                            else:
+                                print("Using TAGATES OPMAT CONCAT NASBench101 Operation Matrix")
+                            # op_mat = np.concatenate((op_mat, np.asarray(tagates_samps[idxlx_][1])), axis=1)
+                            zsp_ = np.asarray(tagates_samps[idxlx_][1])
+                    if args.zcp_tagates:
+                        print("Using TAGATES ZCP (7 ZCPs)")
+                        zcp_ = tagates_samps[idxlx_][-1]
+                    else:
+                        print("Using NASBench ZCP (13 ZCPs)")
+                        zcp_ = embedding_gen.get_zcp(nb101_idx_converter[idxlx_])
                     if args.op_emb:
-                        op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
+                        # op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
+                        op_mat = tagates_samps[idxlx_][0][1]
+                        # op_mat = [0] + [xlz + 2 for xlz in tagates_samps[idxlx_][0][1]] + [1]
+                        # op_mat = [0] +[xlz + 2 for xlz in tagates_samps[idxlx_][0][1]]
                     if space == 'tb101':
                         accs.append(embedding_gen.get_valacc(i, task=args.task))
                     else:
-                        accs.append(embedding_gen.get_valacc(i))
+                        if args.accs_tagates:
+                            print("Using TAGATES ACCS")
+                            accs.append(tagates_samps[idxlx_][-3])
+                        else:
+                            print("Using NASBench ACCS")
+                            accs.append(embedding_gen.get_valacc(nb101_idx_converter[idxlx_], normalized=False))
+                            # accs.append(embedding_gen.get_valacc(nb101_idx_converter[idxlx_]))
+                        
                     if args.op_emb:
-                        representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zcp_)))
+                        representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zsp_), torch.Tensor(zcp_)))
                     else:
                         representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat), torch.Tensor(zcp_)))
 
@@ -502,85 +599,108 @@ samp_eff = {}
 if wandb:
     config = wandb.config
 
-for sample_count in sample_counts:
-    # config.sample_count = sample_count
-    # config.update({'sample_count': sample_count}, allow_val_change=True)
-    # Initialize data get_dataloader(args, space, sample_count, representation, mode, train_indexes=None):
-    train_dataloader, train_indexes = get_dataloader(args, embedding_gen, space, sample_count, representation, mode='train')
-    test_dataloader, test_indexes = get_dataloader(args, embedding_gen, space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.test_size)
+across_trials = {sample_count: [] for sample_count in sample_counts}
+for tr_ in range(num_trials):
+    for sample_count in sample_counts:
+        # config.sample_count = sample_count
+        # config.update({'sample_count': sample_count}, allow_val_change=True)
+        # Initialize data get_dataloader(args, space, sample_count, representation, mode, train_indexes=None):
+        train_dataloader, train_indexes = get_dataloader(args, embedding_gen, space, sample_count, representation, mode='train')
+        test_dataloader, test_indexes = get_dataloader(args, embedding_gen, space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.test_size)
 
-    # Initialize MLP
-    if representation == 'adj_gin':
-        cfg = configs[4]
-        input_dim = next(iter(train_dataloader))[0][1].shape[2]
-        if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-            model = EAGLE_M_GINADJ(num_features=input_dim, num_layers=5, num_hidden=512, dropout_ratio=0.1).to(device)
-            # model = GIN_Model(input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
-            #                 num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
-        else:
-            model = GIN_Model_NDS(input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
-                            num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
-    elif representation == 'adjgin_zcp':
-        cfg = configs[4]
-        if args.op_emb:
-            input_dim = len(list(embedding_gen.get_adj_op(0).values())[1][0])
-        else:
+        # Initialize MLP
+        if representation == 'adj_gin':
+            cfg = configs[4]
             input_dim = next(iter(train_dataloader))[0][1].shape[2]
-        print("INPUT DIM: ", input_dim)
-        input_dim = next(iter(train_dataloader))[0][1].shape[2]
-        if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-            # model = EAGLE_M(num_features=input_dim, num_layers=5, num_hidden=512, dropout_ratio=0.1).to(device)
-            model = GIN_ZCP_Model(input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
-                            zcp_dim=next(iter(train_dataloader))[0][-1].shape[1], zcp_gin_dim=args.zcp_gin_dim,
-                            num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                # model = EAGLE_M_GINADJ(num_features=input_dim, num_layers=5, num_hidden=512, dropout_ratio=0.1).to(device)
+                model = GIN_Model(op_emb=args.op_emb, input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
+                                num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
+            else:
+                model = GIN_Model_NDS(op_emb=args.op_emb, input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
+                                num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
+        elif representation == 'adjgin_zcp':
+            cfg = configs[4]
+            if args.op_emb:
+                input_dim = len(list(embedding_gen.get_adj_op(0).values())[1][0])
+            else:
+                input_dim = next(iter(train_dataloader))[0][1].shape[2]
+            print("INPUT DIM: ", input_dim)
+            if args.op_emb:
+                input_dim = next(iter(train_dataloader))[0][1].shape[1]
+            else:
+                input_dim = next(iter(train_dataloader))[0][1].shape[2]
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                # model = EAGLE_M(num_features=input_dim, num_layers=5, num_hidden=512, dropout_ratio=0.1).to(device)
+                model = GIN_ZCP_Model()
+                # model = GIN_ZCP_Model(op_emb=args.op_emb, input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
+                #                 zcp_dim=next(iter(train_dataloader))[0][-1].shape[1], zcp_gin_dim=args.zcp_gin_dim,
+                #                 num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
+            else:
+                model = GIN_ZCP_Model_NDS(op_emb=args.op_emb, input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
+                                zcp_dim=next(iter(train_dataloader))[0][-1].shape[1], zcp_gin_dim=args.zcp_gin_dim,
+                                num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
+        elif representation == 'adjgat_zcp':
+            cfg - configs[4]
+            input_dim = next(iter(train_dataloader))[0][1].shape[2]
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                model = GAT_ZCP_Model(op_emb=args.op_emb, input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
+                                zcp_dim=next(iter(train_dataloader))[0][-1].shape[1], zcp_gin_dim=args.zcp_gin_dim,
+                                num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
+            else:
+                raise NotImplementedError
         else:
-            model = GIN_ZCP_Model_NDS(input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
-                            zcp_dim=next(iter(train_dataloader))[0][-1].shape[1], zcp_gin_dim=args.zcp_gin_dim,
-                            num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
-    elif representation == 'adjgat_zcp':
-        cfg - configs[4]
-        input_dim = next(iter(train_dataloader))[0][1].shape[2]
-        if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-            model = GAT_ZCP_Model(input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
-                            zcp_dim=next(iter(train_dataloader))[0][-1].shape[1], zcp_gin_dim=args.zcp_gin_dim,
-                            num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
-        else:
-            raise NotImplementedError
-    else:
-        representation_size = next(iter(train_dataloader))[0].shape[1]
-        model = FullyConnectedNN(layer_sizes = [representation_size] + [args.hidden_size] * args.num_layers + [1]).to(device)
-    # Initialize criterion and optimizer
-    criterion = torch.nn.MSELoss()
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    # scheduler = StepLR(optimizer, step_size=args.lr_step, gamma=args.lr_gamma)
-    # scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs//5, eta_min=args.eta_min)
-    scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=args.eta_min)
-    # Train model
-    kdt_l5, spr_l5 = [], []
-    for epoch in range(epochs):
-        start_time = time.time()
-        if args.loss_type == 'mse':
-            model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
-        else:
-            model, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
-        test_loss = test(args, model, test_dataloader, criterion)
-        end_time = time.time()
-        if epoch > epochs - 5:
-            kdt_l5.append(kdt)
-            spr_l5.append(spr)
-            print(f'Epoch {epoch + 1}/{epochs} | Train Loss: {mse_loss:.4f} | Test Loss: {test_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman: {spr:.4f} | Kendall: {kdt:.4f}')
-        else:
-            print(f'Epoch {epoch + 1}/{epochs} | Train Loss: {mse_loss:.4f} | Test Loss: {test_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s')
-        # samp_eff[sample_count] = (max(spr_l5), max(kdt_l5))
+            representation_size = next(iter(train_dataloader))[0].shape[1]
+            model = FullyConnectedNN(layer_sizes = [representation_size] + [args.hidden_size] * args.num_layers + [1]).to(device)
+        # Initialize criterion and optimizer
+        criterion = torch.nn.MSELoss()
+        prms = list(model.mlp.parameters()) + list(model.gcns.parameters()) + list(model.b_gcns.parameters()) + list(model.fb_conversion.parameters()) + list(model.op_emb.parameters()) + list(model.param_zs_embedder.parameters())
+        optimizer = torch.optim.AdamW(prms, lr=args.lr, weight_decay=args.weight_decay)
+        # scheduler = StepLR(optimizer, step_size=args.lr_step, gamma=args.lr_gamma)
+        scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=args.eta_min)
+        # Train model
+        kdt_l5, spr_l5 = [], []
+        for epoch in range(epochs):
+            start_time = time.time()
+            if args.loss_type == 'mse':
+                model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
+            else:
+                model, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
+            test_loss = test(args, model, test_dataloader, criterion)
+            end_time = time.time()
+            if epoch > epochs - 5:
+                kdt_l5.append(kdt)
+                spr_l5.append(spr)
+                print(f'Epoch {epoch + 1}/{epochs} | Train Loss: {mse_loss:.4f} | Test Loss: {test_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman: {spr:.4f} | Kendall: {kdt:.4f}')
+            else:
+                print(f'Epoch {epoch + 1}/{epochs} | Train Loss: {mse_loss:.4f} | Test Loss: {test_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s')
+            # samp_eff[sample_count] = (max(spr_l5), max(kdt_l5))
+            if wandb:
+                wandb.log({"epoch": epoch + 1, "train_loss": mse_loss, "test_loss": test_loss})
+        samp_eff[sample_count] = (sum(spr_l5)/len(spr_l5), sum(kdt_l5)/len(kdt_l5))
+        # Generate and compare codes for all points in test_dataloader
+        # samp_eff[sample_count] = (spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation)
+        pprint(samp_eff)
+        across_trials[sample_count].append(samp_eff[sample_count])
         if wandb:
-            wandb.log({"epoch": epoch + 1, "train_loss": mse_loss, "test_loss": test_loss})
-    samp_eff[sample_count] = (sum(spr_l5)/len(spr_l5), sum(kdt_l5)/len(kdt_l5))
-    # Generate and compare codes for all points in test_dataloader
-    # samp_eff[sample_count] = (spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation)
-    pprint(samp_eff)
-    if wandb:
-        wandb.log({"sample_count": sample_count, "spearman_corr": samp_eff[sample_count][0], "kendall_corr": samp_eff[sample_count][1]})
+            wandb.log({"sample_count": sample_count, "spearman_corr": samp_eff[sample_count][0], "kendall_corr": samp_eff[sample_count][1]})
 
+# print average across trials for each sample count
+for sample_count in sample_counts:
+    print("Average KDT: ", sum([across_trials[sample_count][i][1] for i in range(len(across_trials[sample_count]))])/len(across_trials[sample_count]))
+    # Print variance of KDT across tests
+    print("Variance KDT: ", np.var([across_trials[sample_count][i][1] for i in range(len(across_trials[sample_count]))]))
+    # print SPR
+    print("Average SPR: ", sum([across_trials[sample_count][i][0] for i in range(len(across_trials[sample_count]))])/len(across_trials[sample_count]))
+    # Print variance of SPR across tests
+    print("Variance SPR: ", np.var([across_trials[sample_count][i][0] for i in range(len(across_trials[sample_count]))]))
+
+sample_count = sample_counts[-1]
+avkdt = str(sum([across_trials[sample_count][i][1] for i in range(len(across_trials[sample_count]))])/len(across_trials[sample_count]))
+fstring = ",".join([str(z) for z in [args.adj_tagates, args.op_tagates, args.opmat_tagates, args.opmat_only, args.zcp_tagates, args.accs_tagates]]) + "," + avkdt
+# append fstring to a new line in a file
+with open('typetests.csv', 'a') as f:
+    f.write(fstring + "\n")
 
 import os
 
@@ -613,10 +733,3 @@ with open(filename, 'a') as f:
                 str(samp_eff[key][1]))
                 )
         
-# make trial folder if it doesnt exist
-# if not os.path.exists('trial'):
-#     os.makedirs('trial')
-
-# with open('./trial/trial_%s.txt' % (args.id,), 'w') as f:
-#     f.write(str(samp_eff[364][1]))
-#     f.write("\n")

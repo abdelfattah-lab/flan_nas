@@ -32,8 +32,16 @@ class NASBench101:
         self.load_files(path)
         self.normalize_and_process_zcp(normalize_zcp, log_synflow)
         self.create_hash_to_idx()
-        
-        valacc_list = [self.nb1_api.get_metrics_from_hash(hash_)[1][108][0]['final_validation_accuracy'] for hash_ in self.nb1_api.hash_iterator()]
+        # check if saved_valacc.pkl exists, if not, create it
+        if not os.path.exists(BASE_PATH + 'saved_valacc.pkl'):
+            valacc_list = [
+                sum([
+                    self.nb1_api.get_metrics_from_hash(hash_)[1][108][ixe]['final_validation_accuracy'] for ixe in range(3)
+                    ])/3 for hash_ in tqdm(self.nb1_api.hash_iterator())
+                ]
+            torch.save(valacc_list, BASE_PATH + 'saved_valacc.pkl')
+        else:
+            valacc_list = torch.load(BASE_PATH + 'saved_valacc.pkl')
         self.unnorm_valacc_list = valacc_list
         # MinMax normalize valacc_list
         min_max_scaler = preprocessing.QuantileTransformer()
@@ -77,8 +85,10 @@ class NASBench101:
         mat_repr = str(tuple(mat))
         return [self.zcp_nb101['cifar10'][mat_repr][nn] for nn in self.zcps]
 
-    def get_valacc(self, idx):
+    def get_valacc(self, idx, normalized=True):
         valacc = self.valacc_list[idx]
+        if not normalized:
+            valacc = self.unnorm_valacc_list[idx]
         return valacc
     
     def get_numitems(self):

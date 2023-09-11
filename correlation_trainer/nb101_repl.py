@@ -30,17 +30,28 @@ For adj_mlp, convert the ops matrix into its index and append it to flattened ad
 
 '''
 # execute bash command: export PROJ_BPATH="/home/ya255/projects/iclr_nas_embedding"
-
+# mode = {"timestep": 1,                  # Control number of timesteps
+#         "residual_support": False,              # Residual support connection added or not
+#         "op_attention": False,                  # Op attention added inside sigmoid or not
+#         "zs_as_p": False,                       # Use symmetry breaking zero cost proxy?
+#         "zcp": False,                           # Use zero cost proxy as input?
+#         }
 # Create argparser
 parser = argparse.ArgumentParser()
 ####################################################### Search Space Choices #######################################################
 parser.add_argument('--space', type=str, default='Amoeba')        # nb101, nb201, nb301, tb101, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d supported
 parser.add_argument('--task', type=str, default='class_scene')    # all tb101 tasks supported
 parser.add_argument('--representation', type=str, default='cate') # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adjmlp_zcp, adjgin_zcp, adjgat_zcp supported.
+parser.add_argument('--comment', type=str, default='default') # comment for results row identifier
 parser.add_argument('--test_tagates', action='store_true')        # Currently only supports testing on NB101 networks. Easy to extend.
 parser.add_argument('--loss_type', type=str, default='mse')       # mse, pwl supported
 parser.add_argument('--op_emb', action='store_true')              # with or without operation embedding table.
 parser.add_argument("--num_trials", type=int, default=1)          # Number of trials to run for each sample count.
+parser.add_argument("--timestep", type=int, default=1)            # Number of timesteps to run for each sample count.
+parser.add_argument("--residual_support", action='store_true')    # Residual support connection added or not
+parser.add_argument("--op_attention", action='store_true')        # Op attention added inside sigmoid or not
+parser.add_argument("--zs_as_p", action='store_true')             # Use symmetry breaking zero cost proxy?
+parser.add_argument("--zcp", action='store_true')                 # Use zero cost proxy as input?
 # Convert adj_tagates, op_tagates, opmat_tagates, zcp_tagates, accs_tagates into parser boolean arguments
 for arg in ['adj_tagates', 'op_tagates', 'opmat_tagates', 'opmat_only', 'zcp_tagates', 'accs_tagates']:
     parser.add_argument('--'+arg, action='store_true')
@@ -68,6 +79,24 @@ parser.add_argument('--seed', type=int, default=None)
 parser.add_argument('--id', type=int, default=0)
 ####################################################################################################################################
 args = parser.parse_args()
+
+comment_extra_info = str(args.timestep)
+if args.residual_support:
+    comment_extra_info += "_rs"
+if args.op_attention:
+    comment_extra_info += "_opattn"
+if args.zs_as_p:
+    comment_extra_info += "_zsasp"
+if args.zcp:
+    comment_extra_info += "_zcp"
+
+args.comment += "_" + comment_extra_info
+mode = {"timestep": args.timestep,                  # Control number of timesteps
+        "residual_support": args.residual_support,              # Residual support connection added or not
+        "op_attention": args.op_attention,                  # Op attention added inside sigmoid or not
+        "zs_as_p": args.zs_as_p,                       # Use symmetry breaking zero cost proxy?
+        "zcp": args.zcp,                           # Use zero cost proxy as input?
+        }
 
 # Set random seeds
 def seed_everything(seed: int):
@@ -118,8 +147,8 @@ sample_tests = {# NDS
                 # NASBench
                 # 'nb101': [72, 364, 728, 3645, 7280],
                 # 'nb101': [7280],
-                # 'nb101': [72],
-                'nb101': [364],
+                'nb101': [72, 364, 728],
+                # 'nb101': [364],
                 # 'nb201': [7, 39, 78, 390, 781],
                 'nb201': [7812],
                 'nb301': [29, 58, 294, 589, 2948],
@@ -267,16 +296,16 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         for reprs, scores in test_dataloader:
             if args.representation == 'adj_gin':
                 if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                    pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long)).squeeze().detach().cpu().tolist())
+                    pred_scores.append(model(reprs[1].to(device), reprs[0].to(device).to(torch.long)).squeeze().detach().cpu().tolist())
                 else:
-                    pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[3].cuda(), reprs[2].cuda().to(torch.long)).squeeze().detach().cpu().tolist())
+                    pred_scores.append(model(reprs[1].to(device), reprs[0].to(device).to(torch.long), reprs[3].to(device), reprs[2].to(device).to(torch.long)).squeeze().detach().cpu().tolist())
             elif args.representation == 'adjgin_zcp':
                 if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                    pred_scores.append(model.forward(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[2].cuda(), reprs[3].cuda()).squeeze().detach().cpu().tolist())
+                    pred_scores.append(model.forward(reprs[1].to(device), reprs[0].to(device).to(torch.long), reprs[2].to(device), reprs[3].to(device)).squeeze().detach().cpu().tolist())
                 else:
-                    pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[3].cuda(), reprs[2].cuda().to(torch.long), reprs[4].cuda()).squeeze().detach().cpu().tolist())
+                    pred_scores.append(model(reprs[1].to(device), reprs[0].to(device).to(torch.long), reprs[3].to(device), reprs[2].to(device).to(torch.long), reprs[4].to(device)).squeeze().detach().cpu().tolist())
             else:
-                pred_scores.append(model(reprs.cuda()).squeeze().detach().cpu().tolist())
+                pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())
             true_scores.append(scores.cpu().tolist())
         try:
             pred_scores = [t for sublist in pred_scores for t in sublist]
@@ -328,16 +357,16 @@ def train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloa
         for reprs, scores in test_dataloader:
             if args.representation == 'adj_gin':
                 if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                    pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long)).squeeze().detach().cpu().tolist())
+                    pred_scores.append(model(reprs[1].to(device), reprs[0].to(device).to(torch.long)).squeeze().detach().cpu().tolist())
                 else:
-                    pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[3].cuda(), reprs[2].cuda().to(torch.long)).squeeze().detach().cpu().tolist())
+                    pred_scores.append(model(reprs[1].to(device), reprs[0].to(device).to(torch.long), reprs[3].to(device), reprs[2].to(device).to(torch.long)).squeeze().detach().cpu().tolist())
             elif args.representation == 'adjgin_zcp':
                 if space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                    pred_scores.append(model.forward(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[2].cuda()).squeeze().detach().cpu().tolist())
+                    pred_scores.append(model.forward(reprs[1].to(device), reprs[0].to(device).to(torch.long), reprs[2].to(device)).squeeze().detach().cpu().tolist())
                 else:
-                    pred_scores.append(model(reprs[1].cuda(), reprs[0].cuda().to(torch.long), reprs[3].cuda(), reprs[2].cuda().to(torch.long), reprs[4].cuda()).squeeze().detach().cpu().tolist())
+                    pred_scores.append(model(reprs[1].to(device), reprs[0].to(device).to(torch.long), reprs[3].to(device), reprs[2].to(device).to(torch.long), reprs[4].to(device)).squeeze().detach().cpu().tolist())
             else:
-                pred_scores.append(model(reprs.cuda()).squeeze().detach().cpu().tolist())
+                pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())
             true_scores.append(scores.cpu().tolist())
         try:
             pred_scores = [t for sublist in pred_scores for t in sublist]
@@ -632,7 +661,7 @@ for tr_ in range(num_trials):
                 input_dim = next(iter(train_dataloader))[0][1].shape[2]
             if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 # model = EAGLE_M(num_features=input_dim, num_layers=5, num_hidden=512, dropout_ratio=0.1).to(device)
-                model = GIN_ZCP_Model()
+                model = GIN_ZCP_Model(mode=mode)
                 # model = GIN_ZCP_Model(op_emb=args.op_emb, input_dim=input_dim, hidden_dim=args.hidden_size, latent_dim=1, readout=args.gin_readout,
                 #                 zcp_dim=next(iter(train_dataloader))[0][-1].shape[1], zcp_gin_dim=args.zcp_gin_dim,
                 #                 num_hops=args.num_hops, num_mlp_layers=args.num_mlp_layers, dropout=0.3, **cfg['GAE']).to(device)
@@ -654,7 +683,7 @@ for tr_ in range(num_trials):
             model = FullyConnectedNN(layer_sizes = [representation_size] + [args.hidden_size] * args.num_layers + [1]).to(device)
         # Initialize criterion and optimizer
         criterion = torch.nn.MSELoss()
-        prms = list(model.mlp.parameters()) + list(model.gcns.parameters()) + list(model.b_gcns.parameters()) + list(model.fb_conversion.parameters()) + list(model.op_emb.parameters()) + list(model.param_zs_embedder.parameters())
+        prms = list(model.zcp_embedder.parameters()) + list(model.mlp.parameters()) + list(model.gcns.parameters()) + list(model.b_gcns.parameters()) + list(model.fb_conversion.parameters()) + list(model.op_emb.parameters()) + list(model.param_zs_embedder.parameters()) + list(model.updateop_embedder.parameters())
         optimizer = torch.optim.AdamW(prms, lr=args.lr, weight_decay=args.weight_decay)
         # scheduler = StepLR(optimizer, step_size=args.lr_step, gamma=args.lr_gamma)
         scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=args.eta_min)
@@ -707,9 +736,9 @@ import os
 if not os.path.exists('correlation_results'):
     os.makedirs('correlation_results')
     
-filename = f'correlation_results/{args.space}_samp_eff.csv'
+filename = f'correlation_results/tagates_ablation_{args.space}_samp_eff.csv'
 
-header = "seed,batch_size,hidden_size,num_layers,epochs,space,representation,pwl_mse,test_tagates,key,spr,kdt"
+header = "comment,seed,batch_size,hidden_size,num_layers,epochs,space,representation,pwl_mse,test_tagates,key,spr,kdt"
 
 if not os.path.isfile(filename):
     with open(filename, 'w') as f:
@@ -717,8 +746,9 @@ if not os.path.isfile(filename):
 
 with open(filename, 'a') as f:
     for key in samp_eff.keys():
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                 (
+                str(args.comment),
                 str(args.seed),
                 str(args.batch_size),
                 str(args.hidden_size),

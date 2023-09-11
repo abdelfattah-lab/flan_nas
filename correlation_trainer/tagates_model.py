@@ -6,6 +6,7 @@ import random
 import collections
 import itertools
 import yaml
+import time
 from typing import List
 
 import numpy as np
@@ -15,13 +16,19 @@ import torch.nn.functional as F
 import math
 
 
+
 class DenseGraphFlow(nn.Module):
 
     def __init__(self, in_features, out_features, op_emb_dim,
                  has_attention=True, plus_I=False, normalize=False, bias=True,
-                 residual_only=None, reverse=False):
+                 residual_only=None, reverse=False, mode = {"timestep": 1,                  # Control number of timesteps
+                                                            "residual_support": False,              # Residual support connection added or not
+                                                            "op_attention": False,                  # Op attention added inside sigmoid or not
+                                                            "zs_as_p": False,                       # Use symmetry breaking zero cost proxy?
+                                                            "zcp": False,                           # Use zero cost proxy as input?
+                                                            }):
         super(DenseGraphFlow, self).__init__()
-
+        self.mode = mode
         self.plus_I = plus_I
         self.normalize = normalize
         self.in_features = in_features
@@ -60,8 +67,19 @@ class DenseGraphFlow(nn.Module):
         support = torch.matmul(inputs, self.weight)
         if self.residual_only is None:
             # use residual
-            output = torch.sigmoid(self.op_attention(op_emb)) * torch.matmul(adj_aug, support) \
-                     + support
+            if self.mode["op_attention"] and self.mode["residual_support"]:
+                output = torch.sigmoid(self.op_attention(op_emb)) * torch.matmul(adj_aug, support)\
+                     + support #OBS: removing +support 0.77 -> 0.73 (0.67 -> 0.59)
+            if self.mode["op_attention"] and not self.mode["residual_support"]:
+                output = torch.sigmoid(self.op_attention(op_emb)) * torch.matmul(adj_aug, support)
+            if not self.mode["op_attention"] and self.mode["residual_support"]:
+                output = torch.sigmoid(op_emb) * torch.matmul(adj_aug, support) + support
+            if not self.mode["op_attention"] and not self.mode["residual_support"]:
+                output = torch.matmul(adj_aug, support)
+            # output = torch.sigmoid(op_emb) * torch.matmul(adj_aug, support)\
+            #          + support #OBS: removing this 0.67 -> ?? 
+            # output = torch.matmul(adj_aug, support)\
+            #          + support #OBS: removing sigmoid 72 NB101 0.67 -> 0.159
         else:
             # residual only the first `self.residual_only` nodes
             if self.residual_only == 0:
@@ -116,7 +134,7 @@ class GIN_ZCP_Model():
 
         ## newly added
         # construction (tagates)
-        num_time_steps: int = 2,
+        num_time_steps: int = 3,
         fb_conversion_dims = [128, 128],
         backward_gcn_out_dims = [128, 128, 128, 128, 128],
         updateopemb_method: str = "concat_ofb", # concat_ofb, concat_fb, concat_b
@@ -138,10 +156,16 @@ class GIN_ZCP_Model():
         updateopemb_detach_finfo: bool = True,
 
         mask_nonparametrized_ops: bool = False,
-        schedule_cfg = None
+        schedule_cfg = None, 
+        mode = {"timestep": 1,                  # Control number of timesteps
+        "residual_support": False,              # Residual support connection added or not
+        "op_attention": False,                  # Op attention added inside sigmoid or not
+        "zs_as_p": False,                       # Use symmetry breaking zero cost proxy?
+        "zcp": False,                           # Use zero cost proxy as input?
+        }
     ) -> None:
         super(GIN_ZCP_Model, self).__init__()
-
+        self.mode = mode
         # configs
         self.op_embedding_dim = op_embedding_dim
         self.node_embedding_dim = node_embedding_dim
@@ -183,7 +207,11 @@ class GIN_ZCP_Model():
         self.concat_param_zs_as_opemb_scale = concat_param_zs_as_opemb_scale
         self.mlp = []
         mlp_hiddens=(200, 200, 200)
-        dim = 128
+        # dim = 128
+        if self.mode["zcp"]:
+            dim = 128 + self.op_embedding_dim
+        else:
+            dim = 128
         mlp_dropout = self.mlp_dropout
         for hidden_size in mlp_hiddens:
             self.mlp.append(nn.Sequential(
@@ -245,6 +273,7 @@ class GIN_ZCP_Model():
                     if symmetry_breaking_method == "param_zs" else\
                     (self.op_embedding_dim if not self.share_op_attention else dim),
                     has_attention=not self.share_op_attention,
+                    mode=mode,
                     **(gcn_kwargs or {})
                 )
             )
@@ -321,6 +350,18 @@ class GIN_ZCP_Model():
                 in_dim = embedder_dim
             self.updateop_embedder.append(nn.Linear(in_dim, self.op_embedding_dim))
             self.updateop_embedder = nn.Sequential(*self.updateop_embedder)
+
+            # 3 layers FNN for zcp_ in forward()
+            self.zcp_embedder = []
+            zin_dim = 13
+            for embedder_dim in [128, 128]:
+                self.zcp_embedder.append(nn.Linear(zin_dim, embedder_dim))
+                self.zcp_embedder.append(nn.ReLU(inplace = False))
+                zin_dim = embedder_dim
+            self.zcp_embedder.append(nn.Linear(zin_dim, self.op_embedding_dim))
+            self.zcp_embedder = nn.Sequential(*self.zcp_embedder)
+
+
 
     def embed_and_transform_arch(self, archs):
         # import pdb; pdb.set_trace()
@@ -522,6 +563,7 @@ class GIN_ZCP_Model():
         # import pdb; pdb.set_trace()
         # archs = list(zip([np.asarray(x.cpu()) for x in x_adj], [np.asarray(x.cpu()) for x in x_ops]))
         archs = [[np.asarray(x.cpu()) for x in x_adj], [np.asarray(x.cpu()) for x in x_ops]]
+        zcp_ = zcp_.cpu()
         zs_as_p = zs_as_p.cpu()
         zs_as_l = None
         adjs, x, op_emb, op_inds = self.embed_and_transform_arch(archs)
@@ -547,18 +589,29 @@ class GIN_ZCP_Model():
             zs_as_p = self.input_op_emb.new(np.array(zs_as_p))
             zs_as_p = self.param_zs_embedder(zs_as_p)
             # import pdb; pdb.set_trace()
-            op_emb = op_emb + zs_as_p * self.concat_param_zs_as_opemb_scale
+            if self.mode["zs_as_p"]:
+                op_emb = op_emb + zs_as_p * self.concat_param_zs_as_opemb_scale # removing zs_as_p 0.67 -> 0.64
+            else:
+                op_emb = op_emb
 
         if self.share_op_attention:
             op_emb = self.op_attention(op_emb)
 
-        for t in range(self.num_time_steps):
-            if self.symmetry_breaking_method == "param_zs":
-                # param-level zeroshot: op_emb | zeroshot
-                auged_op_emb = torch.cat((op_emb, zs_as_p), dim = -1)
-            else:
-                auged_op_emb = op_emb
+        # self.flAG = False
 
+        # for t in range(self.num_time_steps): 
+        for t in range(self.mode["timestep"]): 
+            # If made 1 with b_y op_emb update disabled, 0.77 -> 0.77??????????
+            # For samples 72 NB101 --->                  0.67 -> 0.66
+            # if self.symmetry_breaking_method == "param_zs":
+            #     # param-level zeroshot: op_emb | zeroshot
+            #     auged_op_emb = torch.cat((op_emb, zs_as_p), dim = -1)
+            # else:
+            auged_op_emb = op_emb
+            # if not self.flAG:
+            #     self.flAG = True
+            #     print("FLAGGEDD")
+            #     time.sleep(10)
             y = self._forward_pass(x, adjs, auged_op_emb)
 
             if t == self.num_time_steps - 1:
@@ -567,6 +620,14 @@ class GIN_ZCP_Model():
             b_y = self._backward_pass(y, adjs, zs_as_l, auged_op_emb)
             op_emb = self._update_op_emb(y, b_y, op_emb, concat_op_emb_mask)
 
-        ## --- output ---
+        if self.mode["zcp"]:
+        # process zcp_
+            zcp_ = self.zcp_embedder(zcp_)
+            intermediate_out = self._final_process(y, op_inds)
+            # concatenate zcp_ and intermediate_out
+            intermediate_out = torch.cat((intermediate_out, zcp_), dim = -1)
+        else:
+            intermediate_out = self._final_process(y, op_inds)
+        # ## --- output ---
         # y: (batch_size, vertices, gcn_out_dims[-1])
-        return self.mlp(self._final_process(y, op_inds))
+        return self.mlp(intermediate_out)

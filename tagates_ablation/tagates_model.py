@@ -351,15 +351,15 @@ class GIN_ZCP_Model():
             self.updateop_embedder.append(nn.Linear(in_dim, self.op_embedding_dim))
             self.updateop_embedder = nn.Sequential(*self.updateop_embedder)
 
-            # 3 layers FNN for zcp_ in forward()
-            self.zcp_embedder = []
-            zin_dim = 13
-            for embedder_dim in [128, 128]:
-                self.zcp_embedder.append(nn.Linear(zin_dim, embedder_dim))
-                self.zcp_embedder.append(nn.ReLU(inplace = False))
-                zin_dim = embedder_dim
-            self.zcp_embedder.append(nn.Linear(zin_dim, self.op_embedding_dim))
-            self.zcp_embedder = nn.Sequential(*self.zcp_embedder)
+        # 3 layers FNN for zcp_ in forward()
+        self.zcp_embedder = []
+        zin_dim = 13
+        for embedder_dim in [128, 128]:
+            self.zcp_embedder.append(nn.Linear(zin_dim, embedder_dim))
+            self.zcp_embedder.append(nn.ReLU(inplace = False))
+            zin_dim = embedder_dim
+        self.zcp_embedder.append(nn.Linear(zin_dim, self.op_embedding_dim))
+        self.zcp_embedder = nn.Sequential(*self.zcp_embedder)
 
 
 

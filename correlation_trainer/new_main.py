@@ -8,7 +8,6 @@ import argparse, sys, time, random, os
 import numpy as np
 from pprint import pprint
 from tqdm import tqdm
-from configs import configs
 from utils import CustomDataset, get_tagates_sample_indices
 from torch.optim.lr_scheduler import StepLR
 from pprint import pprint

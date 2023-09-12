@@ -169,7 +169,7 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
     pred_scores, true_scores = [], []
     repr_max = int(80/args.batch_size)
     for repr_idx, (reprs, scores) in enumerate(test_dataloader):
-        if epoch < args.epochs - 5 and repr_idx > repr_max:
+        if epoch < args.epochs - 5 and repr_idx >= repr_max:
             break
         if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
             pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())

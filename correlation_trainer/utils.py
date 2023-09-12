@@ -34,12 +34,12 @@ def get_tagates_sample_indices(args):
             nb101_tagates_sample_indices = np.load(BASE_PATH2 + '/tagates_replication/nb101_test_tagates.npy')
             nb101_train_tagates_sample_indices = np.load(BASE_PATH2 + '/tagates_replication/nb101_train_tagates.npy')
         return nb101_train_tagates_sample_indices, nb101_tagates_sample_indices
-    if args.space == 'nb201' and args.test_tagates:
-        print("Explicit TAGATES comparision")
-        with open(os.environ['PROJ_BPATH'] + "/correlation_trainer/tagates_replication/nasbench201_zsall_train.pkl", "rb") as fp:
-            train_data = pickle.load(fp)
-        with open(os.environ['PROJ_BPATH'] + "/correlation_trainer/tagates_replication/nasbench201_zsall_valid.pkl", "rb") as fp:
-            valid_data = pickle.load(fp)
+    # if args.space == 'nb201' and args.test_tagates:
+    #     print("Explicit TAGATES comparision")
+    #     with open(os.environ['PROJ_BPATH'] + "/correlation_trainer/tagates_replication/nasbench201_zsall_train.pkl", "rb") as fp:
+    #         train_data = pickle.load(fp)
+    #     with open(os.environ['PROJ_BPATH'] + "/correlation_trainer/tagates_replication/nasbench201_zsall_valid.pkl", "rb") as fp:
+    #         valid_data = pickle.load(fp)
         
     return [], []
 

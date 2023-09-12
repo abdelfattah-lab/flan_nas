@@ -17,6 +17,7 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 
 # python -i new_main.py --space nb101 --representation adj_gin_zcp --test_tagates --loss_type pwl --sample_sizes 72 --batch_size 8
+# python -i new_main.py --space nb201 --representation adj_gin_zcp --test_tagates --loss_type pwl --sample_sizes 40 --batch_size 8
 
 parser = argparse.ArgumentParser()
 ####################################################### Search Space Choices #######################################################
@@ -25,6 +26,7 @@ parser.add_argument('--task', type=str, default='class_scene')    # all tb101 ta
 parser.add_argument('--representation', type=str, default='cate') # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate supported.
 parser.add_argument('--test_tagates', action='store_true')        # Currently only supports testing on NB101 networks. Easy to extend.
 parser.add_argument('--loss_type', type=str, default='pwl')       # mse, pwl supported
+parser.add_argument('--num_trials', type=int, default=3)
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--sample_sizes', nargs='+', type=int, default=[72, 364, 728, 3645, 7280]) # Default NB101
@@ -292,20 +294,21 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
     else: # adj_gin, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate --> GIN_Model
         assert representation in ["adj_gin", "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"], "Representation Not Supported!"
         if args.representation == "adj_gin":
-            if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
-                adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=args.space).values()
-                op_mat_norm = torch.Tensor(np.array(op_mat_norm)).argmax(dim=1)
-                op_mat_red = torch.Tensor(np.array(op_mat_red)).argmax(dim=1)
-                accs.append(embedding_gen.get_valacc(i, space=args.space))
-                representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red)))
-            else:
-                adj_mat, op_mat = embedding_gen.get_adj_op(i).values()
-                op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
-                if space == 'tb101':
-                    accs.append(embedding_gen.get_valacc(i, task=args.task))
+            for i in tqdm(sample_indexes):
+                if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+                    adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=args.space).values()
+                    op_mat_norm = torch.Tensor(np.array(op_mat_norm)).argmax(dim=1)
+                    op_mat_red = torch.Tensor(np.array(op_mat_red)).argmax(dim=1)
+                    accs.append(embedding_gen.get_valacc(i, space=args.space))
+                    representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red)))
                 else:
-                    accs.append(embedding_gen.get_valacc(i))
-                representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat)))
+                    adj_mat, op_mat = embedding_gen.get_adj_op(i).values()
+                    op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
+                    if space == 'tb101':
+                        accs.append(embedding_gen.get_valacc(i, task=args.task))
+                    else:
+                        accs.append(embedding_gen.get_valacc(i))
+                    representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat)))
         else: # "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"
             for i in tqdm(sample_indexes):
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
@@ -342,7 +345,7 @@ sample_counts = sample_tests[args.space]
 samp_eff = {}
 across_trials = {sample_count: [] for sample_count in sample_counts}
 
-for tr_ in range(1):
+for tr_ in range(args.num_trials):
     for sample_count in sample_counts:
         train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.space, sample_count, representation, mode='train')
         test_dataloader, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.test_size)
@@ -430,15 +433,22 @@ for sample_count in sample_counts:
     # Print variance of SPR across tests
     print("Variance SPR: ", np.var([across_trials[sample_count][i][0] for i in range(len(across_trials[sample_count]))]))
 
-sample_count = sample_counts[-1]
-avkdt = str(sum([across_trials[sample_count][i][1] for i in range(len(across_trials[sample_count]))])/len(across_trials[sample_count]))
+# sample_count = sample_counts[-1]
+record_ = {}
+for sample_count in sample_counts:
+    avkdt = str(sum([across_trials[sample_count][i][1] for i in range(len(across_trials[sample_count]))])/len(across_trials[sample_count]))
+    kdt_std = str(np.var([across_trials[sample_count][i][1] for i in range(len(across_trials[sample_count]))]))
+    avspr = str(sum([across_trials[sample_count][i][0] for i in range(len(across_trials[sample_count]))])/len(across_trials[sample_count]))
+    spr_std = str(np.var([across_trials[sample_count][i][0] for i in range(len(across_trials[sample_count]))]))
+    record_[sample_count] = [avkdt, kdt_std, avspr, spr_std]
 
 if not os.path.exists('correlation_results'):
     os.makedirs('correlation_results')
 
 filename = f'correlation_results/{args.space}_samp_eff.csv'
-header = "comment,seed,batch_size,hidden_size,num_layers,epochs,space,representation,pwl_mse,test_tagates,key,spr,kdt"
+# header = "comment,seed,batch_size,hidden_size,num_layers,epochs,space,representation,pwl_mse,test_tagates,key,spr,kdt"
 
+header = "name_desc,seed,batch_size,epochs,space,task,representation,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
 if not os.path.isfile(filename):
     with open(filename, 'w') as f:
         f.write(header + "\n")
@@ -447,18 +457,19 @@ with open(filename, 'a') as f:
     for key in samp_eff.keys():
         f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                 (
-                str(args.comment),
-                str(args.seed),
-                str(args.batch_size),
-                str(args.hidden_size),
-                str(args.num_layers),
-                str(args.epochs),
-                str(args.space),
-                str(args.representation),
-                str(args.loss_type),
-                str(args.test_tagates),
-                str(key),
-                str(samp_eff[key][0]),
-                str(samp_eff[key][1]))
+                    args.name_desc,
+                    args.seed,
+                    args.batch_size,
+                    args.epochs,
+                    args.space,
+                    args.task,
+                    args.representation,
+                    args.loss_type,
+                    args.test_tagates,
+                    key,
+                    record_[key][2],
+                    record_[key][0],
+                    record_[key][3],
+                    record_[key][1]
                 )
         

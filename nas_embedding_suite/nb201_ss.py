@@ -42,10 +42,12 @@ class NASBench201:
         self.zcp_nb201_valacc = {k: v['val_accuracy'] for k,v in self.zcp_nb201_valacc['cifar10'].items()}
         valacc_frame = pd.DataFrame(self.zcp_nb201_valacc, index=[0]).T
         self.valacc_frame = valacc_frame
+        self.zcp_unnorm_nb201_valacc = pd.DataFrame(valacc_frame, columns=valacc_frame.columns, index=valacc_frame.index).to_dict()[0]
         # MinMax normalize the valacc_frame using sklearn preprocessing
         min_max_scaler = preprocessing.MinMaxScaler()
         self.zcp_nb201_valacc = pd.DataFrame(min_max_scaler.fit_transform(valacc_frame), columns=valacc_frame.columns, index=valacc_frame.index).to_dict()[0]
         self.normalize_zcp = normalize_zcp
+        # self.normalize_and_process_zcp(normalize_zcp, log_synflow)
         if normalize_zcp:
             print("Normalizing ZCP dict")
             self.norm_zcp = pd.DataFrame({k0: {k1: v1["score"] for k1,v1 in v0.items() if v1.__class__()=={}} for k0, v0 in self.zcp_nb201['cifar10'].items()}).T
@@ -71,10 +73,45 @@ class NASBench201:
                     'global': 7
                 }
         self._index_to_opname = {v: k for k, v in self._opname_to_index.items()}
-        self.nb2_api  = NB2API(BASE_PATH + "NAS-Bench-201-v1_0-e61699.pth")
+        self.nb2_api  = NB2API(BASE_PATH + "NAS-Bench-201-v1_1-096897.pth")
         print("Loaded files in: ", time.time() - a, " seconds")
         self.zcps = ['epe_nas', 'fisher', 'flops', 'grad_norm', 'grasp', 'jacov', 'l2_norm', 'nwot', 'params', 'plain', 'snip', 'synflow', 'zen']    
 
+    def min_max_scaling(self, data):
+        return (data - np.min(data)) / (np.max(data) - np.min(data))
+
+    def log_transform(self, data):
+        return np.log1p(data)
+
+    def standard_scaling(self, data):
+        return (data - np.mean(data)) / np.std(data)
+
+    def normalize_and_process_zcp(self, normalize_zcp, log_synflow):
+        if normalize_zcp:
+            print("Normalizing ZCP dict")
+            self.norm_zcp = pd.DataFrame({k0: {k1: v1["score"] for k1, v1 in v0.items() if v1.__class__() == {}} 
+                                          for k0, v0 in self.zcp_nb201['cifar10'].items()}).T
+
+            # Add normalization code here
+            self.norm_zcp['epe_nas'] = self.min_max_scaling(self.norm_zcp['epe_nas'])
+            self.norm_zcp['fisher'] = self.min_max_scaling(self.log_transform(self.norm_zcp['fisher']))
+            self.norm_zcp['flops'] = self.min_max_scaling(self.log_transform(self.norm_zcp['flops']))
+            self.norm_zcp['grad_norm'] = self.min_max_scaling(self.log_transform(self.norm_zcp['grad_norm']))
+            self.norm_zcp['grasp'] = self.standard_scaling(self.norm_zcp['grasp'])
+            self.norm_zcp['jacov'] = self.min_max_scaling(self.norm_zcp['jacov'])
+            self.norm_zcp['l2_norm'] = self.min_max_scaling(self.norm_zcp['l2_norm'])
+            self.norm_zcp['nwot'] = self.min_max_scaling(self.norm_zcp['nwot'])
+            self.norm_zcp['params'] = self.min_max_scaling(self.log_transform(self.norm_zcp['params']))
+            self.norm_zcp['plain'] = self.min_max_scaling(self.norm_zcp['plain'])
+            self.norm_zcp['snip'] = self.min_max_scaling(self.log_transform(self.norm_zcp['snip']))
+            if log_synflow:
+                self.norm_zcp['synflow'] = self.min_max_scaling(self.log_transform(self.norm_zcp['synflow']))
+            else:
+                self.norm_zcp['synflow'] = self.min_max_scaling(self.norm_zcp['synflow'])
+            self.norm_zcp['zen'] = self.min_max_scaling(self.norm_zcp['zen'])
+            # self.norm_zcp['val_accuracy'] = self.min_max_scaling(self.norm_zcp['val_accuracy'])
+
+            self.zcp_nb201 = {'cifar10': self.norm_zcp.T.to_dict()}
     #################### Key Functions Begin ###################
     
     def get_adjmlp_zcp(self, idx):
@@ -109,9 +146,24 @@ class NASBench201:
     
     def get_valacc(self, idx):
         arch_str = self.nb2_api.query_by_index(idx).arch_str
-        cellobj = Cell201(arch_str)
-        zcp_key = str(tuple(cellobj.encode(predictor_encoding='adj')))
-        return self.zcp_nb201_valacc[zcp_key]
+        arch_index = self.nb2_api.query_index_by_arch(arch_str)
+        # acc_results = self.nb2_api.query_by_index(arch_index, 'cifar10-valid', use_12epochs_result=False)
+        try:
+            acc_results = sum([self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
+                                                    use_12epochs_result=False,
+                                                    is_random=seed)['valid-accuracy'] for seed in [777, 888, 999]])/3.
+            val_acc = acc_results['valid-accuracy'] / 100.
+        except:
+            # some architectures only contain 1 seed result
+            acc_results = self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
+                                                    use_12epochs_result=False,
+                                                    is_random=False)['valid-accuracy'] 
+            val_acc = acc_results/ 100
+        return val_acc
+        # cellobj = Cell201(arch_str)
+        # zcp_key = str(tuple(cellobj.encode(predictor_encoding='adj')))
+        # # return self.zcp_nb201_valacc[zcp_key]
+        # return self.zcp_unnorm_nb201_valacc[zcp_key]
 
     def get_arch2vec(self, idx):
         return self.arch2vec_nb201[idx]['feature'].tolist()

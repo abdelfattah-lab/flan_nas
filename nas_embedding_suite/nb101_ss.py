@@ -106,24 +106,64 @@ class NASBench101:
 
         print("Loaded files in: ", time.time() - start_time, " seconds")
 
+    def min_max_scaling(self, data):
+        return (data - np.min(data)) / (np.max(data) - np.min(data))
+
+    def log_transform(self, data):
+        return np.log1p(data)
+
+    def standard_scaling(self, data):
+        return (data - np.mean(data)) / np.std(data)
+
     def normalize_and_process_zcp(self, normalize_zcp, log_synflow):
         if normalize_zcp:
             print("Normalizing ZCP dict")
             self.norm_zcp = pd.DataFrame({k0: {k1: v1["score"] for k1, v1 in v0.items() if v1.__class__() == {}} 
                                           for k0, v0 in self.zcp_nb101['cifar10'].items()}).T
 
+            # Add normalization code here
+            self.norm_zcp['epe_nas'] = self.min_max_scaling(self.norm_zcp['epe_nas'])
+            self.norm_zcp['fisher'] = self.min_max_scaling(self.log_transform(self.norm_zcp['fisher']))
+            self.norm_zcp['flops'] = self.min_max_scaling(self.log_transform(self.norm_zcp['flops']))
+            self.norm_zcp['grad_norm'] = self.min_max_scaling(self.log_transform(self.norm_zcp['grad_norm']))
+            self.norm_zcp['grasp'] = self.standard_scaling(self.norm_zcp['grasp'])
+            self.norm_zcp['jacov'] = self.min_max_scaling(self.norm_zcp['jacov'])
+            self.norm_zcp['l2_norm'] = self.min_max_scaling(self.norm_zcp['l2_norm'])
+            self.norm_zcp['nwot'] = self.min_max_scaling(self.norm_zcp['nwot'])
+            self.norm_zcp['params'] = self.min_max_scaling(self.log_transform(self.norm_zcp['params']))
+            self.norm_zcp['plain'] = self.min_max_scaling(self.norm_zcp['plain'])
+            self.norm_zcp['snip'] = self.min_max_scaling(self.log_transform(self.norm_zcp['snip']))
             if log_synflow:
-                self.norm_zcp['synflow'] = np.log10(self.norm_zcp['synflow'])
+                self.norm_zcp['synflow'] = self.min_max_scaling(self.log_transform(self.norm_zcp['synflow']))
             else:
-                print("WARNING: Not taking log of synflow values for normalization results in very small synflow inputs")
+                self.norm_zcp['synflow'] = self.min_max_scaling(self.norm_zcp['synflow'])
+            self.norm_zcp['zen'] = self.min_max_scaling(self.norm_zcp['zen'])
+            self.norm_zcp['val_accuracy'] = self.min_max_scaling(self.norm_zcp['val_accuracy'])
 
-            minfinite = self.norm_zcp['synflow'].replace(-np.inf, 1000).min()
-            self.norm_zcp['synflow'] = self.norm_zcp['synflow'].replace(-np.inf, minfinite + 1e-2)
-
-            # Normalize each column of self.norm_zcp
-            min_max_scaler = preprocessing.MinMaxScaler()
-            self.norm_zcp = pd.DataFrame(min_max_scaler.fit_transform(self.norm_zcp), columns=self.norm_zcp.columns, index=self.norm_zcp.index)
             self.zcp_nb101 = {'cifar10': self.norm_zcp.T.to_dict()}
+        
+    # def normalize_and_process_zcp(self, normalize_zcp, log_synflow):
+    #     if normalize_zcp:
+    #         print("Normalizing ZCP dict")
+    #         self.norm_zcp = pd.DataFrame({k0: {k1: v1["score"] for k1, v1 in v0.items() if v1.__class__() == {}} 
+    #                                       for k0, v0 in self.zcp_nb101['cifar10'].items()}).T
+
+    #         if log_synflow:
+    #             # loglist = ['synflow', 'fisher', 'flops', 'grad_norm', ]
+    #             self.norm_zcp['synflow'] = np.log1p(self.norm_zcp['synflow'])
+    #             # self.norm_zcp['fisher'] = np.log1p(self.norm_zcp['fisher'])
+    #             # self.norm_zcp['flops'] = np.log1p(self.norm_zcp['flops'])
+    #             # self.norm_zcp
+    #         else:
+    #             print("WARNING: Not taking log of synflow values for normalization results in very small synflow inputs")
+
+    #         minfinite = self.norm_zcp['synflow'].replace(-np.inf, 1000).min()
+    #         self.norm_zcp['synflow'] = self.norm_zcp['synflow'].replace(-np.inf, minfinite + 1e-2)
+
+    #         # Normalize each column of self.norm_zcp
+    #         min_max_scaler = preprocessing.MinMaxScaler()
+    #         self.norm_zcp = pd.DataFrame(min_max_scaler.fit_transform(self.norm_zcp), columns=self.norm_zcp.columns, index=self.norm_zcp.index)
+    #         self.zcp_nb101 = {'cifar10': self.norm_zcp.T.to_dict()}
 
     def create_hash_to_idx(self):
         self.hash_iterator_list = list(self.nb1_api.hash_iterator())

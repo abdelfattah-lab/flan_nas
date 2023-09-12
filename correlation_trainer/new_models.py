@@ -288,7 +288,8 @@ class GIN_Model(nn.Module):
 
     def forward(self, x_ops_1=None, x_adj_1=None, x_ops_2=None, x_adj_2=None, zcp=None):
         archs_1 = [[np.asarray(x.cpu()) for x in x_adj_1], [np.asarray(x.cpu()) for x in x_ops_1]]
-        zcp = zcp.cpu()
+        if zcp is not None:
+            zcp = zcp.cpu()
         adjs_1, x_1, op_emb_1, op_inds_1 = self.embed_and_transform_arch(archs_1)
         for tst in range(self.num_time_steps):
             y_1 = self._forward_pass(x_1, adjs_1, op_emb_1)

@@ -74,6 +74,7 @@ class NDS:
             # RobustScaler normalize this space
             min_max_scaler = preprocessing.QuantileTransformer()
             self.all_accs[space] = min_max_scaler.fit_transform(np.array(self.all_accs[space]).reshape(-1, 1)).flatten()
+            self.unnorm_all_accs[space] = np.array(self.all_accs[space]).reshape(-1, 1).flatten().tolist()
             self.all_accs[space] = self.all_accs[space].tolist()
         self.unnorm_accs = self.all_accs
         self.all_accs = self.all_accs
@@ -102,7 +103,8 @@ class NDS:
         return self.arch2vec_embeddings[space][idx]['feature'].tolist()
     
     def get_valacc(self, idx, space="Amoeba"):
-        return self.all_accs[space][idx]
+        return self.unnorm_all_accs[space][idx]/100.
+        # return self.all_accs[space][idx]
         # return 100.-self.space_dicts[space][idx]['test_ep_top1'][-1]
     
     def get_numitems(self, space="Amoeba"):

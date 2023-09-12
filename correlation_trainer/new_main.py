@@ -95,8 +95,8 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
             keep_inds = np.random.choice(np.arange(ex_thresh_nums), n_max_pairs, replace=False)
             ex_thresh_inds = (ex_thresh_inds[0][keep_inds], ex_thresh_inds[1][keep_inds])
         if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
-            archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1])))]
-            archs_2 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[0])))]
+            archs_1 = [torch.stack(list((inputs[indx] for indx in ex_thresh_inds[1])))]
+            archs_2 = [torch.stack(list((inputs[indx] for indx in ex_thresh_inds[0])))]
             X_input_1 = archs_1[0].to(device)
             s_1 = model(X_input_1).squeeze()
             X_input_2 = archs_2[0].to(device)
@@ -149,7 +149,7 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
                         torch.stack(list((inputs[4][indx] for indx in ex_thresh_inds[0])))]
                 X_adj_a_1, X_ops_a_1, X_adj_b_1, X_ops_b_1, zcp = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device), archs_1[4].to(device)
                 s_1 = model(x_ops_1 = X_ops_a_1, x_adj_1 = X_adj_a_1.to(torch.long), x_ops_2 = X_ops_b_1, x_adj_2 = X_adj_b_1.to(torch.long), zcp = zcp).squeeze()
-                X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device)
+                X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, zcp = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device)
                 s_2 = model(x_ops_1 = X_ops_a_2, x_adj_1 = X_adj_a_2.to(torch.long), x_ops_2 = X_ops_b_2, x_adj_2 = X_adj_b_2.to(torch.long), zcp = zcp).squeeze()
         else:
             raise NotImplementedError
@@ -167,8 +167,9 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
     model.training = False
     model.eval()
     pred_scores, true_scores = [], []
+    repr_max = int(80/args.batch_size)
     for repr_idx, (reprs, scores) in enumerate(test_dataloader):
-        if epoch < args.epochs - 5 and repr_idx > 10:
+        if epoch < args.epochs - 5 and repr_idx > repr_max:
             break
         if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
             pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())
@@ -281,7 +282,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                 if space in ['nb101', 'nb201', 'nb301']:
                     exec('representations.append(embedding_gen.get_{}(i))'.format(representation))
                 elif space=='tb101':
-                    exec('representations.append(embedding_gen.get_{}(i, "{}"}))'.format(representation, args.task))
+                    exec('representations.append(embedding_gen.get_{}(i, "{}"))'.format(representation, args.task))
                 else:
                     exec('representations.append(embedding_gen.get_{}(i, "{}"))'.format(representation, args.space))
                 if space=='tb101':
@@ -385,7 +386,7 @@ for tr_ in range(args.num_trials):
                                 input_zcp = True)
         elif representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
             representation_size = next(iter(train_dataloader))[0].shape[1]
-            model = FullyConnectedNN(layer_sizes = [representation_size] + [args.hidden_size] * args.num_layers + [1]).to(device)
+            model = FullyConnectedNN(layer_sizes = [representation_size] + [128] * 3 + [1]).to(device)
         
         criterion = torch.nn.MSELoss()
         params_optimize = list(model.parameters())
@@ -446,30 +447,29 @@ if not os.path.exists('correlation_results'):
     os.makedirs('correlation_results')
 
 filename = f'correlation_results/{args.space}_samp_eff.csv'
-# header = "comment,seed,batch_size,hidden_size,num_layers,epochs,space,representation,pwl_mse,test_tagates,key,spr,kdt"
-
-header = "name_desc,seed,batch_size,epochs,space,task,representation,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
+header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
 if not os.path.isfile(filename):
     with open(filename, 'w') as f:
         f.write(header + "\n")
 
 with open(filename, 'a') as f:
     for key in samp_eff.keys():
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                 (
-                    args.name_desc,
-                    args.seed,
-                    args.batch_size,
-                    args.epochs,
-                    args.space,
-                    args.task,
-                    args.representation,
-                    args.loss_type,
-                    args.test_tagates,
-                    key,
-                    record_[key][2],
-                    record_[key][0],
-                    record_[key][3],
-                    record_[key][1]
+                    str(args.name_desc),
+                    str(args.seed),
+                    str(args.batch_size),
+                    str(args.epochs),
+                    str(args.space),
+                    str(args.task),
+                    str(args.representation),
+                    str(args.timesteps),
+                    str(args.loss_type),
+                    str(args.test_tagates),
+                    str(key),
+                    str(record_[key][2]),
+                    str(record_[key][0]),
+                    str(record_[key][3]),
+                    str(record_[key][1])
                 )
-        
+        )

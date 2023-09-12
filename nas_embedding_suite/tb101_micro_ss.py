@@ -29,9 +29,11 @@ class TransNASBench101Micro:
         self.zcps = ['epe_nas', 'fisher', 'flops', 'grad_norm', 'grasp', 'jacov', 'l2_norm', 'nwot', 'params', 'plain', 'snip', 'synflow', 'zen']
         self.zcp_tb101 = json.load(open(BASE_PATH + "zc_transbench101_micro.json", "r"))
         self.valaccs = {}
+        self.unnorm_valaccs = {}
         for task_ in self.zcp_tb101.keys():
             valacc_frame = pd.DataFrame({vec: self.zcp_tb101[task_][vec]['val_accuracy'] for vec in self.zcp_tb101[task_].keys()}, index=[0]).T
             # MinMax normalize the valacc_frame using sklearn preprocessing
+            self.unnorm_valaccs[task_] = valacc_frame.to_dict()[0]
             valacc_frame_norm = pd.DataFrame(preprocessing.minmax_scale(valacc_frame), index=valacc_frame.index, columns=valacc_frame.columns)
             valacc_frame_norm = valacc_frame_norm.to_dict()[0]
             self.valaccs[task_] = valacc_frame_norm
@@ -95,7 +97,8 @@ class TransNASBench101Micro:
     def get_valacc(self, idx, task=None):
         task = 'class_scene' if task==None else task
         hash = self.hash_iterator_list[idx]
-        return self.valaccs[task][hash]
+        # return self.valaccs[task][hash]
+        return self.unnorm_valaccs[task][hash]
     
     def get_arch2vec(self, idx, task=None):
         task = 'class_scene' if task==None else task

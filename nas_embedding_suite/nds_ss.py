@@ -66,6 +66,7 @@ class NDS:
             min_max_scaler = preprocessing.MinMaxScaler()
             self.cate_embeddings[task_.replace(".json", "")]['embeddings'] = min_max_scaler.fit_transform(self.cate_embeddings[task_.replace(".json", "")]['embeddings'])
         self.all_accs = {}
+        self.unnorm_all_accs = {}
         for space in self.spaces:
             space = space.replace(".json", "")
             self.all_accs[space] = []

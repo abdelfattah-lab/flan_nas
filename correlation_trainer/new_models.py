@@ -6,6 +6,23 @@ import torch.nn as nn
 import numpy as np
 import math
 
+class FullyConnectedNN(nn.Module):
+    def __init__(self, layer_sizes):
+        super(FullyConnectedNN, self).__init__()
+
+        self.layers = nn.ModuleList()
+
+        for i in range(len(layer_sizes) - 1):
+            self.layers.append(nn.Linear(layer_sizes[i], layer_sizes[i + 1]))
+            if i < len(layer_sizes) - 2:
+                self.layers.append(nn.BatchNorm1d(layer_sizes[i + 1]))  # Add batch normalization
+                self.layers.append(nn.ReLU())
+
+    def forward(self, x):
+        for layer in self.layers:
+            x = layer(x)
+        return x
+
 class DenseGraphFlow(nn.Module):
 
     def __init__(self, in_features, out_features, op_emb_dim):
@@ -27,6 +44,7 @@ class DenseGraphFlow(nn.Module):
 
     def forward(self, inputs, adj, op_emb):
         adj_aug = adj
+        # import pdb; pdb.set_trace()
         support = torch.matmul(inputs, self.weight)
         output = torch.sigmoid(self.op_attention(op_emb)) * torch.matmul(adj_aug, support) + support
         return output + self.bias
@@ -37,9 +55,10 @@ class DenseGraphFlow(nn.Module):
                + str(self.out_features) + ')'
 
 
-class GIN_Model():
+class GIN_Model(nn.Module):
     def __init__(
             self,
+            dual_gcn = False,
             num_zcps = 13,
             vertices = 7,
             none_op_ind = 3,
@@ -60,8 +79,9 @@ class GIN_Model():
             zcp_embedder_dims = [128, 128],
     ):
         super(GIN_Model, self).__init__()
-        if num_time_steps > 1:
-            raise NotImplementedError
+        # if num_time_steps > 1:
+        #     raise NotImplementedError
+        self.dual_gcn = dual_gcn
         self.num_zcps = num_zcps
         self.op_embedding_dim = op_embedding_dim
         self.node_embedding_dim = node_embedding_dim
@@ -89,6 +109,7 @@ class GIN_Model():
         reg_inp_dims = self.nn_emb_dims
         if self.input_zcp:
             reg_inp_dims += self.zcp_embedding_dim
+        dim = reg_inp_dims
         for hidden_size in self.mlp_dims:
             self.mlp.append(nn.Sequential(
                 nn.Linear(dim, hidden_size),
@@ -139,11 +160,50 @@ class GIN_Model():
             zin_dim = zcp_emb_dim
         self.zcp_embedder.append(nn.Linear(zin_dim, self.zcp_embedding_dim))
         self.zcp_embedder = nn.Sequential(*self.zcp_embedder)
+
+        # backward gcn
+        self.b_gcns = []
+        in_dim = self.fb_conversion_dims[-1]
+        for dim in self.backward_gcn_out_dims:
+            self.b_gcns.append(
+                DenseGraphFlow(
+                    in_dim, dim, self.op_embedding_dim
+                )
+            )
+            in_dim = dim
+        self.b_gcns = nn.ModuleList(self.b_gcns)
+        self.num_b_gcn_layers = len(self.b_gcns)
+
+        # fb_conversion
+        if self.num_time_steps > 1:
+            self.fb_conversion_list = []
+            dim = self.gcn_out_dims[-1]
+            num_fb_layers = len(self.fb_conversion_dims)
+            for i_dim, fb_conversion_dim in enumerate(fb_conversion_dims):
+                self.fb_conversion_list.append(nn.Linear(dim, fb_conversion_dim))
+                if i_dim < num_fb_layers - 1:
+                    self.fb_conversion_list.append(nn.ReLU(inplace=False))
+                dim = fb_conversion_dim
+            self.fb_conversion = nn.Sequential(*self.fb_conversion_list)
+        
+        # updateop_embedder
+        self.updateop_embedder = []
+        in_dim = self.gcn_out_dims[-1] + self.backward_gcn_out_dims[-1] + self.op_embedding_dim
+        for embedder_dim in self.updateopemb_dims:
+            self.updateop_embedder.append(nn.Linear(in_dim, embedder_dim))
+            self.updateop_embedder.append(nn.ReLU(inplace = False))
+            in_dim = embedder_dim
+        self.updateop_embedder.append(nn.Linear(in_dim, self.op_embedding_dim))
+        self.updateop_embedder = nn.Sequential(*self.updateop_embedder)
         
     def embed_and_transform_arch(self, archs):
         adjs = self.input_op_emb.new([arch.T for arch in archs[0]])
         op_inds = self.input_op_emb.new([arch for arch in archs[1]]).long()
         op_embs = self.op_emb(op_inds)
+        # Remove the first and last index of op_emb 
+        # shape is [128, 7, 48], remove [128, 0, 48] and [128, 6, 48]
+        op_embs = op_embs[:, 1:-1, :]
+        op_inds = op_inds[:, 1:-1]
         b_size = op_embs.shape[0]
         op_embs = torch.cat(
             (
@@ -166,61 +226,59 @@ class GIN_Model():
         y = x
         for i_layer, gcn in enumerate(self.gcns):
             y = gcn(y, adjs, auged_op_emb)
-            if self.use_bn:
-                shape_y = y.shape
-                y = self.bns[i_layer](y.reshape(shape_y[0], -1, shape_y[-1])).reshape(
-                    shape_y
-                )
+            # if self.use_bn:
+            #     shape_y = y.shape
+            #     y = self.bns[i_layer](y.reshape(shape_y[0], -1, shape_y[-1])).reshape(
+            #         shape_y
+            #     )
             if i_layer != self.num_gcn_layers - 1:
                 y = F.relu(y)
             y = F.dropout(y, self.dropout, training = self.training)
         return y
 
-    # def _backward_pass(self, y, adjs, zs_as_l, auged_op_emb):
-    # If activating, define b_gcns, fb_conversion, b_bns
-    #     # --- backward pass ---
-    #     b_info = y[:, -1:, :]
-    #     b_info = self.fb_conversion(b_info)
-    #     b_info = torch.cat(
-    #         (
-    #             torch.zeros([y.shape[0], self.vertices - 1, b_info.shape[-1]], device = y.device),
-    #             b_info
-    #         ),
-    #         dim = 1
-    #     )
-    #     # start backward flow
-    #     b_adjs = adjs.transpose(1, 2)
-    #     b_y = b_info
-    #     for i_layer, gcn in enumerate(self.b_gcns):
-    #         b_y = gcn(b_y, b_adjs, auged_op_emb)
-    #         if self.b_use_bn:
-    #             shape_y = b_y.shape
-    #             b_y = self.b_bns[i_layer](b_y.reshape(shape_y[0], -1, shape_y[-1]))\
-    #                         .reshape(shape_y)
-    #         if i_layer != self.num_b_gcn_layers - 1:
-    #             b_y = F.relu(b_y)
-    #             b_y = F.dropout(b_y, self.dropout, training = self.training)
-    #     return b_y
+    def _backward_pass(self, y, adjs, zs_as_l, auged_op_emb):
+    # If activating, define b_gcns, fb_conversion
+        # --- backward pass ---
+        b_info = y[:, -1:, :]
+        b_info = self.fb_conversion(b_info)
+        b_info = torch.cat(
+            (
+                torch.zeros([y.shape[0], self.vertices - 1, b_info.shape[-1]], device = y.device),
+                b_info
+            ),
+            dim = 1
+        )
+        # start backward flow
+        b_adjs = adjs.transpose(1, 2)
+        b_y = b_info
+        for i_layer, gcn in enumerate(self.b_gcns):
+            b_y = gcn(b_y, b_adjs, auged_op_emb)
+            if i_layer != self.num_b_gcn_layers - 1:
+                b_y = F.relu(b_y)
+                b_y = F.dropout(b_y, self.dropout, training = self.training)
+        return b_y
 
-    # def _update_op_emb(self, y, b_y, op_emb, concat_op_emb_mask):
+    def _update_op_emb(self, y, b_y, op_emb, concat_op_emb_mask):
     # If activating, define updateop_embedder
-    #     # --- UpdateOpEmb ---
-    #     in_embedding = torch.cat(
-    #         (
-    #             op_emb.detach(),
-    #             y.detach(),
-    #             b_y
-    #         ),
-    #         dim = -1)
-    #     update = self.updateop_embedder(in_embedding)
-    #     op_emb = op_emb + self.updateopemb_scale * update
-    #     return op_emb
+        # --- UpdateOpEmb ---
+        in_embedding = torch.cat(
+            (
+                op_emb.detach(),
+                y.detach(),
+                b_y
+            ),
+            dim = -1)
+        update = self.updateop_embedder(in_embedding)
+        op_emb = op_emb + self.updateopemb_scale * update
+        return op_emb
 
     def _final_process(self, y, op_inds):
         y = y[:, 1:, :]
         y = torch.cat(
             (
-                y[:, :-1, :] * (op_inds != self.none_op_ind)[:, :, None].to(torch.float32),
+                y[:, :-1, :] * (
+                    op_inds != self.none_op_ind
+                    )[:, :, None].to(torch.float32),
                 y[:, -1:, :],
             ),
             dim = 1
@@ -228,14 +286,31 @@ class GIN_Model():
         y = torch.mean(y, dim = 1)
         return y
 
-    def forward(self, x_ops, x_adj, zcp):
-        archs = [[np.asarray(x.cpu()) for x in x_adj], [np.asarray(x.cpu()) for x in x_ops]]
+    def forward(self, x_ops_1=None, x_adj_1=None, x_ops_2=None, x_adj_2=None, zcp=None):
+        archs_1 = [[np.asarray(x.cpu()) for x in x_adj_1], [np.asarray(x.cpu()) for x in x_ops_1]]
         zcp = zcp.cpu()
-        adjs, x, op_emb, op_inds = self.embed_and_transform_arch(archs)
-        y = self._forward_pass(x, adjs, op_emb)
-        y = self._final_process(y, op_inds)
+        adjs_1, x_1, op_emb_1, op_inds_1 = self.embed_and_transform_arch(archs_1)
+        for tst in range(self.num_time_steps):
+            y_1 = self._forward_pass(x_1, adjs_1, op_emb_1)
+            if tst == self.num_time_steps - 1:
+                break
+            b_y_1 = self._backward_pass(y_1, adjs_1, zcp, op_emb_1)
+            op_emb_1 = self._update_op_emb(y_1, b_y_1, op_emb_1, op_inds_1)
+        y_1 = self._final_process(y_1, op_inds_1)
+        if self.dual_gcn:
+            archs_2 = [[np.asarray(x.cpu()) for x in x_adj_2], [np.asarray(x.cpu()) for x in x_ops_2]]
+            adjs_2, x_2, op_emb_2, op_inds_2 = self.embed_and_transform_arch(archs_2)
+            for tst in range(self.num_time_steps):
+                y_2 = self._forward_pass(x_2, adjs_2, op_emb_2)
+                if tst == self.num_time_steps - 1:
+                    break
+                b_y_2 = self._backward_pass(y_2, adjs_2, zcp, op_emb_2)
+                op_emb_2 = self._update_op_emb(y_2, b_y_2, op_emb_2, op_inds_2)
+            y_2 = self._final_process(y_2, op_inds_2)
+            y_1 += y_2
+        y_1 = y_1.squeeze()
         if self.input_zcp:
             zcp = self.zcp_embedder(zcp)
-            y = torch.cat((y, zcp), dim = -1)
-        y = self.mlp(y)
-        return y
+            y_1 = torch.cat((y_1, zcp), dim = -1)
+        y_1 = self.mlp(y_1)
+        return y_1

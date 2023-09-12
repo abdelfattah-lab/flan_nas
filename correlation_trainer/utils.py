@@ -6,6 +6,43 @@ import random
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
+
+def get_tagates_sample_indices(args):
+    import os
+    BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_datasets/'
+    BASE_PATH2 = "/home/ya255/projects/iclr_nas_embedding/correlation_trainer/"
+    if args.space == 'nb101' and args.test_tagates:
+        print("Explicit TAGATES comparision")
+        # Check if nb101_train_tagates.npy and nb101_test_tagates.npy exist
+        if not os.path.exists(BASE_PATH2 + '/tagates_replication/nb101_train_tagates.npy') or not os.path.exists(BASE_PATH2 + '/tagates_replication/nb101_test_tagates.npy'):
+            from nb123.nas_bench_101.cell_101 import Cell101
+            from nasbench import api as NB1API
+            import pickle
+            BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_datasets/'
+            nb1_api = NB1API.NASBench(BASE_PATH + 'nasbench_only108_caterec.tfrecord')
+            hash_to_idx = {v: idx for idx,v in enumerate(list(nb1_api.hash_iterator()))}
+            with open(os.environ['PROJ_BPATH'] + "/" + "/correlation_trainer/tagates_replication/nb101_hash.txt", "rb") as fp:
+                nb101_hash = pickle.load(fp)
+            nb101_tagates_sample_indices = [hash_to_idx[hash_] for hash_ in nb101_hash]
+            with open(os.environ['PROJ_BPATH'] + "/" + "/correlation_trainer/tagates_replication/nb101_hash_train.txt", "rb") as fp:
+                nb101_train_hash = pickle.load(fp)
+            nb101_train_tagates_sample_indices = [hash_to_idx[hash_] for hash_ in nb101_train_hash]
+            np.save(BASE_PATH2 + '/tagates_replication/nb101_test_tagates.npy', nb101_tagates_sample_indices)
+            np.save(BASE_PATH2 + '/tagates_replication/nb101_train_tagates.npy', nb101_train_tagates_sample_indices)
+        else:
+            print("Loading from npy")
+            nb101_tagates_sample_indices = np.load(BASE_PATH2 + '/tagates_replication/nb101_test_tagates.npy')
+            nb101_train_tagates_sample_indices = np.load(BASE_PATH2 + '/tagates_replication/nb101_train_tagates.npy')
+        return nb101_train_tagates_sample_indices, nb101_tagates_sample_indices
+    if args.space == 'nb201' and args.test_tagates:
+        print("Explicit TAGATES comparision")
+        with open(os.environ['PROJ_BPATH'] + "/correlation_trainer/tagates_replication/nasbench201_zsall_train.pkl", "rb") as fp:
+            train_data = pickle.load(fp)
+        with open(os.environ['PROJ_BPATH'] + "/correlation_trainer/tagates_replication/nasbench201_zsall_valid.pkl", "rb") as fp:
+            valid_data = pickle.load(fp)
+        
+    return [], []
+
 class AverageMeter(object):
     def __init__(self):
         self.reset()

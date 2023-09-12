@@ -16,13 +16,15 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 
 sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 
+# python -i new_main.py --space nb101 --representation adj_gin_zcp --test_tagates --loss_type pwl --sample_sizes 72 --batch_size 8
+
 parser = argparse.ArgumentParser()
 ####################################################### Search Space Choices #######################################################
 parser.add_argument('--space', type=str, default='Amoeba')        # nb101, nb201, nb301, tb101, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d supported
 parser.add_argument('--task', type=str, default='class_scene')    # all tb101 tasks supported
 parser.add_argument('--representation', type=str, default='cate') # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate supported.
 parser.add_argument('--test_tagates', action='store_true')        # Currently only supports testing on NB101 networks. Easy to extend.
-parser.add_argument('--loss_type', type=str, default='mse')       # mse, pwl supported
+parser.add_argument('--loss_type', type=str, default='pwl')       # mse, pwl supported
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--sample_sizes', nargs='+', type=int, default=[72, 364, 728, 3645, 7280]) # Default NB101
@@ -164,9 +166,8 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
     model.eval()
     pred_scores, true_scores = [], []
     for repr_idx, (reprs, scores) in enumerate(test_dataloader):
-        if epoch < args.epochs - 5:
-            if repr_idx > 10:
-                break
+        if epoch < args.epochs - 5 and repr_idx > 10:
+            break
         if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
             pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())
         elif args.representation in ["adj_gin"]:
@@ -184,7 +185,8 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         true_scores.append(scores.cpu().tolist())
     pred_scores = [t for sublist in pred_scores for t in sublist]
     true_scores = [t for sublist in true_scores for t in sublist]
-    return model, running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
+    num_test_items = len(pred_scores)
+    return model, num_test_items, running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
 
 def test(args, model, dataloader, criterion):
     model.training = False
@@ -214,7 +216,8 @@ def test(args, model, dataloader, criterion):
                 true_scores.append(scores.cpu().tolist())
         pred_scores = [t for sublist in pred_scores for t in sublist]
         true_scores = [t for sublist in true_scores for t in sublist]
-    return running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
+        num_items = len(pred_scores)
+    return running_loss / len(dataloader), num_items, spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
 
 
 sys.path.append("..")
@@ -401,17 +404,17 @@ for tr_ in range(1):
                 raise NotImplementedError
                 # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
             elif args.loss_type == "pwl":
-                model, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
+                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
             else:
                 raise NotImplementedError
-            test_loss, test_spearmanr, test_kendalltau = test(args, model, test_dataloader, criterion)
+            # test_loss, num_test_items, test_spearmanr, test_kendalltau = test(args, model, test_dataloader, criterion)
             end_time = time.time()
             if epoch > args.epochs - 5:
                 kdt_l5.append(kdt)
                 spr_l5.append(spr)
-                print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Test Loss: {test_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman: {spr:.4f} | Kendall: {kdt:.4f}')
+                print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
             else:
-                print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Test Loss: {test_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman: {test_spearmanr:.4f} | Kendall: {test_kendalltau:.4f}')
+                print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
         samp_eff[sample_count] = (sum(spr_l5)/len(spr_l5), sum(kdt_l5)/len(kdt_l5))
         print("Sample Count: {}, Spearman: {}, Kendall: {}".format(sample_count, sum(spr_l5)/len(spr_l5), sum(kdt_l5)/len(kdt_l5)))
         pprint(samp_eff)

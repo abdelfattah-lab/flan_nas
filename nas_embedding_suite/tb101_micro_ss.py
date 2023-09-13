@@ -28,6 +28,7 @@ class TransNASBench101Micro:
         # self.cate_embeddings = {}
         self.zcps = ['epe_nas', 'fisher', 'flops', 'grad_norm', 'grasp', 'jacov', 'l2_norm', 'nwot', 'params', 'plain', 'snip', 'synflow', 'zen']
         self.zcp_tb101 = json.load(open(BASE_PATH + "zc_transbench101_micro.json", "r"))
+        self.unnorm_zcp_tb101 = json.load(open(BASE_PATH + "zc_transbench101_micro.json", "r"))
         self.valaccs = {}
         self.unnorm_valaccs = {}
         for task_ in self.zcp_tb101.keys():
@@ -201,5 +202,5 @@ class TransNASBench101Micro:
     def get_params(self, idx, task=None):
         if task == None:
             task = 'class_scene'
-        return self.zcp_tb101[task][self.hash_iterator_list[idx]]['params']['score']
+        return self.unnorm_zcp_tb101[task][self.hash_iterator_list[idx]]['params']['score']*1e5
         

@@ -39,7 +39,7 @@ class NASBench301:
         self.use_nb3_performance_model = use_nb3_performance_model
         self.ensemble_dir_performance = BASE_PATH + "nb_models_0.9/xgb_v0.9"
         self.cate_nb301 = torch.load(BASE_PATH + "cate_embeddings/cate_nasbench301.pt")
-        
+        self.nb301_proxy_cate = None
         self.arch2vec_nb301 = torch.load(BASE_PATH + "arch2vec_embeddings/arch2vec-model-dim_32_search_space_nasbench301-nasbench301.pt")
 
         self.nb3_api = nb3_api
@@ -95,3 +95,8 @@ class NASBench301:
     def get_genotype(self, idx):
         return self.index_to_embedding(idx)['genotypes']
     
+    def get_params(self, idx):
+        if self.nb301_proxy_cate is None:
+            with open(BASE_PATH + '/nasbench301_proxy.json', 'r') as f: # load 
+                self.nb301_proxy_cate = json.load(f)
+        return self.nb301_proxy_cate[str(idx)]["params"]

@@ -1,5 +1,8 @@
 ####### PREPROCESSING #######
 
+# !!!! ALL SS !!!!
+python preprocessing/gen_alljson.py
+
 # NASBench101
 python preprocessing/gen_json.py
 # NASBench201
@@ -36,6 +39,10 @@ python preprocessing/gen_json_transnasbench101.py  --task room_layout
 python preprocessing/gen_json_transnasbench101.py  --task segmentsemantic
 
 ####### DATA GENERATION #######
+
+# !!!! ALL SS !!!!
+python preprocessing/data_generate.py --dataset all_ss --flag extract_seq
+python preprocessing/data_generate.py --dataset all_ss --flag build_pair --k 1 --d 5000000 --metric params
 
 # NASBench101
 python preprocessing/data_generate.py --dataset nasbench101 --flag extract_seq
@@ -119,6 +126,9 @@ python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pa
 
 ####### PRETRAINING #######
 
+# !!!! ALL SS !!!!
+bash run_scripts/pretrain_allss.sh
+
 bash run_scripts/pretrain_nasbench101.sh
 bash run_scripts/pretrain_nasbench201.sh
 bash run_scripts/pretrain_nasbench301.sh
@@ -126,6 +136,9 @@ bash run_scripts/pretrain_nds.sh
 bash run_scripts/pretrain_transnasbench101.sh
 
 ####### CATE Extraction #######
+
+# !!!! ALL SS !!!!
+python inference/inference.py --pretrained_path model/all_ss_model_best.pth.tar --train_data data/all_ss/train_data.pt --valid_data data/all_ss/test_data.pt --dataset all_ss --search_space all_ss --n_vocab 20 --graph_d_model 32 --pair_d_model 32
 
 # NASBench101
 python inference/inference.py --pretrained_path model/nasbench101_model_best.pth.tar --train_data data/nasbench101/train_data.pt --valid_data data/nasbench101/test_data.pt --dataset nasbench101 --search_space nasbench101 --n_vocab 5 --graph_d_model 32 --pair_d_model 32

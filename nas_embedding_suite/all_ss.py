@@ -77,12 +77,24 @@ class AllSS:
                 new_adj_op_mat[matkey] = final_mat.tolist()
         return new_adj_op_mat
     
-    def get_zcp(self, idx, space):
+    def get_zcp(self, idx, space, task="class_scene"):
         if space in ["nb101", "nb201", "nb301", "tb101"]:
-            zcp = eval("self." + space).get_zcp(idx)
+            if space == "tb101":
+                zcp = eval("self." + space).get_zcp(idx, task=task)
+            else:
+                zcp = eval("self." + space).get_zcp(idx)
         else:
             zcp = self.nds.get_zcp(idx, space=space)
         return zcp
+    
+    def get_params(self, idx, space, task="class_scene"):
+        if space in ["nb101", "nb201", "nb301", "tb101"]:
+            if space == "tb101":
+                params = eval("self." + space).get_params(idx, task=task)
+            else:
+                params = eval("self." + space).get_params(idx)
+        else:
+            params = self.nds.get_params(idx, space=space)
     
     def get_arch2vec(self, idx, space):
         if space in ["nb101", "nb201", "nb301", "tb101"]:

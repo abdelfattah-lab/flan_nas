@@ -45,7 +45,7 @@ for spm_k, spm in spaces_m.items():
 
 true_l = np.concatenate(np.asarray(true_l)).flatten()
 space_halts_inv = {v: k for k, v in space_halts.items()}
-exit(0)
+# exit(0)
 # def gen_json_file():
     # nas_gen = gen_data_point()
 data_dict = OrderedDict()

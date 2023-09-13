@@ -168,6 +168,9 @@ class NASBench101:
     def create_hash_to_idx(self):
         self.hash_iterator_list = list(self.nb1_api.hash_iterator())
         self.hash_to_idx = {hash: idx for idx, hash in enumerate(self.hash_iterator_list)}
+
+    def get_params(self, idx):
+        return self.nb1_api.get_metrics_from_hash(self.hash_iterator_list[idx])[0]['trainable_parameters']
     
     def transform_nb101_operations(self, ops):
         transform_dict = {'input': 0, 'conv1x1-bn-relu': 1, 'conv3x3-bn-relu': 2, 'maxpool3x3': 3, 'output': 4}

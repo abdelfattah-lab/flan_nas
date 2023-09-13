@@ -24,7 +24,3 @@ python new_main.py --space tb101 --task class_scene --sample_size 16 32 128 256 
 python new_main.py --space tb101 --task jigsaw --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_zcp
 python new_main.py --space tb101 --task room_layout --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_zcp
 python new_main.py --space tb101 --task segmentsemantic --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_zcp
-
-# python new_main.py --space nb101 --representation adj_gin_cate --test_tagates --loss_type pwl --sample_sizes 73 364 729 --batch_size 16
-
-# python new_main.py --space nb101 --representation cate --test_tagates --loss_type pwl --sample_sizes 73 364 729 --batch_size 16

@@ -20,10 +20,6 @@ cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
 # adj_gin_arch2vec
 
-# python new_main.py --space nb101 --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
-# python new_main.py --space nb201 --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
+python new_main.py --space nb101 --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
+python new_main.py --space nb201 --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
 python new_main.py --space nb301 --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
-
-# python new_main.py --space nb101 --representation adj_gin_zcp --test_tagates --loss_type pwl --sample_sizes 73 364 729 --batch_size 16
-
-# python new_main.py --space nb101 --representation zcp --test_tagates --loss_type pwl --sample_sizes 73 364 729 --batch_size 16

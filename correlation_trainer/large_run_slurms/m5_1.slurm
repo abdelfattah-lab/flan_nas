@@ -26,13 +26,7 @@ python new_main.py --space PNAS --sample_size 1024 2048 --seed 42 --representati
 python new_main.py --space PNAS_fix-w-d --sample_size 1024 2048 --seed 42 --representation adj_gin_arch2vec
 
 
-# python new_main.py --space ENAS_fix-w-d --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
-# python new_main.py --space NASNet --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
-# python new_main.py --space PNAS --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
-# python new_main.py --space PNAS_fix-w-d --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
-
-
-# python new_main.py --space nb101 --representation adj_gin_arch2vec --test_tagates --loss_type pwl --sample_sizes 73 364 729 --batch_size 16
-
-# python new_main.py --space nb101 --representation arch2vec --test_tagates --loss_type pwl --sample_sizes 73 364 729 --batch_size 16
-
+python new_main.py --space ENAS_fix-w-d --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
+python new_main.py --space NASNet --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
+python new_main.py --space PNAS --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec
+python new_main.py --space PNAS_fix-w-d --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_arch2vec

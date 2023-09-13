@@ -5,9 +5,10 @@
 #SBATCH -N 1
 #SBATCH -n 2
 #SBATCH --mem=30000
+#SBATCH --gres=gpu:1
 #SBATCH -t 16:00:00
 #SBATCH --account=abdelfattah
-#SBATCH --partition=abdelfattah
+
 
 export PROJ_BPATH="/home/ya255/projects/iclr_nas_embedding"
 

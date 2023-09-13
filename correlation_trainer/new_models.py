@@ -58,6 +58,7 @@ class DenseGraphFlow(nn.Module):
 class GIN_Model(nn.Module):
     def __init__(
             self,
+            device='cpu',
             dual_gcn = False,
             num_zcps = 13,
             vertices = 7,
@@ -81,6 +82,7 @@ class GIN_Model(nn.Module):
         super(GIN_Model, self).__init__()
         # if num_time_steps > 1:
         #     raise NotImplementedError
+        self.device = device
         self.dual_gcn = dual_gcn
         self.num_zcps = num_zcps
         self.op_embedding_dim = op_embedding_dim
@@ -236,7 +238,7 @@ class GIN_Model(nn.Module):
             y = F.dropout(y, self.dropout, training = self.training)
         return y
 
-    def _backward_pass(self, y, adjs, zs_as_l, auged_op_emb):
+    def _backward_pass(self, y, adjs, auged_op_emb):
     # If activating, define b_gcns, fb_conversion
         # --- backward pass ---
         b_info = y[:, -1:, :]
@@ -258,7 +260,7 @@ class GIN_Model(nn.Module):
                 b_y = F.dropout(b_y, self.dropout, training = self.training)
         return b_y
 
-    def _update_op_emb(self, y, b_y, op_emb, concat_op_emb_mask):
+    def _update_op_emb(self, y, b_y, op_emb):
     # If activating, define updateop_embedder
         # --- UpdateOpEmb ---
         in_embedding = torch.cat(
@@ -289,23 +291,25 @@ class GIN_Model(nn.Module):
     def forward(self, x_ops_1=None, x_adj_1=None, x_ops_2=None, x_adj_2=None, zcp=None):
         archs_1 = [[np.asarray(x.cpu()) for x in x_adj_1], [np.asarray(x.cpu()) for x in x_ops_1]]
         if zcp is not None:
-            zcp = zcp.cpu()
+            zcp = zcp.to(self.device)
         adjs_1, x_1, op_emb_1, op_inds_1 = self.embed_and_transform_arch(archs_1)
+        adjs_1, x_1, op_emb_1, op_inds_1 = adjs_1.to(self.device), x_1.to(self.device), op_emb_1.to(self.device), op_inds_1.to(self.device)
         for tst in range(self.num_time_steps):
             y_1 = self._forward_pass(x_1, adjs_1, op_emb_1)
             if tst == self.num_time_steps - 1:
                 break
-            b_y_1 = self._backward_pass(y_1, adjs_1, zcp, op_emb_1)
+            b_y_1 = self._backward_pass(y_1, adjs_1, op_emb_1)
             op_emb_1 = self._update_op_emb(y_1, b_y_1, op_emb_1, op_inds_1)
         y_1 = self._final_process(y_1, op_inds_1)
         if self.dual_gcn:
             archs_2 = [[np.asarray(x.cpu()) for x in x_adj_2], [np.asarray(x.cpu()) for x in x_ops_2]]
             adjs_2, x_2, op_emb_2, op_inds_2 = self.embed_and_transform_arch(archs_2)
+            adjs_2, x_2, op_emb_2, op_inds_2 = adjs_2.to(self.device), x_2.to(self.device), op_emb_2.to(self.device), op_inds_2.to(self.device)
             for tst in range(self.num_time_steps):
                 y_2 = self._forward_pass(x_2, adjs_2, op_emb_2)
                 if tst == self.num_time_steps - 1:
                     break
-                b_y_2 = self._backward_pass(y_2, adjs_2, zcp, op_emb_2)
+                b_y_2 = self._backward_pass(y_2, adjs_2, op_emb_2)
                 op_emb_2 = self._update_op_emb(y_2, b_y_2, op_emb_2, op_inds_2)
             y_2 = self._final_process(y_2, op_inds_2)
             y_1 += y_2

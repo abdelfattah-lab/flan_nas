@@ -104,7 +104,7 @@ class NDS:
         return self.arch2vec_embeddings[space][idx]['feature'].tolist()
     
     def get_valacc(self, idx, space="Amoeba"):
-        return self.unnorm_all_accs[space][idx]/100.
+        return self.unnorm_all_accs[space][idx]
         # return self.all_accs[space][idx]
         # return 100.-self.space_dicts[space][idx]['test_ep_top1'][-1]
     

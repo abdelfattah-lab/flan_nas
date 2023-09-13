@@ -29,7 +29,7 @@ parser.add_argument('--num_trials', type=int, default=3)
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--sample_sizes', nargs='+', type=int, default=[72, 364, 728, 3645, 7280]) # Default NB101
-parser.add_argument('--device', type=str, default='cpu')
+parser.add_argument('--device', type=str, default='cuda:0')
 parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--test_batch_size', type=int, default=5000)
 parser.add_argument('--num_workers', type=int, default=4)
@@ -348,6 +348,8 @@ across_trials = {sample_count: [] for sample_count in sample_counts}
 
 for tr_ in range(args.num_trials):
     for sample_count in sample_counts:
+        if sample_count > 32:
+            args.batch_size = int(sample_count//4)
         train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.space, sample_count, representation, mode='train')
         test_dataloader, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.test_size)
         test_dataloader_lowbs, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=80)
@@ -356,13 +358,15 @@ for tr_ in range(args.num_trials):
             input_dim = next(iter(train_dataloader))[0][1].shape[1]
             none_op_ind = 50 # placeholder
             if args.space in ["nb101", "nb201", "nb301", "tb101"]:
-                model = GIN_Model(dual_gcn = False,
+                model = GIN_Model(device=args.device,
+                    dual_gcn = False,
                                 num_time_steps = args.timesteps,
                                 vertices = input_dim,
                                 none_op_ind = none_op_ind,
                                 input_zcp = False)
             else:
-                model = GIN_Model(dual_gcn = True,
+                model = GIN_Model(device=args.device,
+                    dual_gcn = True,
                                 num_time_steps = args.timesteps,
                                 vertices = input_dim,
                                 none_op_ind = none_op_ind,
@@ -372,14 +376,16 @@ for tr_ in range(args.num_trials):
             num_zcps = next(iter(train_dataloader))[0][-1].shape[1]
             none_op_ind = 50
             if args.space in ["nb101", "nb201", "nb301", "tb101"]:
-                model = GIN_Model(dual_gcn = False,
+                model = GIN_Model(device=args.device,
+                    dual_gcn = False,
                                 num_time_steps = args.timesteps,
                                 num_zcps = num_zcps,
                                 vertices = input_dim,
                                 none_op_ind = none_op_ind,
                                 input_zcp = True)
             else:
-                model = GIN_Model(dual_gcn = True,
+                model = GIN_Model(device=args.device,
+                    dual_gcn = True,
                                 num_time_steps = args.timesteps,
                                 num_zcps = num_zcps,
                                 vertices = input_dim,
@@ -389,6 +395,7 @@ for tr_ in range(args.num_trials):
             representation_size = next(iter(train_dataloader))[0].shape[1]
             model = FullyConnectedNN(layer_sizes = [representation_size] + [128] * 3 + [1]).to(device)
         
+        model.to(device)
         criterion = torch.nn.MSELoss()
         params_optimize = list(model.parameters())
         # params_optimize = list(model.mlp.parameters())            + \

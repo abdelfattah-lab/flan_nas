@@ -18,6 +18,6 @@ conda activate unr
 cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
 
-python new_main.py --space nb101 --representation adj_gin --test_tagates --loss_type pwl --sample_sizes 73 364 729  --batch_size 16
+# python new_main.py --space nb101 --representation adj_gin --test_tagates --loss_type pwl --sample_sizes 73 364 729  --batch_size 16
 
-python new_main.py --space nb101 --representation zcp --test_tagates --loss_type pwl --sample_sizes 73 364 729  --batch_size 16
+python new_main.py --space nb101 --representation adj_mlp --test_tagates --loss_type pwl --sample_sizes 73 364 729  --batch_size 16

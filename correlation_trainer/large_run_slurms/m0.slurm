@@ -19,5 +19,5 @@ cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
 python new_main.py --space nb201 --representation adj_gin --test_tagates --loss_type pwl --sample_sizes 8 40 80 --batch_size 16 --test_size 7813
 
-python new_main.py --space nb201 --representation zcp --test_tagates --loss_type pwl --sample_sizes 8 40 80 --batch_size 16 --test_size 7813
+# python new_main.py --space nb201 --representation zcp --test_tagates --loss_type pwl --sample_sizes 8 40 80 --batch_size 16 --test_size 7813
 

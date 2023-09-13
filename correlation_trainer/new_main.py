@@ -31,6 +31,7 @@ parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--sample_sizes', nargs='+', type=int, default=[72, 364, 728, 3645, 7280]) # Default NB101
 parser.add_argument('--device', type=str, default='cpu')
 parser.add_argument('--batch_size', type=int, default=16)
+parser.add_argument('--test_batch_size', type=int, default=5000)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--timesteps', type=int, default=2)
 parser.add_argument('--test_size', type=int, default=None)
@@ -166,9 +167,9 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
     model.training = False
     model.eval()
     pred_scores, true_scores = [], []
-    repr_max = int(80/args.batch_size)
-    for repr_idx, (reprs, scores) in enumerate(test_dataloader):
-        if epoch < args.epochs - 5 and repr_idx >= repr_max:
+    repr_max = int(80/args.test_batch_size)
+    for repr_idx, (reprs, scores) in enumerate(tqdm(test_dataloader)):
+        if epoch < args.epochs - 5 and repr_idx > repr_max:
             break
         if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
             pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())
@@ -336,7 +337,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zcp_)))
 
     dataset = CustomDataset(representations, accs)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=True if mode=='train' else False)
+    dataloader = DataLoader(dataset, batch_size=args.batch_size if mode=='train' else args.test_batch_size, shuffle=True if mode=='train' else False)
     return dataloader, sample_indexes
     
 
@@ -349,6 +350,7 @@ for tr_ in range(args.num_trials):
     for sample_count in sample_counts:
         train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.space, sample_count, representation, mode='train')
         test_dataloader, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.test_size)
+        test_dataloader_lowbs, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=80)
 
         if representation == "adj_gin":
             input_dim = next(iter(train_dataloader))[0][1].shape[1]
@@ -407,7 +409,10 @@ for tr_ in range(args.num_trials):
                 raise NotImplementedError
                 # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
             elif args.loss_type == "pwl":
-                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
+                if epoch > args.epochs - 5:
+                    model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
+                else:
+                    model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_lowbs, epoch)
             else:
                 raise NotImplementedError
             # test_loss, num_test_items, test_spearmanr, test_kendalltau = test(args, model, test_dataloader, criterion)

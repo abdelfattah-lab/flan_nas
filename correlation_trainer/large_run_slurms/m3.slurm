@@ -3,9 +3,9 @@
 #SBATCH -o /home/ya255/projects/iclr_nas_embedding/correlation_trainer/large_scale_run_logs/help_tests_%j.out
 #SBATCH -e /home/ya255/projects/iclr_nas_embedding/correlation_trainer/large_scale_run_logs/help_tests_%j.err
 #SBATCH -N 1
-#SBATCH -n 4
-#SBATCH --mem=40000
-#SBATCH -t 4:00:00
+#SBATCH -n 2
+#SBATCH --mem=30000
+#SBATCH -t 16:00:00
 #SBATCH --account=abdelfattah
 #SBATCH --partition=abdelfattah
 
@@ -17,7 +17,14 @@ conda activate unr
 
 cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
+# adj_gin_zcp
+
+python new_main.py --space Amoeba --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_zcp
+python new_main.py --space DARTS --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_zcp
+python new_main.py --space DARTS_fix-w-d --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_zcp
+python new_main.py --space DARTS_lr-wd --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_zcp
+python new_main.py --space ENAS --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_zcp
 
 # python new_main.py --space nb101 --representation adj_gin --test_tagates --loss_type pwl --sample_sizes 73 364 729  --batch_size 16
 
-python new_main.py --space nb101 --representation adj_mlp --test_tagates --loss_type pwl --sample_sizes 73 364 729  --batch_size 16
+# python new_main.py --space nb101 --representation adj_mlp --test_tagates --loss_type pwl --sample_sizes 73 364 729  --batch_size 16

@@ -19,11 +19,11 @@ cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
 # adj_gin_cate
 
-python new_main.py --space Amoeba --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_cate
-python new_main.py --space DARTS --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_cate
-python new_main.py --space DARTS_fix-w-d --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_cate
-python new_main.py --space DARTS_lr-wd --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_cate
-python new_main.py --space ENAS --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin_cate
+python new_main.py --space Amoeba --sample_size 1024 2048 --seed 42 --representation adj_gin_cate
+python new_main.py --space DARTS --sample_size 1024 2048 --seed 42 --representation adj_gin_cate
+python new_main.py --space DARTS_fix-w-d --sample_size 1024 2048 --seed 42 --representation adj_gin_cate
+python new_main.py --space DARTS_lr-wd --sample_size 1024 2048 --seed 42 --representation adj_gin_cate
+python new_main.py --space ENAS --sample_size 1024 2048 --seed 42 --representation adj_gin_cate
 
 
 

@@ -19,11 +19,18 @@ cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
 # adj_gin 
 
-python new_main.py --space Amoeba --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin
-python new_main.py --space DARTS --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin
-python new_main.py --space DARTS_fix-w-d --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin
-python new_main.py --space DARTS_lr-wd --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin
-python new_main.py --space ENAS --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin
+python new_main.py --space Amoeba --sample_size 1024 2048 --seed 42 --representation adj_gin
+python new_main.py --space DARTS --sample_size 1024 2048 --seed 42 --representation adj_gin
+python new_main.py --space DARTS_fix-w-d --sample_size 1024 2048 --seed 42 --representation adj_gin
+python new_main.py --space DARTS_lr-wd --sample_size 1024 2048 --seed 42 --representation adj_gin
+python new_main.py --space ENAS --sample_size 1024 2048 --seed 42 --representation adj_gin
+
+
+# python new_main.py --space Amoeba --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin
+# python new_main.py --space DARTS --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin
+# python new_main.py --space DARTS_fix-w-d --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin
+# python new_main.py --space DARTS_lr-wd --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin
+# python new_main.py --space ENAS --sample_size 16 32 128 256 512 --seed 42 --representation adj_gin
 # python new_main.py --space nb201 --representation adj_gin_cate --test_tagates --loss_type pwl --sample_sizes 8 40 80 --batch_size 16 --test_size 7813
 
 # python new_main.py --space nb201 --representation cate --test_tagates --loss_type pwl --sample_sizes 8 40 80 --batch_size 16 --test_size 7813

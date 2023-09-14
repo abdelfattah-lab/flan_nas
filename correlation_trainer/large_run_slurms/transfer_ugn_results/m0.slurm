@@ -4,7 +4,7 @@
 #SBATCH -e /home/ya255/projects/iclr_nas_embedding/correlation_trainer/large_scale_run_logs/help_tests_%j.err
 #SBATCH -N 1
 #SBATCH -n 2
-#SBATCH --mem=30000
+#SBATCH --mem=80000
 #SBATCH --gres=gpu:1
 #SBATCH -t 16:00:00
 #SBATCH --account=abdelfattah
@@ -18,6 +18,6 @@ conda activate unr
 
 cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
-python universal_main.py --space DARTS --transfer_space ENAS --representation adj_gin --loss_type pwl --sample_size 2048 --batch_size 256 --transfer_sample_sizes 4 8 16 32 --batch_size 8 --transfer_epochs 30 --transfer_lr 3e-4
-python universal_main.py --space PNAS_fix-w-d --transfer_space DARTS_fix-w-d --representation adj_gin --loss_type pwl --sample_size 2048 --batch_size 256 --transfer_sample_sizes 4 8 16 32 --batch_size 8 --transfer_epochs 30 --transfer_lr 3e-4
-python universal_main.py --space NASNet --transfer_space ENAS_fix-w-d --representation adj_gin --loss_type pwl --sample_size 2048 --batch_size 256 --transfer_sample_sizes 4 8 16 32 --batch_size 8 --transfer_epochs 30 --transfer_lr 3e-4
+python universal_main.py --space DARTS --transfer_space ENAS --seed 42 --representation adj_gin --loss_type pwl --sample_size 2048 --batch_size 256 --transfer_sample_sizes 4 8 16 --batch_size 8 --transfer_epochs 30 --transfer_lr 3e-4
+python universal_main.py --space PNAS_fix-w-d --transfer_space DARTS_fix-w-d --seed 42 --representation adj_gin --loss_type pwl --sample_size 2048 --batch_size 256 --transfer_sample_sizes 4 8 16 --batch_size 8 --transfer_epochs 30 --transfer_lr 3e-4
+python universal_main.py --space NASNet --transfer_space ENAS_fix-w-d --seed 42 --representation adj_gin --loss_type pwl --sample_size 2048 --batch_size 256 --transfer_sample_sizes 4 8 16 --batch_size 8 --transfer_epochs 30 --transfer_lr 3e-4

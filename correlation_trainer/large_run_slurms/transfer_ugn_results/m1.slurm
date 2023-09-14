@@ -19,6 +19,6 @@ conda activate unr
 cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
 
-python new_main.py --space ENAS --representation adj_gin --loss_type pwl --sample_sizes 4 8 16 32 --batch_size 8 --transfer_comparison
-python new_main.py --space DARTS_fix-w-d --representation adj_gin --loss_type pwl --sample_sizes 4 8 16 32 --batch_size 8  --transfer_comparison
-python new_main.py --space ENAS_fix-w-d --representation adj_gin --loss_type pwl --sample_sizes 4 8 16 32 --batch_size 8   --transfer_comparison
+python new_main.py --space ENAS --seed 42 --representation adj_gin --loss_type pwl --sample_sizes 4 8 16 --batch_size 8 --transfer_comparison
+python new_main.py --space DARTS_fix-w-d --seed 42 --representation adj_gin --loss_type pwl --sample_sizes 4 8 16 --batch_size 8  --transfer_comparison
+python new_main.py --space ENAS_fix-w-d --seed 42 --representation adj_gin --loss_type pwl --sample_sizes 4 8 16 --batch_size 8   --transfer_comparison

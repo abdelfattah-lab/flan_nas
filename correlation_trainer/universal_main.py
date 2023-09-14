@@ -405,6 +405,10 @@ for tr_ in range(args.num_trials):
                 print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
         ### Transfer
         model.vertices = next(iter(transfer_dataloader))[0][1].shape[1]
+        if args.transfer_space not in ["nb101", "nb201", "nb301", "tb101"]:
+            model.dual_gcn = True
+        if args.transfer_space in ["nb101", "nb201", "nb301", "tb101"]:
+            model.dual_gcn = False
         criterion = torch.nn.MSELoss()
         params_optimize = list(model.parameters())
         optimizer = torch.optim.AdamW(params_optimize, lr = args.transfer_lr, weight_decay = args.weight_decay)

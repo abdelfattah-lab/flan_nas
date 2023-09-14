@@ -55,6 +55,7 @@ class AllSS:
                         1478635: "DARTS_fix-w-d",
                         1483635: "tb101",
                     }
+        start_ = time.time()
         print("[WARNING]: ALL SS has a cache store at {}, which needs to be changed if reproducing in all_ss.py!!!!".format(CACHE_DIR))
         self._ensure_cache_exists()
         self.nb301 = NASBench301()
@@ -82,6 +83,7 @@ class AllSS:
                 # else:
                 #     self.cate_f_ss = pd.read_csv()
         self.max_oplen = self.get_max_oplen()
+        print("Time taken to load all_ss: {}".format(time.time() - start_))
 
     def prep_cate_joint(self):
         features = []

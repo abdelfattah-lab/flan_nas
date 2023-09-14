@@ -203,13 +203,15 @@ class GIN_Model(nn.Module):
     def embed_and_transform_arch(self, archs):
         # If self.dual input, remove first 2 and use input_op_emb.
         adjs = self.input_op_emb.new([arch.T for arch in archs[0]])
+        # import pdb; pdb.set_trace()
         op_inds = self.input_op_emb.new([arch for arch in archs[1]]).long()
         op_embs = self.op_emb(op_inds)
         # Remove the first and last index of op_emb 
         # shape is [128, 7, 48], remove [128, 0, 48] and [128, 6, 48]
+        dinp = 2
         if self.dual_input:
-            op_embs = op_embs[:, 2:-1, :]
-            op_inds = op_inds[:, 2:-1]
+            op_embs = op_embs[:, dinp:-1, :]
+            op_inds = op_inds[:, dinp:-1]
         else:
             op_embs = op_embs[:, 1:-1, :]
             op_inds = op_inds[:, 1:-1]
@@ -300,7 +302,11 @@ class GIN_Model(nn.Module):
         return op_emb
 
     def _final_process(self, y, op_inds):
-        y = y[:, 1:, :]
+        dinp = 2
+        if self.dual_input:
+            y = y[:, dinp:, :]
+        else:
+            y = y[:, 1:, :]
         y = torch.cat(
             (
                 y[:, :-1, :] * (
@@ -317,7 +323,7 @@ class GIN_Model(nn.Module):
         archs_1 = [[np.asarray(x.cpu()) for x in x_adj_1], [np.asarray(x.cpu()) for x in x_ops_1]]
         if zcp is not None:
             zcp = zcp.to(self.device)
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         adjs_1, x_1, op_emb_1, op_inds_1 = self.embed_and_transform_arch(archs_1)
         adjs_1, x_1, op_emb_1, op_inds_1 = adjs_1.to(self.device), x_1.to(self.device), op_emb_1.to(self.device), op_inds_1.to(self.device)
         for tst in range(self.num_time_steps):

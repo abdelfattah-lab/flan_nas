@@ -20,12 +20,13 @@ sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 
 parser = argparse.ArgumentParser()
 ####################################################### Search Space Choices #######################################################
-parser.add_argument('--space', type=str, default='Amoeba')        # nb101, nb201, nb301, tb101, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d supported
-parser.add_argument('--task', type=str, default='class_scene')    # all tb101 tasks supported
-parser.add_argument('--representation', type=str, default='cate') # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate supported.
-parser.add_argument('--test_tagates', action='store_true')        # Currently only supports testing on NB101 networks. Easy to extend.
-parser.add_argument('--loss_type', type=str, default='pwl')       # mse, pwl supported
+parser.add_argument('--space', type=str, default='Amoeba')         # nb101, nb201, nb301, tb101, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d supported
+parser.add_argument('--task', type=str, default='class_scene')     # all tb101 tasks supported
+parser.add_argument('--representation', type=str, default='cate')  # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate supported.
+parser.add_argument('--test_tagates', action='store_true')         # Currently only supports testing on NB101 networks. Easy to extend.
+parser.add_argument('--loss_type', type=str, default='pwl')        # mse, pwl supported
 parser.add_argument('--num_trials', type=int, default=3)
+parser.add_argument('--transfer_comparison', action='store_true')  # use this if comparing with a transfer test.
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--sample_sizes', nargs='+', type=int, default=[72, 364, 728, 3645, 7280]) # Default NB101
@@ -454,33 +455,66 @@ for sample_count in sample_counts:
     spr_std = str(np.var([across_trials[sample_count][i][0] for i in range(len(across_trials[sample_count]))]))
     record_[sample_count] = [avkdt, kdt_std, avspr, spr_std]
 
-if not os.path.exists('correlation_results'):
-    os.makedirs('correlation_results')
+if args.transfer_comparison:
+    if not os.path.exists('transfer_correlation_results_base'):
+        os.makedirs('transfer_correlation_results_base')
 
-filename = f'correlation_results/{args.space}_samp_eff.csv'
-header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
-if not os.path.isfile(filename):
-    with open(filename, 'w') as f:
-        f.write(header + "\n")
+    filename = f'transfer_correlation_results_base/{args.space}_samp_eff.csv'
+    header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
+    if not os.path.isfile(filename):
+        with open(filename, 'w') as f:
+            f.write(header + "\n")
 
-with open(filename, 'a') as f:
-    for key in samp_eff.keys():
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
-                (
-                    str(args.name_desc),
-                    str(args.seed),
-                    str(args.batch_size),
-                    str(args.epochs),
-                    str(args.space),
-                    str(args.task),
-                    str(args.representation),
-                    str(args.timesteps),
-                    str(args.loss_type),
-                    str(args.test_tagates),
-                    str(key),
-                    str(record_[key][2]),
-                    str(record_[key][0]),
-                    str(record_[key][3]),
-                    str(record_[key][1])
-                )
-        )
+    with open(filename, 'a') as f:
+        for key in samp_eff.keys():
+            f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+                    (
+                        str(args.name_desc),
+                        str(args.seed),
+                        str(args.batch_size),
+                        str(args.epochs),
+                        str(args.space),
+                        str(args.task),
+                        str(args.representation),
+                        str(args.timesteps),
+                        str(args.loss_type),
+                        str(args.test_tagates),
+                        str(key),
+                        str(record_[key][2]),
+                        str(record_[key][0]),
+                        str(record_[key][3]),
+                        str(record_[key][1])
+                    )
+            )
+
+else:
+    if not os.path.exists('correlation_results'):
+        os.makedirs('correlation_results')
+
+    filename = f'correlation_results/{args.space}_samp_eff.csv'
+    header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
+    if not os.path.isfile(filename):
+        with open(filename, 'w') as f:
+            f.write(header + "\n")
+
+    with open(filename, 'a') as f:
+        for key in samp_eff.keys():
+            f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+                    (
+                        str(args.name_desc),
+                        str(args.seed),
+                        str(args.batch_size),
+                        str(args.epochs),
+                        str(args.space),
+                        str(args.task),
+                        str(args.representation),
+                        str(args.timesteps),
+                        str(args.loss_type),
+                        str(args.test_tagates),
+                        str(key),
+                        str(record_[key][2]),
+                        str(record_[key][0]),
+                        str(record_[key][3]),
+                        str(record_[key][1])
+                    )
+            )

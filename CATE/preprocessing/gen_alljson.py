@@ -59,26 +59,26 @@ for i in tqdm(true_l):
         curr_space = space_halts_inv[i]
         print("New Curr Space: ", curr_space)
     if curr_space in ['nb101', 'nb201', 'nb301', 'tb101']:
-        vacc = eval('all_ss.' + curr_space).get_valacc(i - space_halts[curr_space])
+        # vacc = eval('all_ss.' + curr_space).get_valacc(i - space_halts[curr_space])
         madj = all_ss.get_adj_op(i - space_halts[curr_space], curr_space)["module_adjacency"]
         mop = all_ss.get_adj_op(i - space_halts[curr_space], curr_space)["module_operations"]
         params_ = all_ss.get_params(i - space_halts[curr_space], curr_space)
     else:  # [-5] -> zcp -> params
-        vacc = all_ss.nds.get_valacc(i - space_halts[curr_space], curr_space)
+        # vacc = all_ss.nds.get_valacc(i - space_halts[curr_space], curr_space)
         madj = all_ss.get_adj_op(i - space_halts[curr_space], curr_space)["normal_adj"]
         mop = all_ss.get_adj_op(i - space_halts[curr_space], curr_space)["normal_ops"]
         params_ = all_ss.get_params(i - space_halts[curr_space], curr_space)
 
     data_dict.update({int(i): # unique_hash
-                    {'test_accuracy': vacc,
-                        'validation_accuracy': vacc,
+                    {'test_accuracy': 0,
+                        'validation_accuracy': 0,
                         'module_adjacency': madj,
                         'module_operations': mop,
                         'parameters': params_,
                         'training_time': 0}})
     if i - 100 in space_halts_inv.keys():
         b = time.time()
-        print("Avg Time Per Query for %s: ".format(curr_space), (b-a)/100)
+        print("Avg Time Per Query for %s: " % (curr_space), (b-a)/100)
 
 with open('data/all_ss.json', 'w') as outfile:
     json.dump(data_dict, outfile)

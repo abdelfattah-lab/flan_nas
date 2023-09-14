@@ -22,6 +22,6 @@ cd /home/ya255/projects/iclr_nas_embedding/CATE/
 
 python preprocessing/gen_alljson.py
 python preprocessing/data_generate.py --dataset all_ss --flag extract_seq
-python preprocessing/data_generate.py --dataset all_ss --flag build_pair --k 1 --d 5000000 --metric params
+python preprocessing/data_generate.py --dataset all_ss --flag build_pair --k 2 --d 5000000 --metric params
 bash run_scripts/pretrain_allss.sh
 python inference/inference.py --pretrained_path model/all_ss_model_best.pth.tar --train_data data/all_ss/train_data.pt --valid_data data/all_ss/test_data.pt --dataset all_ss --search_space all_ss --n_vocab 20 --graph_d_model 32 --pair_d_model 32

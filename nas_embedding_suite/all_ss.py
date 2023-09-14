@@ -40,11 +40,96 @@ class AllSS:
         self.ss_mapper = {"nb101": 0, "nb201": 1, "nb301": 2, "Amoeba": 3, "PNAS_fix-w-d": 4, 
                      "ENAS_fix-w-d": 5, "NASNet": 6, "DARTS": 7, "ENAS": 8, "PNAS": 9, 
                      "DARTS_lr-wd": 10, "DARTS_fix-w-d": 11, "tb101": 12}
+        self.arch2vec_ranges = {
+                        0: "nb101",
+                        423624: "nb201",
+                        439249: "nb301",
+                        1439249: "Amoeba",
+                        1444232: "PNAS_fix-w-d",
+                        1448791: "ENAS_fix-w-d",
+                        1453791: "NASNet",
+                        1458637: "DARTS",
+                        1463637: "ENAS",
+                        1468636: "PNAS",
+                        1473635: "DARTS_lr-wd",
+                        1478635: "DARTS_fix-w-d",
+                        1483635: "tb101",
+                    }
         self._ensure_cache_exists()
         self.nb301 = NASBench301()
         self._load_classes()
+                # # check if os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv", exists
+                # # if it does not exist, create it
+                # if not os.path.exists(os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv"):
+                #     self.arch2vec_data_dict = torch.load(
+                #                                     os.environ["PROJ_BPATH"]
+                #                                     + "/"
+                #                                     + "/arch2vec/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt"
+                #                                 )
+                #     self.prep_arch2vec_joint()
+                # else: # load it
+                #     self.arch2vec_f_ss = pd.read_csv(os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv")
+                
+                # if not os.path.exists(os.environ["PROJ_BPATH"] + "/embedding_dataset/cate_f_ss.csv"):
+                #     self.cate_data_dict = torch.load(
+                #                                     os.environ["PROJ_BPATH"]
+                #                                     + "/"
+                #                                     + "/CATE/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt"
+                #                                 )
+                #     self.prep_cate_joint()
+                # else:
+                #     self.cate_f_ss = pd.read_csv()
         self.max_oplen = self.get_max_oplen()
 
+    def prep_cate_joint(self):
+        features = []
+        labels = []
+        for key, val in self.cate_data_dict.items():
+            feature_val = val["feature"]
+            class_idx = None
+            for r in sorted(self.arch2vec_ranges):
+                if key >= r:
+                    class_idx = list(self.arch2vec_ranges.values()).index(self.arch2vec_ranges[r])
+            labels.append(class_idx)
+            features.append(feature_val.tolist())
+        features = np.array(features)
+        labels = np.array(labels)
+        self.cate_f_ss = pd.DataFrame(features)
+        # add a column for labels
+        self.cate_f_ss["label"] = labels
+        # Save this dataframe
+        self.cate_f_ss.to_csv(os.environ["PROJ_BPATH"] + "/embedding_dataset/cate_f_ss.csv", index=False)
+
+
+    def prep_arch2vec_joint(self):
+        features = []
+        labels = []
+        for key, val in self.arch2vec_data_dict.items():
+            feature_val = val["feature"]
+            class_idx = None
+            for r in sorted(self.arch2vec_ranges):
+                if key >= r:
+                    class_idx = list(self.arch2vec_ranges.values()).index(self.arch2vec_ranges[r])
+            labels.append(class_idx)
+            features.append(feature_val.tolist())
+        features = np.array(features)
+        labels = np.array(labels)
+        self.arch2vec_f_ss = pd.DataFrame(features)
+        # add a column for labels
+        self.arch2vec_f_ss["label"] = labels
+        # Save this dataframe
+        self.arch2vec_f_ss.to_csv(os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv", index=False)
+    
+    def get_numitems(self, space=None, task=None):
+        assert self.arch2vec_f_ss.shape[0] == self.cate_f_ss.shape[0], "Number of Archs embedded in Arch2Vec and CATE should be the same!"
+        return self.arch2vec_f_ss.shape[0]
+    
+    def get_ss_idxrange(self, space):
+        class_idx = self.ss_mapper[space]
+        # from cate_f_ss, get the indices where label == class_idx
+        idxs = self.cate_f_ss[self.cate_f_ss["label"] == class_idx].index.tolist()
+        return idxs
+    
     def get_adj_op(self, idx, space):
         if space in ["nb101", "nb201", "nb301", "tb101"]:
             adj_op_mat = eval("self." + space).get_adj_op(idx)
@@ -77,7 +162,7 @@ class AllSS:
                 new_adj_op_mat[matkey] = final_mat.tolist()
         return new_adj_op_mat
     
-    def get_zcp(self, idx, space, task="class_scene"):
+    def get_zcp(self, idx, space, task="class_scene", joint=None):
         if space in ["nb101", "nb201", "nb301", "tb101"]:
             if space == "tb101":
                 zcp = eval("self." + space).get_zcp(idx, task=task)
@@ -92,22 +177,34 @@ class AllSS:
             if space == "tb101":
                 params = eval("self." + space).get_params(idx, task=task)
             else:
+
                 params = eval("self." + space).get_params(idx)
         else:
             params = self.nds.get_params(idx, space=space)
+        return params
     
-    def get_arch2vec(self, idx, space):
-        if space in ["nb101", "nb201", "nb301", "tb101"]:
-            arch2vec = eval("self." + space).get_arch2vec(idx)
+    def get_arch2vec(self, idx, space, joint=False):
+        if joint:
+            class_map = self.ss_mapper[space]
+            # extract all the features where label == class_map
+            arch2vec = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_map].values[:, :-1]
+            return arch2vec[idx]
+            raise NotImplementedError
         else:
-            arch2vec = self.nds.get_arch2vec(idx, space=space)
-        return arch2vec
+            if space in ["nb101", "nb201", "nb301", "tb101"]:
+                arch2vec = eval("self." + space).get_arch2vec(idx)
+            else:
+                arch2vec = self.nds.get_arch2vec(idx, space=space)
+            return arch2vec
 
-    def get_cate(self, idx, space):
-        if space in ["nb101", "nb201", "nb301", "tb101"]:
-            cate = eval("self." + space).get_cate(idx)
+    def get_cate(self, idx, space, joint=False):
+        if joint:
+            raise NotImplementedError
         else:
-            cate = self.nds.get_cate(idx, space=space)
+            if space in ["nb101", "nb201", "nb301", "tb101"]:
+                cate = eval("self." + space).get_cate(idx)
+            else:
+                cate = self.nds.get_cate(idx, space=space)
         return cate
     
     def get_valacc(self, idx, space):

@@ -42,87 +42,87 @@ python preprocessing/gen_json_transnasbench101.py  --task segmentsemantic
 
 # !!!! ALL SS !!!!
 python preprocessing/data_generate.py --dataset all_ss --flag extract_seq
-python preprocessing/data_generate.py --dataset all_ss --flag build_pair --k 1 --d 5000000 --metric params
+python preprocessing/data_generate.py --dataset all_ss --flag build_pair --k 2 --d 2000000 --metric params
 
 # NASBench101
 python preprocessing/data_generate.py --dataset nasbench101 --flag extract_seq
-python preprocessing/data_generate.py --dataset nasbench101 --flag build_pair --k 1 --d 2000000 --metric params
+python preprocessing/data_generate.py --dataset nasbench101 --flag build_pair --k 2 --d 2000000 --metric params
 
 # NASBench201
 python preprocessing/data_generate.py --dataset nasbench201 --flag extract_seq
-python preprocessing/data_generate.py --dataset nasbench201 --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nasbench201 --flag build_pair --k 2 --d 200000 --metric params
 
 # NASBench301
 python preprocessing/data_generate.py --dataset nasbench301 --flag extract_seq
-python preprocessing/data_generate.py --dataset nasbench301 --flag build_pair --k 1 --d 5000000 --metric flops
+python preprocessing/data_generate.py --dataset nasbench301 --flag build_pair --k 2 --d 2000000 --metric flops
 
 # NDS
 python preprocessing/data_generate.py --dataset nds --search_space Amoeba --type normal --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space Amoeba  --type normal --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space Amoeba  --type normal --flag build_pair --k 2 --d 200000 --metric params
 python preprocessing/data_generate.py --dataset nds --search_space Amoeba  --type reduce --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space Amoeba --type reduce --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space Amoeba --type reduce --flag build_pair --k 2 --d 200000 --metric params
 
 python preprocessing/data_generate.py --dataset nds --search_space PNAS_fix-w-d --type normal --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space PNAS_fix-w-d  --type normal --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space PNAS_fix-w-d  --type normal --flag build_pair --k 2 --d 200000 --metric params
 python preprocessing/data_generate.py --dataset nds --search_space PNAS_fix-w-d  --type reduce --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space PNAS_fix-w-d --type reduce --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space PNAS_fix-w-d --type reduce --flag build_pair --k 2 --d 200000 --metric params
 
 python preprocessing/data_generate.py --dataset nds --search_space ENAS_fix-w-d --type normal --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space ENAS_fix-w-d  --type normal --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space ENAS_fix-w-d  --type normal --flag build_pair --k 2 --d 200000 --metric params
 python preprocessing/data_generate.py --dataset nds --search_space ENAS_fix-w-d  --type reduce --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space ENAS_fix-w-d --type reduce --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space ENAS_fix-w-d --type reduce --flag build_pair --k 2 --d 200000 --metric params
 
 python preprocessing/data_generate.py --dataset nds --search_space NASNet --type normal --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space NASNet  --type normal --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space NASNet  --type normal --flag build_pair --k 2 --d 200000 --metric params
 python preprocessing/data_generate.py --dataset nds --search_space NASNet  --type reduce --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space NASNet --type reduce --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space NASNet --type reduce --flag build_pair --k 2 --d 200000 --metric params
 
 python preprocessing/data_generate.py --dataset nds --search_space DARTS --type normal --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space DARTS  --type normal --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space DARTS  --type normal --flag build_pair --k 2 --d 200000 --metric params
 python preprocessing/data_generate.py --dataset nds --search_space DARTS  --type reduce --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space DARTS --type reduce --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space DARTS --type reduce --flag build_pair --k 2 --d 200000 --metric params
 
 python preprocessing/data_generate.py --dataset nds --search_space ENAS --type normal --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space ENAS  --type normal --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space ENAS  --type normal --flag build_pair --k 2 --d 200000 --metric params
 python preprocessing/data_generate.py --dataset nds --search_space ENAS  --type reduce --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space ENAS --type reduce --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space ENAS --type reduce --flag build_pair --k 2 --d 200000 --metric params
 
 python preprocessing/data_generate.py --dataset nds --search_space PNAS --type normal --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space PNAS  --type normal --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space PNAS  --type normal --flag build_pair --k 2 --d 200000 --metric params
 python preprocessing/data_generate.py --dataset nds --search_space PNAS  --type reduce --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space PNAS --type reduce --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space PNAS --type reduce --flag build_pair --k 2 --d 200000 --metric params
 
 python preprocessing/data_generate.py --dataset nds --search_space DARTS_lr-wd --type normal --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space DARTS_lr-wd  --type normal --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space DARTS_lr-wd  --type normal --flag build_pair --k 2 --d 200000 --metric params
 python preprocessing/data_generate.py --dataset nds --search_space DARTS_lr-wd  --type reduce --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space DARTS_lr-wd --type reduce --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space DARTS_lr-wd --type reduce --flag build_pair --k 2 --d 200000 --metric params
 
 python preprocessing/data_generate.py --dataset nds --search_space DARTS_fix-w-d --type normal --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space DARTS_fix-w-d  --type normal --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space DARTS_fix-w-d  --type normal --flag build_pair --k 2 --d 200000 --metric params
 python preprocessing/data_generate.py --dataset nds --search_space DARTS_fix-w-d  --type reduce --flag extract_seq
-python preprocessing/data_generate.py --dataset nds --search_space DARTS_fix-w-d --type reduce --flag build_pair --k 1 --d 200000 --metric params
+python preprocessing/data_generate.py --dataset nds --search_space DARTS_fix-w-d --type reduce --flag build_pair --k 2 --d 200000 --metric params
 
 # TransNASBench-101 Micro
 python preprocessing/data_generate.py --dataset transnasbench101 --flag extract_seq --task class_scene
-python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 1 --d 200000 --metric params --task class_scene
+python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 2 --d 200000 --metric params --task class_scene
 
 python preprocessing/data_generate.py --dataset transnasbench101 --flag extract_seq --task class_object
-python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 1 --d 200000 --metric params --task class_object
+python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 2 --d 200000 --metric params --task class_object
 
 python preprocessing/data_generate.py --dataset transnasbench101 --flag extract_seq --task autoencoder
-python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 1 --d 200000 --metric params --task autoencoder
+python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 2 --d 200000 --metric params --task autoencoder
 
 python preprocessing/data_generate.py --dataset transnasbench101 --flag extract_seq --task normal
-python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 1 --d 200000 --metric params --task normal
+python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 2 --d 200000 --metric params --task normal
 
 python preprocessing/data_generate.py --dataset transnasbench101 --flag extract_seq --task jigsaw
-python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 1 --d 200000 --metric params --task jigsaw
+python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 2 --d 200000 --metric params --task jigsaw
 
 python preprocessing/data_generate.py --dataset transnasbench101 --flag extract_seq --task room_layout
-python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 1 --d 200000 --metric params --task room_layout
+python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 2 --d 200000 --metric params --task room_layout
 
 python preprocessing/data_generate.py --dataset transnasbench101 --flag extract_seq --task segmentsemantic
-python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 1 --d 200000 --metric params --task segmentsemantic
+python preprocessing/data_generate.py --dataset transnasbench101 --flag build_pair --k 2 --d 200000 --metric params --task segmentsemantic
 
 ####### PRETRAINING #######
 

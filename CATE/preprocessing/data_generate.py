@@ -4,7 +4,7 @@ import torch
 import random
 import argparse
 from tqdm import tqdm
-
+from collections import deque
 
 def sample_from_data(data, K=2, maxDist=2e6, metric=None):
 
@@ -18,14 +18,35 @@ def sample_from_data(data, K=2, maxDist=2e6, metric=None):
         while (head < i) and (sorted_data[head][metric] + maxDist < data_i[metric]):
             head += 1
         picks = list(range(head, i))
-        random.shuffle(picks)
         if len(picks) > K:
-            picks = picks[:K]
+            picks = random.sample(picks, K)
+        else:
+            picks = random.sample(picks, len(picks))
         for j in picks:
             data_pair[cnt] = (sorted_data[i]['index'], sorted_data[j]['index'])
             cnt += 1
-
     return data_pair
+
+# def sample_from_data(data, K=2, maxDist=2e6, metric=None):
+
+#     sorted_data = sorted(data.values(), key=lambda x: x[metric])
+
+#     cnt = 0
+#     data_pair = {}
+
+#     head = 0
+#     for i, data_i in enumerate(tqdm(sorted_data)):
+#         while (head < i) and (sorted_data[head][metric] + maxDist < data_i[metric]):
+#             head += 1
+#         picks = list(range(head, i))
+#         random.shuffle(picks)
+#         if len(picks) > K:
+#             picks = picks[:K]
+#         for j in picks:
+#             data_pair[cnt] = (sorted_data[i]['index'], sorted_data[j]['index'])
+#             cnt += 1
+
+#     return data_pair
 
 def argLoader():
     parser = argparse.ArgumentParser()
@@ -211,9 +232,20 @@ if __name__ == '__main__':
         elif args.dataset=='transnasbench101':
             train_data = torch.load(os.path.join(save_dir, '%s_train_data.pt') % (str(args.task)))
             test_data = torch.load(os.path.join(save_dir, '%s_test_data.pt') % (str(args.task)))
+        elif args.dataset == "all_ss":
+            train_data = torch.load(os.path.join(save_dir, 'train_data.pt'))
+            old_rsamp = 1250000
+            num_rsamp = len(train_data)
+            # keys = random.sample(train_data.keys(), num_rsamp)
+            keys = list(range(old_rsamp, num_rsamp))
+            train_data = {k: train_data[k] for k in keys}
+            # train_data = dict(random.sample(list(torch.load(os.path.join(save_dir, 'train_data.pt'))), num_rsamp))
+            print("Randomly sampling {} architectures from all_ss".format(num_rsamp))
+            test_data = torch.load(os.path.join(save_dir, 'test_data.pt'))
         else:
             train_data = torch.load(os.path.join(save_dir, 'train_data.pt'))
             test_data = torch.load(os.path.join(save_dir, 'test_data.pt'))
+            # import pdb; pdb.set_trace()
         train_data_pair = sample_from_data(train_data, K=args.k, maxDist=args.d, metric=args.metric)
         test_data_pair = sample_from_data(test_data, K=args.k, maxDist=args.d, metric=args.metric)
         if args.dataset=='nds':
@@ -222,6 +254,9 @@ if __name__ == '__main__':
         elif args.dataset=='transnasbench101':
             train_name = '{}_train_pair_k{}_d{}_metric_{}.pt'.format(args.task, args.k, args.d, args.metric)
             test_name = '{}_test_pair_k{}_d{}_metric_{}.pt'.format(args.task, args.k, args.d, args.metric)
+        elif args.dataset == "all_ss":
+            train_name = 'train_pair_k{}_d{}_metric_{}_{}_{}.pt'.format(args.k, args.d, args.metric, old_rsamp, num_rsamp)
+            test_name = 'test_pair_k{}_d{}_metric_{}_{}_{}.pt'.format(args.k, args.d, args.metric, old_rsamp, num_rsamp)
         else:
             train_name = 'train_pair_k{}_d{}_metric_{}.pt'.format(args.k, args.d, args.metric)
             test_name = 'test_pair_k{}_d{}_metric_{}.pt'.format(args.k, args.d, args.metric)

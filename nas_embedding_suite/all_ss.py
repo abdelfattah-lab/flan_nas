@@ -55,22 +55,24 @@ class AllSS:
                         1478635: "DARTS_fix-w-d",
                         1483635: "tb101",
                     }
+        print("[WARNING]: ALL SS has a cache store at {}, which needs to be changed if reproducing in all_ss.py!!!!".format(CACHE_DIR))
         self._ensure_cache_exists()
         self.nb301 = NASBench301()
         self._load_classes()
-                # # check if os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv", exists
-                # # if it does not exist, create it
-                # if not os.path.exists(os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv"):
-                #     self.arch2vec_data_dict = torch.load(
-                #                                     os.environ["PROJ_BPATH"]
-                #                                     + "/"
-                #                                     + "/arch2vec/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt"
-                #                                 )
-                #     self.prep_arch2vec_joint()
-                # else: # load it
-                #     self.arch2vec_f_ss = pd.read_csv(os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv")
+        # check if os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv", exists
+        # if it does not exist, create it
+        if not os.path.exists(os.environ["PROJ_BPATH"] + "/nas_embedding_suite/embedding_datasets/arch2vec_f_ss.csv"):
+            print("Creating arch2vec_f_ss.csv")
+            self.arch2vec_data_dict = torch.load(
+                                            os.environ["PROJ_BPATH"]
+                                            + "/"
+                                            + "/arch2vec/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt"
+                                        )
+            self.prep_arch2vec_joint()
+        else: # load it
+            self.arch2vec_f_ss = pd.read_csv(os.environ["PROJ_BPATH"] + "/nas_embedding_suite/embedding_datasets/arch2vec_f_ss.csv")
                 
-                # if not os.path.exists(os.environ["PROJ_BPATH"] + "/embedding_dataset/cate_f_ss.csv"):
+                # if not os.path.exists(os.environ["PROJ_BPATH"] + "/nas_embedding_suite/embedding_datasets/cate_f_ss.csv"):
                 #     self.cate_data_dict = torch.load(
                 #                                     os.environ["PROJ_BPATH"]
                 #                                     + "/"
@@ -98,7 +100,7 @@ class AllSS:
         # add a column for labels
         self.cate_f_ss["label"] = labels
         # Save this dataframe
-        self.cate_f_ss.to_csv(os.environ["PROJ_BPATH"] + "/embedding_dataset/cate_f_ss.csv", index=False)
+        self.cate_f_ss.to_csv(os.environ["PROJ_BPATH"] + "/nas_embedding_suite/embedding_datasets/cate_f_ss.csv", index=False)
 
 
     def prep_arch2vec_joint(self):
@@ -118,16 +120,16 @@ class AllSS:
         # add a column for labels
         self.arch2vec_f_ss["label"] = labels
         # Save this dataframe
-        self.arch2vec_f_ss.to_csv(os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv", index=False)
+        self.arch2vec_f_ss.to_csv(os.environ["PROJ_BPATH"] + "/nas_embedding_suite/embedding_datasets/arch2vec_f_ss.csv", index=False)
     
     def get_numitems(self, space=None, task=None):
-        assert self.arch2vec_f_ss.shape[0] == self.cate_f_ss.shape[0], "Number of Archs embedded in Arch2Vec and CATE should be the same!"
+        # assert self.arch2vec_f_ss.shape[0] == self.cate_f_ss.shape[0], "Number of Archs embedded in Arch2Vec and CATE should be the same!"
         return self.arch2vec_f_ss.shape[0]
     
     def get_ss_idxrange(self, space):
         class_idx = self.ss_mapper[space]
-        # from cate_f_ss, get the indices where label == class_idx
-        idxs = self.cate_f_ss[self.cate_f_ss["label"] == class_idx].index.tolist()
+        # from arch2vec_f_ss, get the indices where label == class_idx
+        idxs = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_idx].index.tolist()
         return idxs
     
     def get_adj_op(self, idx, space):

@@ -158,7 +158,7 @@ class NASBench201:
             acc_results = self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
                                                     use_12epochs_result=False,
                                                     is_random=False)['valid-accuracy'] 
-            val_acc = acc_results/ 100
+            val_acc = acc_results / 100.
         return val_acc
         # cellobj = Cell201(arch_str)
         # zcp_key = str(tuple(cellobj.encode(predictor_encoding='adj')))

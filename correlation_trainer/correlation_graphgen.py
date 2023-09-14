@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
+base_path = 'correlation_results/correlation_graphs'
+
 # Create the directory if it doesn't exist
 if not os.path.exists('correlation_results/correlation_graphs'):
     os.makedirs('correlation_results/correlation_graphs')
@@ -43,12 +45,15 @@ def plot_graph(df, space, task=None):
         plt.savefig(f"correlation_results/correlation_graphs/{space}_{task}.pdf")
     else:
         plt.title(f'Kendall Tau Correlation for {space}')
-        # Save the plot in both
+        # Save the plot in both PNG and PDF formats
+        plt.savefig(f"correlation_results/correlation_graphs/{space}.png")
+        plt.savefig(f"correlation_results/correlation_graphs/{space}.pdf")
 
 # Loop through each space
 for space in spaces:
     # Read the CSV file for the current space
     # df = pd.read_csv(f"{space}.csv")
+    print(f"Reading CSV for {space}")
     try:
         df = pd.read_csv(f"correlation_results/sample_efficiency_results/{space}_samp_eff.csv")
     except Exception as e:
@@ -61,14 +66,18 @@ for space in spaces:
     # If the space is 'tb101', loop through each task
     if space == 'tb101':
         try:
+            print("Plotting graph for ", space)
             tasks = df_space['task'].unique()
             for task in tasks:
                 df_task = df_space[df_space['task'] == task]
                 plot_graph(df_task, space, task=task)
+            print("Plotted graph for ", space)
         except Exception as e:
             print(f"Error for {space}: {e}")
     else:
         try:
+            print("Plotting graph for ", space)
             plot_graph(df_space, space)
+            print("Plotted graph for ", space)
         except Exception as e:
             print(f"Error for {space}: {e}")

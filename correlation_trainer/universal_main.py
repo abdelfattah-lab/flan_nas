@@ -15,8 +15,8 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 
 sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 
-# python -i new_main.py --space nb101 --representation adj_gin_zcp --test_tagates --loss_type pwl --sample_sizes 72 --batch_size 8
-# python -i new_main.py --space nb201 --representation adj_gin_zcp --test_tagates --loss_type pwl --sample_sizes 40 --batch_size 8
+# python -i universal_main.py --space nb101 --transfer_space nb201 --representation adj_gin_zcp --test_tagates --loss_type pwl --sample_size 1024 --batch_size 128 --transfer_sample_sizes 4 8 16 32 --batch_size 8 --transfer_epochs 30 --transfer_lr 5e-5 --test_size 500
+# python -i universal_main.py --space nb201 --representation adj_gin_zcp --test_tagates --loss_type pwl --sample_sizes 40 --batch_size 8
 
 parser = argparse.ArgumentParser()
 ####################################################### Search Space Choices #######################################################
@@ -243,21 +243,13 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
     representations = []
     accs = []
     # here, we dont just need the numitems, we actually need the indexs mapped for each SS
-    if mode == "train":
-        if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
-            sample_indexes = random.sample(embedding_gen.get_numitems(space), sample_count)
-        else:
-            sample_indexes = random.sample(embedding_gen.get_numitems(space), sample_count)
-    elif mode == "transfer":
-        if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
-            sample_indexes = random.sample(embedding_gen.get_numitems(space), sample_count)
-        else:
-            sample_indexes = random.sample(embedding_gen.get_numitems(space), sample_count)
+    idx_range = embedding_gen.get_ss_idxrange(space)
+    min_idx_range = min(idx_range)
+    idx_ranges = [zlm - min_idx_range for zlm in idx_range]
+    if mode in ["train", "transfer"]:
+        sample_indexes = random.sample(idx_ranges, sample_count)
     else: # if mode is train, and we want to test on the same space as train, we pass train_index. else, pass transfer_index to get_dataloader
-        if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
-            remaining_indexes = list(set(embedding_gen.get_numitems(space)) - set(train_indexes))
-        else:
-            remaining_indexes = list(set(embedding_gen.get_numitems(space)) - set(train_indexes))
+        remaining_indexes = list(set(idx_ranges) - set(train_indexes))
         if test_size is not None:
             sample_indexes = random.sample(remaining_indexes, test_size)
         else:
@@ -325,7 +317,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
     
 
 representation = args.representation
-transfer_sample_counts = transfer_sample_tests[args.space]
+transfer_sample_counts = transfer_sample_tests[args.transfer_space]
 samp_eff = {}
 across_trials = {transfer_sample_count: [] for transfer_sample_count in transfer_sample_counts}
 
@@ -333,37 +325,40 @@ for tr_ in range(args.num_trials):
     for transfer_sample_count in transfer_sample_counts:
         if transfer_sample_count > 32:
             args.batch_size = int(transfer_sample_count//4)
-        train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.space, args.sample_count, representation, mode='train')
+        train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.space, args.sample_size, representation, mode='train')
         test_dataloader_source_smallset, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=80)
         test_dataloader_source_full, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.test_size)
         transfer_dataloader, transfer_indexes = get_dataloader(args, embedding_gen, args.transfer_space, sample_count=transfer_sample_count, representation=representation, mode='transfer')
         test_dataloader_target_smallset, test_indexes = get_dataloader(args, embedding_gen, args.transfer_space, sample_count=None, representation=representation, mode='test', train_indexes=transfer_indexes, test_size=80)
         test_dataloader_target_full, test_indexes = get_dataloader(args, embedding_gen, args.transfer_space, sample_count=None, representation=representation, mode='test', train_indexes=transfer_indexes, test_size=args.test_size)
-
+        # import pdb; pdb.set_trace()
         if representation == "adj_gin":
+            # input_dim = max(next(iter(train_dataloader))[0][1].shape[1], next(iter(transfer_dataloader))[0][1].shape[1])
             input_dim = next(iter(train_dataloader))[0][1].shape[1]
             none_op_ind = 50 # placeholder
             if args.space in ["nb101", "nb201", "nb301", "tb101"]:
                 model = GIN_Model(device=args.device,
-                    dual_gcn = False,
+                                dual_gcn = False,
                                 num_time_steps = args.timesteps,
                                 vertices = input_dim,
                                 none_op_ind = none_op_ind,
                                 input_zcp = False)
             else:
                 model = GIN_Model(device=args.device,
-                    dual_gcn = True,
+                                dual_input = True,
+                                dual_gcn = True,
                                 num_time_steps = args.timesteps,
                                 vertices = input_dim,
                                 none_op_ind = none_op_ind,
                                 input_zcp = False)
         elif representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
+            # input_dim = max(next(iter(train_dataloader))[0][1].shape[1], next(iter(transfer_dataloader))[0][1].shape[1])
             input_dim = next(iter(train_dataloader))[0][1].shape[1]
             num_zcps = next(iter(train_dataloader))[0][-1].shape[1]
             none_op_ind = 50
             if args.space in ["nb101", "nb201", "nb301", "tb101"]:
                 model = GIN_Model(device=args.device,
-                    dual_gcn = False,
+                                dual_gcn = False,
                                 num_time_steps = args.timesteps,
                                 num_zcps = num_zcps,
                                 vertices = input_dim,
@@ -371,7 +366,8 @@ for tr_ in range(args.num_trials):
                                 input_zcp = True)
             else:
                 model = GIN_Model(device=args.device,
-                    dual_gcn = True,
+                                dual_input = True,
+                                dual_gcn = True,
                                 num_time_steps = args.timesteps,
                                 num_zcps = num_zcps,
                                 vertices = input_dim,
@@ -408,6 +404,7 @@ for tr_ in range(args.num_trials):
             else:
                 print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
         ### Transfer
+        model.vertices = next(iter(transfer_dataloader))[0][1].shape[1]
         criterion = torch.nn.MSELoss()
         params_optimize = list(model.parameters())
         optimizer = torch.optim.AdamW(params_optimize, lr = args.transfer_lr, weight_decay = args.weight_decay)
@@ -419,7 +416,7 @@ for tr_ in range(args.num_trials):
                 raise NotImplementedError
                 # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
             elif args.loss_type == "pwl":
-                if epoch > args.epochs - 5:
+                if epoch > args.transfer_epochs - 5:
                     model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, transfer_dataloader, criterion, optimizer, scheduler, test_dataloader_target_full, epoch)
                 else:
                     model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, transfer_dataloader, criterion, optimizer, scheduler, test_dataloader_target_smallset, epoch)
@@ -427,17 +424,17 @@ for tr_ in range(args.num_trials):
                 raise NotImplementedError
             # test_loss, num_test_items, test_spearmanr, test_kendalltau = test(args, model, test_dataloader, criterion)
             end_time = time.time()
-            if epoch > args.epochs - 5:
+            if epoch > args.transfer_epochs - 5:
                 kdt_l5.append(kdt)
                 spr_l5.append(spr)
-                print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
+                print(f'Epoch {epoch + 1}/{args.transfer_epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
             else:
-                print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
+                print(f'Epoch {epoch + 1}/{args.transfer_epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
 
-        samp_eff[sample_count] = (sum(spr_l5)/len(spr_l5), sum(kdt_l5)/len(kdt_l5))
-        print("Sample Count: {}, Spearman: {}, Kendall: {}".format(sample_count, sum(spr_l5)/len(spr_l5), sum(kdt_l5)/len(kdt_l5)))
+        samp_eff[transfer_sample_count] = (sum(spr_l5)/len(spr_l5), sum(kdt_l5)/len(kdt_l5))
+        print("Sample Count: {}, Spearman: {}, Kendall: {}".format(transfer_sample_count, sum(spr_l5)/len(spr_l5), sum(kdt_l5)/len(kdt_l5)))
         pprint(samp_eff)
-        across_trials[sample_count].append(samp_eff[sample_count])
+        across_trials[transfer_sample_count].append(samp_eff[transfer_sample_count])
 
 # print average across trials for each sample count
 for transfer_sample_count in transfer_sample_counts:

@@ -25,6 +25,8 @@ parser.add_argument('--task', type=str, default='class_scene')     # all tb101 t
 parser.add_argument('--representation', type=str, default='cate')  # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate supported.
 parser.add_argument('--test_tagates', action='store_true')         # Currently only supports testing on NB101 networks. Easy to extend.
 parser.add_argument('--loss_type', type=str, default='pwl')        # mse, pwl supported
+parser.add_argument('--gnn_type', type=str, default='dense')       # dense, gat, gat_mh supported
+parser.add_argument('--back_dense', action="store_true")           # If True, backward flow will be DenseFlow
 parser.add_argument('--num_trials', type=int, default=3)
 parser.add_argument('--transfer_comparison', action='store_true')  # use this if comparing with a transfer test.
 ###################################################### Other Hyper-Parameters ######################################################
@@ -360,14 +362,18 @@ for tr_ in range(args.num_trials):
             none_op_ind = 50 # placeholder
             if args.space in ["nb101", "nb201", "nb301", "tb101"]:
                 model = GIN_Model(device=args.device,
-                    dual_gcn = False,
+                                gtype = args.gnn_type,
+                                back_dense=args.back_dense,
+                                dual_gcn = False,
                                 num_time_steps = args.timesteps,
                                 vertices = input_dim,
                                 none_op_ind = none_op_ind,
                                 input_zcp = False)
             else:
                 model = GIN_Model(device=args.device,
-                    dual_gcn = True,
+                                gtype = args.gnn_type,
+                                back_dense=args.back_dense,
+                                dual_gcn = True,
                                 num_time_steps = args.timesteps,
                                 vertices = input_dim,
                                 none_op_ind = none_op_ind,
@@ -378,7 +384,9 @@ for tr_ in range(args.num_trials):
             none_op_ind = 50
             if args.space in ["nb101", "nb201", "nb301", "tb101"]:
                 model = GIN_Model(device=args.device,
-                    dual_gcn = False,
+                                gtype = args.gnn_type,
+                                back_dense=args.back_dense,
+                                dual_gcn = False,
                                 num_time_steps = args.timesteps,
                                 num_zcps = num_zcps,
                                 vertices = input_dim,
@@ -386,7 +394,9 @@ for tr_ in range(args.num_trials):
                                 input_zcp = True)
             else:
                 model = GIN_Model(device=args.device,
-                    dual_gcn = True,
+                                gtype = args.gnn_type,
+                                back_dense=args.back_dense,
+                                dual_gcn = True,
                                 num_time_steps = args.timesteps,
                                 num_zcps = num_zcps,
                                 vertices = input_dim,
@@ -399,15 +409,6 @@ for tr_ in range(args.num_trials):
         model.to(device)
         criterion = torch.nn.MSELoss()
         params_optimize = list(model.parameters())
-        # params_optimize = list(model.mlp.parameters())            + \
-        #                 list(model.input_node_emb.parameters()) + \
-        #                 list(model.other_node_emb.parameters()) + \
-        #                 list(model.input_op_emb.parameters())   + \
-        #                 list(model.op_emb.parameters())         + \
-        #                 list(model.output_op_emb.parameters())  + \
-        #                 list(model.x_hidden.parameters())       + \
-        #                 list(model.gcns.parameters())           + \
-        #                 list(model.zcp_embedder.parameters())
         optimizer = torch.optim.AdamW(params_optimize, lr = args.lr, weight_decay = args.weight_decay)
         scheduler = CosineAnnealingLR(optimizer, T_max = args.epochs, eta_min = args.eta_min)
         kdt_l5, spr_l5 = [], []
@@ -460,14 +461,14 @@ if args.transfer_comparison:
         os.makedirs('correlation_results/transfer_correlation_results_base')
 
     filename = f'correlation_results/transfer_correlation_results_base/{args.space}_samp_eff.csv'
-    header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
+    header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
     if not os.path.isfile(filename):
         with open(filename, 'w') as f:
             f.write(header + "\n")
 
     with open(filename, 'a') as f:
         for key in samp_eff.keys():
-            f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+            f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                     (
                         str(args.name_desc),
                         str(args.seed),
@@ -479,6 +480,8 @@ if args.transfer_comparison:
                         str(args.timesteps),
                         str(args.loss_type),
                         str(args.test_tagates),
+                        str(args.gnn_type),
+                        str(args.back_dense),
                         str(key),
                         str(record_[key][2]),
                         str(record_[key][0]),
@@ -492,14 +495,14 @@ else:
         os.makedirs('correlation_results')
 
     filename = f'correlation_results/{args.space}_samp_eff.csv'
-    header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
+    header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
     if not os.path.isfile(filename):
         with open(filename, 'w') as f:
             f.write(header + "\n")
 
     with open(filename, 'a') as f:
         for key in samp_eff.keys():
-            f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+            f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                     (
                         str(args.name_desc),
                         str(args.seed),
@@ -511,6 +514,8 @@ else:
                         str(args.timesteps),
                         str(args.loss_type),
                         str(args.test_tagates),
+                        str(args.gnn_type),
+                        str(args.back_dense),
                         str(key),
                         str(record_[key][2]),
                         str(record_[key][0]),

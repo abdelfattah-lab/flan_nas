@@ -23,6 +23,24 @@ class FullyConnectedNN(nn.Module):
             x = layer(x)
         return x
 
+class EnsembleGATDGFLayer(nn.Module):
+    def __init__(self, in_features, out_features, op_emb_dim):
+        super(EnsembleGATDGFLayer, self).__init__()
+        
+        # Instantiate both modules
+        self.dense_graph_flow = DenseGraphFlow(in_features, out_features, op_emb_dim)
+        self.graph_attention_layer = GraphAttentionLayer(in_features, out_features, op_emb_dim)
+
+    def forward(self, inputs, adj, op_emb):
+        # Get outputs from both modules
+        dense_output = self.dense_graph_flow(inputs, adj, op_emb)
+        gat_output = self.graph_attention_layer(inputs, adj, op_emb)
+        
+        # Average the outputs
+        ensemble_output = (dense_output + gat_output) / 2
+        
+        return ensemble_output
+
 class DenseGraphFlow(nn.Module):
 
     def __init__(self, in_features, out_features, op_emb_dim):
@@ -45,7 +63,6 @@ class DenseGraphFlow(nn.Module):
     def forward(self, inputs, adj, op_emb): # Why is inputs shape 8, when adj is 7?
         adj_aug = adj
         support = torch.matmul(inputs, self.weight) # no mismatch here, adj-shape propagated
-        # torch.sigmoid(self.op_attention(op_emb)) # no mismatch here, adj-shape propagated
         output = torch.sigmoid(self.op_attention(op_emb)) * torch.matmul(adj_aug, support) + support
         return output + self.bias
 
@@ -53,6 +70,30 @@ class DenseGraphFlow(nn.Module):
         return self.__class__.__name__ + ' (' \
                + str(self.in_features) + ' -> ' \
                + str(self.out_features) + ')'
+    
+
+class GraphAttentionLayer(nn.Module):
+    def __init__(self, in_features, out_features, op_emb_dim):
+        super(GraphAttentionLayer, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.op_attention = nn.Linear(op_emb_dim, out_features)
+        self.W = nn.Linear(in_features, out_features, bias=False)
+        self.a = nn.Linear(out_features, 1, bias=False)
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.layernorm = nn.LayerNorm(out_features)
+
+    def forward(self, h, adj, op_emb):
+        Wh = self.W(h)
+        a_input = torch.einsum('balm,beam->belm', Wh.unsqueeze(-3).expand(-1, -1, Wh.size(1), -1), 
+            Wh.unsqueeze(-2).expand(-1, Wh.size(1), -1, -1))
+        alpha = F.leaky_relu(self.a(a_input))
+        alpha = alpha * adj.unsqueeze(-1)
+        attention = F.softmax(alpha, dim=-2)
+        h_prime = torch.sigmoid(self.op_attention(op_emb)) * torch.einsum('bijl,bjl->bil', attention, Wh)
+        h_prime = self.layernorm(h_prime)
+
+        return h_prime
     
 class MultiHeadGraphAttentionLayer(nn.Module):
     def __init__(self, in_features, out_features, op_emb_dim):
@@ -73,38 +114,11 @@ class MultiHeadGraphAttentionLayer(nn.Module):
         # return sum(outputs) / self.n_heads
         return torch.mean(torch.stack(outputs), dim=0)
 
-
-class GraphAttentionLayer(nn.Module):
-    def __init__(self, in_features, out_features, op_emb_dim):
-        super(GraphAttentionLayer, self).__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.op_attention = nn.Linear(op_emb_dim, out_features)
-        self.W = nn.Linear(in_features, out_features, bias=False)
-        # Adjust the linear layer to account for op_emb_dim
-        self.a = nn.Linear(out_features, 1, bias=False)
-        # self.a = nn.Linear(out_features + op_emb_dim, 1, bias=False)//
-        self.leakyrelu = nn.LeakyReLU(0.2)
-        self.layernorm = nn.LayerNorm(out_features)
-
-    def forward(self, h, adj, op_emb):
-        Wh = self.W(h)
-        a_input = torch.einsum('balm,beam->belm', Wh.unsqueeze(-3).expand(-1, -1, Wh.size(1), -1), 
-            Wh.unsqueeze(-2).expand(-1, Wh.size(1), -1, -1))
-        # a_input = torch.cat([a_input, op_emb.unsqueeze(2).expand(-1, -1, Wh.size(1), -1)], dim=-1)
-        alpha = F.leaky_relu(self.a(a_input))
-        # alpha = F.leaky_relu(a_input)
-        alpha = alpha * adj.unsqueeze(-1)
-        attention = F.softmax(alpha, dim=-2)
-        h_prime = torch.sigmoid(self.op_attention(op_emb)) * torch.einsum('bijl,bjl->bil', attention, Wh)
-        h_prime = self.layernorm(h_prime)
-
-        return h_prime
-    
 class GIN_Model(nn.Module):
     def __init__(
             self,
             device='cpu',
+            back_dense=False,
             dual_input = False,
             dual_gcn = False,
             num_zcps = 13,
@@ -153,18 +167,28 @@ class GIN_Model(nn.Module):
         self.vertices = vertices
         self.none_op_ind = none_op_ind
         self.gtype = gtype
+        self.back_dense = back_dense
         
         self.mlp_dropout = 0.1
         self.training = True
         
         if self.gtype == 'dense':
             LayerType = DenseGraphFlow
+            BackLayerType = DenseGraphFlow
         elif self.gtype == 'gat':
             LayerType = GraphAttentionLayer
+            BackLayerType = GraphAttentionLayer
         elif self.gtype == 'gat_mh':
             LayerType = MultiHeadGraphAttentionLayer
+            BackLayerType = MultiHeadGraphAttentionLayer
+        elif self.gtype == 'ensemble':
+            LayerType = EnsembleGATDGFLayer
+            BackLayerType = EnsembleGATDGFLayer
         else:
             raise NotImplementedError
+
+        if self.back_dense:
+            BackLayerType = DenseGraphFlow
 
         # regression MLP
         self.mlp = []
@@ -228,7 +252,7 @@ class GIN_Model(nn.Module):
         in_dim = self.fb_conversion_dims[-1]
         for dim in self.backward_gcn_out_dims:
             self.b_gcns.append(
-                LayerType(
+                BackLayerType(
                     in_dim, dim, self.op_embedding_dim
                 )
             )

@@ -28,6 +28,7 @@ parser.add_argument('--representation', type=str, default='cate')    # adj_mlp, 
 parser.add_argument('--joint_repr', action='store_true')             # If True, uses the joint representation of the search space for CATE and Arch2Vec
 parser.add_argument('--test_tagates', action='store_true')           # Currently only supports testing on NB101 networks. Easy to extend.
 parser.add_argument('--loss_type', type=str, default='pwl')          # mse, pwl supported
+parser.add_argument('--gnn_type', type=str, default='dense')         # dense, gat, gat_mh, ensemble supported
 parser.add_argument('--num_trials', type=int, default=3)
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
@@ -332,6 +333,7 @@ for tr_ in range(args.num_trials):
         none_op_ind = 50 # placeholder
         if args.space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
+                            gtype = args.gnn_type,
                             dual_gcn = False,
                             num_time_steps = args.timesteps,
                             vertices = input_dim,
@@ -339,6 +341,7 @@ for tr_ in range(args.num_trials):
                             input_zcp = False)
         else:
             model = GIN_Model(device=args.device,
+                            gtype = args.gnn_type,
                             dual_input = True,
                             dual_gcn = True,
                             num_time_steps = args.timesteps,
@@ -352,6 +355,7 @@ for tr_ in range(args.num_trials):
         none_op_ind = 50
         if args.space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
+                            gtype = args.gnn_type,
                             dual_gcn = False,
                             num_time_steps = args.timesteps,
                             num_zcps = num_zcps,
@@ -360,6 +364,7 @@ for tr_ in range(args.num_trials):
                             input_zcp = True)
         else:
             model = GIN_Model(device=args.device,
+                            gtype = args.gnn_type,
                             dual_input = True,
                             dual_gcn = True,
                             num_time_steps = args.timesteps,

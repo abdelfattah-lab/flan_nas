@@ -86,7 +86,7 @@ class AllSS:
             class_map = self.ss_mapper[space]
             self.joint_arch2vec_idxer[space] = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_map].values[:, :-1]
         self.joint_cate_idxer = {}
-        for space in self.arch2vec_ranges.values():
+        for space in self.arch2vec_ranges.values(): 
             class_map = self.ss_mapper[space]
             self.joint_cate_idxer[space] = self.cate_f_ss[self.cate_f_ss["label"] == class_map].values[:, :-1]
         self.max_oplen = self.get_max_oplen()

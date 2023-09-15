@@ -66,22 +66,20 @@ class AllSS:
             print("Creating arch2vec_f_ss.csv")
             self.arch2vec_data_dict = torch.load(
                                             os.environ["PROJ_BPATH"]
-                                            + "/"
-                                            + "/arch2vec/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt"
+                                            + "/nas_embedding_suite/embedding_datasets/model-dim_32_search_space_all_ss-all_ss.pt"
                                         )
             self.prep_arch2vec_joint()
         else: # load it
             self.arch2vec_f_ss = pd.read_csv(os.environ["PROJ_BPATH"] + "/nas_embedding_suite/embedding_datasets/arch2vec_f_ss.csv")
-                
-                # if not os.path.exists(os.environ["PROJ_BPATH"] + "/nas_embedding_suite/embedding_datasets/cate_f_ss.csv"):
-                #     self.cate_data_dict = torch.load(
-                #                                     os.environ["PROJ_BPATH"]
-                #                                     + "/"
-                #                                     + "/CATE/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt"
-                #                                 )
-                #     self.prep_cate_joint()
-                # else:
-                #     self.cate_f_ss = pd.read_csv()
+        
+        if not os.path.exists(os.environ["PROJ_BPATH"] + "/nas_embedding_suite/embedding_datasets/cate_f_ss.csv"):
+            self.cate_data_dict = torch.load(
+                                            os.environ["PROJ_BPATH"]
+                                            + "/nas_embedding_suite/embedding_datasets/cate_all_ss.pt"
+                                        )
+            self.prep_cate_joint()
+        else:
+            self.cate_f_ss = pd.read_csv()
         self.max_oplen = self.get_max_oplen()
         print("Time taken to load all_ss: {}".format(time.time() - start_))
 

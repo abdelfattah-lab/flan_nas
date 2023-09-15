@@ -53,8 +53,54 @@ class DenseGraphFlow(nn.Module):
         return self.__class__.__name__ + ' (' \
                + str(self.in_features) + ' -> ' \
                + str(self.out_features) + ')'
+    
+class MultiHeadGraphAttentionLayer(nn.Module):
+    def __init__(self, in_features, out_features, op_emb_dim):
+        super(MultiHeadGraphAttentionLayer, self).__init__()
+        n_heads = 4
+        self.heads = nn.ModuleList()
+        for _ in range(n_heads):
+            self.heads.append(GraphAttentionLayer(in_features, out_features, op_emb_dim))
+        self.n_heads = n_heads
+
+    def forward(self, h, adj, op_emb):
+        # Compute attention for each head
+        outputs = [head(h, adj, op_emb) for head in self.heads]
+        # Concatenate the outputs
+        # return torch.cat(outputs, dim=-1)
+        # take mean
+        # import pdb; pdb.set_trace()
+        # return sum(outputs) / self.n_heads
+        return torch.mean(torch.stack(outputs), dim=0)
 
 
+class GraphAttentionLayer(nn.Module):
+    def __init__(self, in_features, out_features, op_emb_dim):
+        super(GraphAttentionLayer, self).__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.op_attention = nn.Linear(op_emb_dim, out_features)
+        self.W = nn.Linear(in_features, out_features, bias=False)
+        # Adjust the linear layer to account for op_emb_dim
+        self.a = nn.Linear(out_features, 1, bias=False)
+        # self.a = nn.Linear(out_features + op_emb_dim, 1, bias=False)//
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.layernorm = nn.LayerNorm(out_features)
+
+    def forward(self, h, adj, op_emb):
+        Wh = self.W(h)
+        a_input = torch.einsum('balm,beam->belm', Wh.unsqueeze(-3).expand(-1, -1, Wh.size(1), -1), 
+            Wh.unsqueeze(-2).expand(-1, Wh.size(1), -1, -1))
+        # a_input = torch.cat([a_input, op_emb.unsqueeze(2).expand(-1, -1, Wh.size(1), -1)], dim=-1)
+        alpha = F.leaky_relu(self.a(a_input))
+        # alpha = F.leaky_relu(a_input)
+        alpha = alpha * adj.unsqueeze(-1)
+        attention = F.softmax(alpha, dim=-2)
+        h_prime = torch.sigmoid(self.op_attention(op_emb)) * torch.einsum('bijl,bjl->bil', attention, Wh)
+        h_prime = self.layernorm(h_prime)
+
+        return h_prime
+    
 class GIN_Model(nn.Module):
     def __init__(
             self,
@@ -79,13 +125,14 @@ class GIN_Model(nn.Module):
             nn_emb_dims = 128,
             input_zcp = False,
             zcp_embedder_dims = [128, 128],
+            gtype = 'dense',
     ):
         super(GIN_Model, self).__init__()
         # if num_time_steps > 1:
         #     raise NotImplementedError
         self.device = device
         self.dual_input = dual_input
-        self.dinp = 1
+        self.dinp = 2
         self.dual_gcn = dual_gcn
         self.num_zcps = num_zcps
         self.op_embedding_dim = op_embedding_dim
@@ -105,9 +152,19 @@ class GIN_Model(nn.Module):
         self.zcp_embedder_dims = zcp_embedder_dims
         self.vertices = vertices
         self.none_op_ind = none_op_ind
+        self.gtype = gtype
         
         self.mlp_dropout = 0.1
         self.training = True
+        
+        if self.gtype == 'dense':
+            LayerType = DenseGraphFlow
+        elif self.gtype == 'gat':
+            LayerType = GraphAttentionLayer
+        elif self.gtype == 'gat_mh':
+            LayerType = MultiHeadGraphAttentionLayer
+        else:
+            raise NotImplementedError
 
         # regression MLP
         self.mlp = []
@@ -142,7 +199,7 @@ class GIN_Model(nn.Module):
         in_dim = self.hid_dim
         for dim in self.gcn_out_dims:
             self.gcns.append(
-                DenseGraphFlow(
+                LayerType(
                     in_dim, dim, self.op_embedding_dim # potential issue
                 )
             )
@@ -171,7 +228,7 @@ class GIN_Model(nn.Module):
         in_dim = self.fb_conversion_dims[-1]
         for dim in self.backward_gcn_out_dims:
             self.b_gcns.append(
-                DenseGraphFlow(
+                LayerType(
                     in_dim, dim, self.op_embedding_dim
                 )
             )
@@ -227,8 +284,8 @@ class GIN_Model(nn.Module):
             op_embs = op_embs[:, 1:-1, :]
             op_inds = op_inds[:, 1:-1]
         b_size = op_embs.shape[0]
-        # if self.dual_input:
-        if False:
+        if self.dual_input:
+        # if False:
             op_embs = torch.cat(
                 (
                     self.input_op_emb.unsqueeze(0).repeat([b_size, 1, 1]),

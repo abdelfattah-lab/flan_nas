@@ -28,7 +28,6 @@ parser.add_argument('--loss_type', type=str, default='pwl')        # mse, pwl su
 parser.add_argument('--gnn_type', type=str, default='dense')       # dense, gat, gat_mh supported
 parser.add_argument('--back_dense', action="store_true")           # If True, backward flow will be DenseFlow
 parser.add_argument('--num_trials', type=int, default=3)
-parser.add_argument('--transfer_comparison', action='store_true')  # use this if comparing with a transfer test.
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--sample_sizes', nargs='+', type=int, default=[72, 364, 728, 3645, 7280]) # Default NB101
@@ -51,6 +50,8 @@ args = parser.parse_args()
 device = args.device
 sample_tests = {}
 sample_tests[args.space] = args.sample_sizes
+
+assert args.name_desc is not None, "Please provide a name description for the experiment."
 
 # Set random seeds
 def seed_everything(seed: int):
@@ -456,70 +457,35 @@ for sample_count in sample_counts:
     spr_std = str(np.var([across_trials[sample_count][i][0] for i in range(len(across_trials[sample_count]))]))
     record_[sample_count] = [avkdt, kdt_std, avspr, spr_std]
 
-if args.transfer_comparison:
-    if not os.path.exists('correlation_results/transfer_correlation_results_base'):
-        os.makedirs('correlation_results/transfer_correlation_results_base')
+if not os.path.exists('correlation_results/{}'.format(args.name_desc)):
+    os.makedirs('correlation_results/{}'.format(args.name_desc))
 
-    filename = f'correlation_results/transfer_correlation_results_base/{args.space}_samp_eff.csv'
-    header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
-    if not os.path.isfile(filename):
-        with open(filename, 'w') as f:
-            f.write(header + "\n")
+filename = f'correlation_results/{args.name_desc}/{args.space}_samp_eff.csv'
+header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
+if not os.path.isfile(filename):
+    with open(filename, 'w') as f:
+        f.write(header + "\n")
 
-    with open(filename, 'a') as f:
-        for key in samp_eff.keys():
-            f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
-                    (
-                        str(args.name_desc),
-                        str(args.seed),
-                        str(args.batch_size),
-                        str(args.epochs),
-                        str(args.space),
-                        str(args.task),
-                        str(args.representation),
-                        str(args.timesteps),
-                        str(args.loss_type),
-                        str(args.test_tagates),
-                        str(args.gnn_type),
-                        str(args.back_dense),
-                        str(key),
-                        str(record_[key][2]),
-                        str(record_[key][0]),
-                        str(record_[key][3]),
-                        str(record_[key][1])
-                    )
-            )
-
-else:
-    if not os.path.exists('correlation_results'):
-        os.makedirs('correlation_results')
-
-    filename = f'correlation_results/{args.space}_samp_eff.csv'
-    header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
-    if not os.path.isfile(filename):
-        with open(filename, 'w') as f:
-            f.write(header + "\n")
-
-    with open(filename, 'a') as f:
-        for key in samp_eff.keys():
-            f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
-                    (
-                        str(args.name_desc),
-                        str(args.seed),
-                        str(args.batch_size),
-                        str(args.epochs),
-                        str(args.space),
-                        str(args.task),
-                        str(args.representation),
-                        str(args.timesteps),
-                        str(args.loss_type),
-                        str(args.test_tagates),
-                        str(args.gnn_type),
-                        str(args.back_dense),
-                        str(key),
-                        str(record_[key][2]),
-                        str(record_[key][0]),
-                        str(record_[key][3]),
-                        str(record_[key][1])
-                    )
-            )
+with open(filename, 'a') as f:
+    for key in samp_eff.keys():
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+                (
+                    str(args.name_desc),
+                    str(args.seed),
+                    str(args.batch_size),
+                    str(args.epochs),
+                    str(args.space),
+                    str(args.task),
+                    str(args.representation),
+                    str(args.timesteps),
+                    str(args.loss_type),
+                    str(args.test_tagates),
+                    str(args.gnn_type),
+                    str(args.back_dense),
+                    str(key),
+                    str(record_[key][2]),
+                    str(record_[key][0]),
+                    str(record_[key][3]),
+                    str(record_[key][1])
+                )
+        )

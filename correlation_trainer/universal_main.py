@@ -28,6 +28,7 @@ parser.add_argument('--representation', type=str, default='cate')    # adj_mlp, 
 parser.add_argument('--joint_repr', action='store_true')             # If True, uses the joint representation of the search space for CATE and Arch2Vec
 parser.add_argument('--test_tagates', action='store_true')           # Currently only supports testing on NB101 networks. Easy to extend.
 parser.add_argument('--loss_type', type=str, default='pwl')          # mse, pwl supported
+parser.add_argument('--back_dense', action="store_true")           # If True, backward flow will be DenseFlow
 parser.add_argument('--gnn_type', type=str, default='dense')         # dense, gat, gat_mh, ensemble supported
 parser.add_argument('--num_trials', type=int, default=3)
 ###################################################### Other Hyper-Parameters ######################################################
@@ -55,6 +56,8 @@ args = parser.parse_args()
 device = args.device
 transfer_sample_tests = {}
 transfer_sample_tests[args.transfer_space] = args.transfer_sample_sizes
+
+assert args.name_desc is not None, "Please provide a name description for the experiment."
 
 # Set random seeds
 def seed_everything(seed: int):
@@ -334,6 +337,7 @@ for tr_ in range(args.num_trials):
         if args.space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
+                            back_dense=args.back_dense,
                             dual_gcn = False,
                             num_time_steps = args.timesteps,
                             vertices = input_dim,
@@ -342,6 +346,7 @@ for tr_ in range(args.num_trials):
         else:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
+                            back_dense=args.back_dense,
                             dual_input = True,
                             dual_gcn = True,
                             num_time_steps = args.timesteps,
@@ -356,6 +361,7 @@ for tr_ in range(args.num_trials):
         if args.space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
+                            back_dense=args.back_dense,
                             dual_gcn = False,
                             num_time_steps = args.timesteps,
                             num_zcps = num_zcps,
@@ -365,6 +371,7 @@ for tr_ in range(args.num_trials):
         else:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
+                            back_dense=args.back_dense,
                             dual_input = True,
                             dual_gcn = True,
                             num_time_steps = args.timesteps,
@@ -467,18 +474,18 @@ for transfer_sample_count in transfer_sample_counts:
     spr_std = str(np.var([across_trials[transfer_sample_count][i][0] for i in range(len(across_trials[transfer_sample_count]))]))
     record_[transfer_sample_count] = [avkdt, kdt_std, avspr, spr_std]
 
-if not os.path.exists('correlation_results/transfer_correlation_results'):
-    os.makedirs('correlation_results/transfer_correlation_results')
+if not os.path.exists('correlation_results/{}'.format(args.name_desc)):
+    os.makedirs('correlation_results/{}'.format(args.name_desc))
 
-filename = f'correlation_results/transfer_correlation_results/{args.space}_{args.transfer_space}_samp_eff.csv'
-header = "name_desc,seed,batch_size,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
+filename = f'correlation_results/{args.name_desc}/{args.space}_{args.transfer_space}_samp_eff.csv'
+header = "name_desc,seed,batch_size,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
 if not os.path.isfile(filename):
     with open(filename, 'w') as f:
         f.write(header + "\n")
 
 with open(filename, 'a') as f:
     for key in samp_eff.keys():
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                 (
                     str(args.name_desc),
                     str(args.seed),
@@ -491,6 +498,8 @@ with open(filename, 'a') as f:
                     str(args.timesteps),
                     str(args.loss_type),
                     str(args.test_tagates),
+                    str(args.gnn_type),
+                    str(args.back_dense),
                     str(key),
                     str(record_[key][2]),
                     str(record_[key][0]),

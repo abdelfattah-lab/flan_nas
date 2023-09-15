@@ -2,8 +2,8 @@ import pandas as pd
 import os
 
 # Directories
-dir_transfer = "transfer_correlation_results"
-dir_base = "transfer_correlation_results_base"
+dir_transfer = "correlation_results/transfer_correlation_results"
+dir_base = "correlation_results/transfer_correlation_results_base"
 
 # Load all CSV files from a directory into a list of dataframes
 def load_csvs_from_directory(directory):
@@ -35,6 +35,9 @@ for transfer_df in transfer_dfs:
 
 # Concatenate all processed dataframes vertically
 final_df = pd.concat(final_dfs, axis=0, ignore_index=True)
+
+# Pivot the table to get representations side by side
+final_df = final_df.pivot_table(index=['transfer_space', 'key'], columns='representation', values='kdt_diff', aggfunc='first').reset_index()
 
 # Convert the final dataframe to LaTeX format
 latex_code = final_df.to_latex(index=False, escape=False)

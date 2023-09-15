@@ -456,10 +456,10 @@ for sample_count in sample_counts:
     record_[sample_count] = [avkdt, kdt_std, avspr, spr_std]
 
 if args.transfer_comparison:
-    if not os.path.exists('transfer_correlation_results_base'):
-        os.makedirs('transfer_correlation_results_base')
+    if not os.path.exists('correlation_results/transfer_correlation_results_base'):
+        os.makedirs('correlation_results/transfer_correlation_results_base')
 
-    filename = f'transfer_correlation_results_base/{args.space}_samp_eff.csv'
+    filename = f'correlation_results/transfer_correlation_results_base/{args.space}_samp_eff.csv'
     header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
     if not os.path.isfile(filename):
         with open(filename, 'w') as f:

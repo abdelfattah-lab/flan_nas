@@ -462,10 +462,10 @@ for transfer_sample_count in transfer_sample_counts:
     spr_std = str(np.var([across_trials[transfer_sample_count][i][0] for i in range(len(across_trials[transfer_sample_count]))]))
     record_[transfer_sample_count] = [avkdt, kdt_std, avspr, spr_std]
 
-if not os.path.exists('transfer_correlation_results'):
-    os.makedirs('transfer_correlation_results')
+if not os.path.exists('correlation_results/transfer_correlation_results'):
+    os.makedirs('correlation_results/transfer_correlation_results')
 
-filename = f'transfer_correlation_results/{args.space}_{args.transfer_space}_samp_eff.csv'
+filename = f'correlation_results/transfer_correlation_results/{args.space}_{args.transfer_space}_samp_eff.csv'
 header = "name_desc,seed,batch_size,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,key,spr,kdt,spr_std,kdt_std"
 if not os.path.isfile(filename):
     with open(filename, 'w') as f:

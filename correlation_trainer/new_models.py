@@ -85,6 +85,7 @@ class GIN_Model(nn.Module):
         #     raise NotImplementedError
         self.device = device
         self.dual_input = dual_input
+        self.dinp = 1
         self.dual_gcn = dual_gcn
         self.num_zcps = num_zcps
         self.op_embedding_dim = op_embedding_dim
@@ -199,6 +200,17 @@ class GIN_Model(nn.Module):
             in_dim = embedder_dim
         self.updateop_embedder.append(nn.Linear(in_dim, self.op_embedding_dim))
         self.updateop_embedder = nn.Sequential(*self.updateop_embedder)
+
+        # combine y_1 and y_2
+        if self.dual_gcn:
+            self.y_combiner = nn.Linear(self.gcn_out_dims[-1] * 2, self.gcn_out_dims[-1])
+            # add 1 relu and layer
+            self.y_combiner = nn.Sequential(
+                self.y_combiner,
+                nn.ReLU(inplace = False),
+                nn.Linear(self.gcn_out_dims[-1], self.gcn_out_dims[-1])
+            )
+
         
     def embed_and_transform_arch(self, archs):
         # If self.dual input, remove first 2 and use input_op_emb.
@@ -208,15 +220,15 @@ class GIN_Model(nn.Module):
         op_embs = self.op_emb(op_inds)
         # Remove the first and last index of op_emb 
         # shape is [128, 7, 48], remove [128, 0, 48] and [128, 6, 48]
-        dinp = 2
         if self.dual_input:
-            op_embs = op_embs[:, dinp:-1, :]
-            op_inds = op_inds[:, dinp:-1]
+            op_embs = op_embs[:, self.dinp:-1, :]
+            op_inds = op_inds[:, self.dinp:-1]
         else:
             op_embs = op_embs[:, 1:-1, :]
             op_inds = op_inds[:, 1:-1]
         b_size = op_embs.shape[0]
-        if self.dual_input:
+        # if self.dual_input:
+        if False:
             op_embs = torch.cat(
                 (
                     self.input_op_emb.unsqueeze(0).repeat([b_size, 1, 1]),
@@ -302,9 +314,8 @@ class GIN_Model(nn.Module):
         return op_emb
 
     def _final_process(self, y, op_inds):
-        dinp = 2
         if self.dual_input:
-            y = y[:, dinp:, :]
+            y = y[:, self.dinp:, :]
         else:
             y = y[:, 1:, :]
         y = torch.cat(
@@ -344,7 +355,8 @@ class GIN_Model(nn.Module):
                 b_y_2 = self._backward_pass(y_2, adjs_2, op_emb_2)
                 op_emb_2 = self._update_op_emb(y_2, b_y_2, op_emb_2)
             y_2 = self._final_process(y_2, op_inds_2)
-            y_1 += y_2
+            # y_1 += y_2
+            y_1 = self.y_combiner(torch.cat((y_1, y_2), dim = -1))
         y_1 = y_1.squeeze()
         if self.input_zcp:
             zcp = self.zcp_embedder(zcp)

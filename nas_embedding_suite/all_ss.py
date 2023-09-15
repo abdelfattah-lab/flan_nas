@@ -81,12 +81,14 @@ class AllSS:
         else:
             self.cate_f_ss = pd.read_csv(os.environ["PROJ_BPATH"] + "/nas_embedding_suite/embedding_datasets/cate_f_ss.csv")
         
-        joint_arch2vec_idxer = {}
+        self.joint_arch2vec_idxer = {}
         for space in self.arch2vec_ranges.values():
-            joint_arch2vec_idxer[space] = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_map].values[:, :-1]
-        joint_cate_idxer = {}
+            class_map = self.ss_mapper[space]
+            self.joint_arch2vec_idxer[space] = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_map].values[:, :-1]
+        self.joint_cate_idxer = {}
         for space in self.arch2vec_ranges.values():
-            joint_cate_idxer[space] = self.cate_f_ss[self.cate_f_ss["label"] == class_map].values[:, :-1]
+            class_map = self.ss_mapper[space]
+            self.joint_cate_idxer[space] = self.cate_f_ss[self.cate_f_ss["label"] == class_map].values[:, :-1]
         self.max_oplen = self.get_max_oplen()
         print("Time taken to load all_ss: {}".format(time.time() - start_))
 
@@ -196,7 +198,7 @@ class AllSS:
             # # extract all the features where label == class_map
             # arch2vec = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_map].values[:, :-1]
             # return arch2vec[idx]
-            return joint_arch2vec_idxer[space][idx]
+            return self.joint_arch2vec_idxer[space][idx]
             # raise NotImplementedError
         else:
             if space in ["nb101", "nb201", "nb301", "tb101"]:
@@ -207,7 +209,7 @@ class AllSS:
 
     def get_cate(self, idx, space, joint=False):
         if joint:
-            return joint_cate_idxer[space][idx]
+            return self.joint_cate_idxer[space][idx]
             # class_map = self.ss_mapper[space]
             # cate = self.cate_f_ss[self.cate_f_ss["label"] == class_map].values[:, :-1]
             # return cate[idx]

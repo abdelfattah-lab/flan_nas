@@ -26,7 +26,7 @@ while IFS= read -r line; do
 #SBATCH -e /home/ya255/projects/iclr_nas_embedding/correlation_trainer/large_scale_run_logs/%j.err
 #SBATCH -N 1
 #SBATCH --mem=$mem
-#SBATCH -t 48:00:00
+#SBATCH -t 16:00:00
 #SBATCH --account=abdelfattah
 EOL
 
@@ -51,7 +51,7 @@ $command
 EOL
 
         # Submit the slurm job
-        # sbatch --requeue "$slurm_file"
+        sbatch --requeue "$slurm_file"
     fi
 
 done < unified_joblist.log

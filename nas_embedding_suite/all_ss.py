@@ -79,22 +79,27 @@ class AllSS:
                                         )
             self.prep_cate_joint()
         else:
-            self.cate_f_ss = pd.read_csv()
+            self.cate_f_ss = pd.read_csv(os.environ["PROJ_BPATH"] + "/nas_embedding_suite/embedding_datasets/cate_f_ss.csv")
+        
+        joint_arch2vec_idxer = {}
+        for space in self.arch2vec_ranges.values():
+            joint_arch2vec_idxer[space] = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_map].values[:, :-1]
+        joint_cate_idxer = {}
+        for space in self.arch2vec_ranges.values():
+            joint_cate_idxer[space] = self.cate_f_ss[self.cate_f_ss["label"] == class_map].values[:, :-1]
         self.max_oplen = self.get_max_oplen()
         print("Time taken to load all_ss: {}".format(time.time() - start_))
 
     def prep_cate_joint(self):
         features = []
         labels = []
-        for key, val in self.cate_data_dict.items():
-            feature_val = val["feature"]
+        for key in range(self.cate_data_dict["embeddings"].shape[0]):
             class_idx = None
             for r in sorted(self.arch2vec_ranges):
                 if key >= r:
                     class_idx = list(self.arch2vec_ranges.values()).index(self.arch2vec_ranges[r])
             labels.append(class_idx)
-            features.append(feature_val.tolist())
-        features = np.array(features)
+        features = np.asarray(self.cate_data_dict["embeddings"])
         labels = np.array(labels)
         self.cate_f_ss = pd.DataFrame(features)
         # add a column for labels
@@ -187,11 +192,12 @@ class AllSS:
     
     def get_arch2vec(self, idx, space, joint=False):
         if joint:
-            class_map = self.ss_mapper[space]
-            # extract all the features where label == class_map
-            arch2vec = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_map].values[:, :-1]
-            return arch2vec[idx]
-            raise NotImplementedError
+            # class_map = self.ss_mapper[space]
+            # # extract all the features where label == class_map
+            # arch2vec = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_map].values[:, :-1]
+            # return arch2vec[idx]
+            return joint_arch2vec_idxer[space][idx]
+            # raise NotImplementedError
         else:
             if space in ["nb101", "nb201", "nb301", "tb101"]:
                 arch2vec = eval("self." + space).get_arch2vec(idx)
@@ -201,7 +207,11 @@ class AllSS:
 
     def get_cate(self, idx, space, joint=False):
         if joint:
-            raise NotImplementedError
+            return joint_cate_idxer[space][idx]
+            # class_map = self.ss_mapper[space]
+            # cate = self.cate_f_ss[self.cate_f_ss["label"] == class_map].values[:, :-1]
+            # return cate[idx]
+            # raise NotImplementedError
         else:
             if space in ["nb101", "nb201", "nb301", "tb101"]:
                 cate = eval("self." + space).get_cate(idx)

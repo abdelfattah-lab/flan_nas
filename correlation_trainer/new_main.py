@@ -77,10 +77,16 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
     model.train()
     running_loss = 0.0
     for inputs, targets in dataloader:
-        if inputs[0].shape[0] == 1 and args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
-            continue
-        elif inputs[0].shape[0] == 2 and args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
-            continue
+        if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
+            if inputs.shape[0] == 1 and args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                continue
+            elif inputs.shape[0] == 2 and args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+                continue
+        else:
+            if inputs[0].shape[0] == 1 and args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                continue
+            elif inputs[0].shape[0] == 2 and args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+                continue
         #### Params for PWL Loss
         accs = targets
         max_compare_ratio = 4

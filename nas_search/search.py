@@ -168,33 +168,33 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         running_loss += pair_loss.item()
     scheduler.step()
 
-    model.training = False
-    model.eval()
-    pred_scores, true_scores = [], []
-    repr_max = int(80/args.test_batch_size)
-    for repr_idx, (reprs, scores) in enumerate(tqdm(test_dataloader)):
-        if epoch < args.epochs - 5 and repr_idx > repr_max:
-            break
-        if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
-            pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())
-        elif args.representation in ["adj_gin"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None).squeeze().detach().cpu().tolist())
-            else:
-                pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=None).squeeze().detach().cpu().tolist())
-        elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=reprs[2].to(device)).squeeze().detach().cpu().tolist())
-            else:
-                pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=reprs[4].to(device)).squeeze().detach().cpu().tolist())
-        else:
-            raise NotImplementedError
-        true_scores.append(scores.cpu().tolist())
-    pred_scores = [t for sublist in pred_scores for t in sublist]
-    true_scores = [t for sublist in true_scores for t in sublist]
-    num_test_items = len(pred_scores)
-    return model, num_test_items, running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
-
+    # model.training = False
+    # model.eval()
+    # pred_scores, true_scores = [], []
+    # repr_max = int(80/args.test_batch_size)
+    # for repr_idx, (reprs, scores) in enumerate(tqdm(test_dataloader)):
+    #     if epoch < args.epochs - 5 and repr_idx > repr_max:
+    #         break
+    #     if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
+    #         pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())
+    #     elif args.representation in ["adj_gin"]:
+    #         if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+    #             pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None).squeeze().detach().cpu().tolist())
+    #         else:
+    #             pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=None).squeeze().detach().cpu().tolist())
+    #     elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
+    #         if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+    #             pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=reprs[2].to(device)).squeeze().detach().cpu().tolist())
+    #         else:
+    #             pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=reprs[4].to(device)).squeeze().detach().cpu().tolist())
+    #     else:
+    #         raise NotImplementedError
+    #     true_scores.append(scores.cpu().tolist())
+    # pred_scores = [t for sublist in pred_scores for t in sublist]
+    # true_scores = [t for sublist in true_scores for t in sublist]
+    # num_test_items = len(pred_scores)
+    # return model, num_test_items, running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
+    return model, num_test_items, running_loss / len(dataloader), 0, 0
 
 
 
@@ -404,8 +404,12 @@ def get_all_scores(model, dataloader):
     pred_scores = [t for sublist in pred_scores for t in sublist]
     return pred_scores
 
+# Initialize dictionaries to store statistics for each num_samps
+best_accuracies = {}
+median_accuracies = {}
+mean_accuracies = {}
 for tr_ in range(args.num_trials):
-    print("Trial number: {}".format(tr_))")    
+    print("Trial number: {}".format(tr_))
     model.load_state_dict(preserved_state)
     sampled_indexes = []
     accuracy_sampled = []
@@ -415,10 +419,10 @@ for tr_ in range(args.num_trials):
         criterion = torch.nn.MSELoss()
         params_optimize = list(model.parameters())
         optimizer = torch.optim.AdamW(params_optimize, lr = args.transfer_lr, weight_decay = args.weight_decay)
-        scheduler = CosineAnnealingLR(optimizer, T_max = transf_ep, eta_min = args.eta_min)
+        scheduler = CosineAnnealingLR(optimizer, T_max = args.transf_ep, eta_min = args.eta_min)
         # predict score on entire search space
         pred_scores = get_all_scores(model, full_target_space)
-        best_candidates = sorted(zip(list(range(embedding_gen.get_numitems(space=args.target_space))), scores), key=lambda p: p[1], reverse=True)
+        best_candidates = sorted(zip(list(range(embedding_gen.get_numitems(space=args.target_space))), pred_scores), key=lambda p: p[1], reverse=True)
             # iterate best_candidates, and if index, doesnt match, add it to sampled_indexes.
         # Sample best candidates
         cand_tracker = 0
@@ -430,6 +434,11 @@ for tr_ in range(args.num_trials):
                 accuracy_predicted.append(cand[1])
                 accuracy_sampled.append(embedding_gen.get_valacc(cand[0], space=args.target_space))
             cand_tracker += 1
+        
+        # Calculate statistics for the current num_samps
+        best_accuracies.setdefault(num_samps, []).append(max(accuracy_sampled))
+        median_accuracies.setdefault(num_samps, []).append(np.median(accuracy_sampled))
+        mean_accuracies.setdefault(num_samps, []).append(np.mean(accuracy_sampled))
         # Sample random candidates
         rand_indx = random.sample(set(list(range(embedding_gen.get_numitems(space=args.target_space)))) - sampled_indexes, num_samps//2)
         # insert all elements in rand_indx to sampled_indexes
@@ -444,17 +453,75 @@ for tr_ in range(args.num_trials):
             raise NotImplementedError
             # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
         elif args.loss_type == "pwl":
-            if epoch > args.transfer_epochs - 5:
-                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, full_target_space, epoch)
-            else:
-                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, transfer_dataloader, criterion, optimizer, scheduler, mini_target_space, epoch)
+            # if epoch > args.transfer_epochs - 5:
+            model, num_test_items, mse_loss, _, _ = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, full_target_space, epoch)
+            # else:
+                # model, num_test_items, mse_loss, _, _ = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, mini_target_space, epoch)
         else:
             raise NotImplementedError
         end_time = time.time()
-        if epoch > args.transfer_epochs - 5:
-            kdt_l5.append(kdt)
-            spr_l5.append(spr)
-            print(f'Epoch {epoch + 1}/{args.transfer_epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
-        else:
-            print(f'Epoch {epoch + 1}/{args.transfer_epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
+        # if epoch > args.transfer_epochs - 5:
+        #     kdt_l5.append(kdt)
+        #     spr_l5.append(spr)
+        #     print(f'Epoch {epoch + 1}/{args.transfer_epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
+        # else:
+        #     print(f'Epoch {epoch + 1}/{args.transfer_epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
         epoch += 1
+
+# Calculate average and standard deviation for each statistic across all trials for each num_samps
+av_best_acc = {k: np.mean(v) for k, v in best_accuracies.items()}
+std_best_acc = {k: np.std(v) for k, v in best_accuracies.items()}
+
+av_median_acc = {k: np.mean(v) for k, v in median_accuracies.items()}
+std_median_acc = {k: np.std(v) for k, v in median_accuracies.items()}
+
+av_mean_acc = {k: np.mean(v) for k, v in mean_accuracies.items()}
+std_mean_acc = {k: np.std(v) for k, v in mean_accuracies.items()}
+
+# # Write results to a file
+# with open('statistics.txt', 'w') as f:
+#     f.write("num_samps,av_best_acc,av_median_acc,av_mean_acc,best_acc_std,median_acc_std,mean_acc_std\n")
+#     for num_samps in list(range(0, args.samp_lim, args.periter_samps)):
+#         f.write(f"{num_samps},{av_best_acc},{av_median_acc},{av_mean_acc},{best_acc_std},{median_acc_std},{mean_acc_std}\n")
+
+
+if not os.path.exists(f'search_results/'):
+    os.makedirs(f'search_results/')
+
+if not os.path.exists(f'search_results/{args.name_desc}/'):
+    os.makedirs(f'search_results/{args.name_desc}/')
+
+filename = f'search_results/{args.name_desc}/{args.target_space}_search_eff.csv'
+header = "name_desc,seed,batch_size,epochs,source_space,target_space,task,representation,joint_repr,loss_type,gnn_type,back_dense,periter_sampes,samp_lim,source_samps,timesteps,transf_ep,lr,transfer_lr,num_samps,av_best_acc,av_median_acc,av_mean_acc,best_acc_std,median_acc_std,mean_acc_std"
+if not os.path.isfile(filename):
+    with open(filename, 'w') as f:
+        f.write(header + "\n")
+
+with open(filename, 'a') as f:
+    for num_samps in list(range(0, args.samp_lim, args.periter_samps)):
+        f.write(f"{args.name_desc},\
+                  {args.seed},\
+                  {args.batch_size},\
+                  {args.epochs},\
+                  {args.source_space},\
+                  {args.target_space},\
+                  {args.task},\
+                  {args.representation},\
+                  {args.joint_repr},\
+                  {args.loss_type},\
+                  {args.gnn_type},\
+                  {args.back_dense},\
+                  {args.periter_samps},\
+                  {args.samp_lim},\
+                  {args.source_samps},\
+                  {args.timesteps},\
+                  {args.transf_ep},\
+                  {args.lr},\
+                  {args.transfer_lr},\
+                  {num_samps},\
+                  {av_best_acc[num_samps]},\
+                  {av_median_acc[num_samps]},\
+                  {av_mean_acc[num_samps]},\
+                  {std_best_acc[num_samps]},\
+                  {std_median_acc[num_samps]},\
+                  {std_mean_acc[num_samps]}\n")

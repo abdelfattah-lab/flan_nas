@@ -40,6 +40,7 @@ parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--timesteps', type=int, default=2)
 parser.add_argument('--test_size', type=int, default=None)
 parser.add_argument('--epochs', type=int, default=150)
+parser.add_argument('--transf_ep', type=int, default=150)
 parser.add_argument('--lr_step', type=int, default=10)
 parser.add_argument('--lr_gamma', type=float, default=0.6)
 parser.add_argument('--lr', type=float, default=1e-3)
@@ -52,6 +53,7 @@ parser.add_argument('--id', type=int, default=0)
 args = parser.parse_args()
 device = args.device
 
+args.transf_ep = args.samp_lim//args.periter_samps
 assert args.name_desc is not None, "Please provide a name description for the experiment."
 
 # Set random seeds
@@ -379,8 +381,8 @@ if args.source_space is not None:
             print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
     preserved_state = copy.deepcopy(model.state_dict())
 
-
 full_target_space, _ = get_dataloader(args, embedding_gen, args.target_space, sample_count=None, representation=representation, mode='test', train_indexes=None, fetch_fixed_index=list(range(embedding_gen.get_numitems(space=args.target_space))))
+mini_target_space, _ = get_dataloader(args, embedding_gen, args.target_space, sample_count=None, representation=representation, mode='test', train_indexes=None, fetch_fixed_index=random.sample(list(range(embedding_gen.get_numitems(space=args.target_space))), 40))
 
 def get_all_scores(model, dataloader):
     for idx, (reprs, scores) in enumerate(dataloader):
@@ -402,29 +404,57 @@ def get_all_scores(model, dataloader):
     pred_scores = [t for sublist in pred_scores for t in sublist]
     return pred_scores
 
-
-
 for tr_ in range(args.num_trials):
     print("Trial number: {}".format(tr_))")    
     model.load_state_dict(preserved_state)
     sampled_indexes = []
     accuracy_sampled = []
     accuracy_predicted = []
+    epoch = 0
     for num_samps in list(range(0, args.samp_lim, args.periter_samps)):
         criterion = torch.nn.MSELoss()
         params_optimize = list(model.parameters())
         optimizer = torch.optim.AdamW(params_optimize, lr = args.transfer_lr, weight_decay = args.weight_decay)
-        scheduler = CosineAnnealingLR(optimizer, T_max = args.transfer_epochs, eta_min = args.eta_min)
+        scheduler = CosineAnnealingLR(optimizer, T_max = transf_ep, eta_min = args.eta_min)
         # predict score on entire search space
         pred_scores = get_all_scores(model, full_target_space)
         best_candidates = sorted(zip(list(range(embedding_gen.get_numitems(space=args.target_space))), scores), key=lambda p: p[1], reverse=True)
             # iterate best_candidates, and if index, doesnt match, add it to sampled_indexes.
+        # Sample best candidates
         cand_tracker = 0
-        while len(sampled_indexes) < num_samps:
+        start_len = len(sampled_indexes)
+        while len(sampled_indexes) < start_len + num_samps//2:
             cand = best_candidates[cand_tracker]
             if cand[0] not in sampled_indexes:
                 sampled_indexes.append(cand[0])
                 accuracy_predicted.append(cand[1])
                 accuracy_sampled.append(embedding_gen.get_valacc(cand[0], space=args.target_space))
             cand_tracker += 1
-        best_acc_ = embedding_gen.get_valacc(best_candidates[0][0], space=args.target_space)
+        # Sample random candidates
+        rand_indx = random.sample(set(list(range(embedding_gen.get_numitems(space=args.target_space)))) - sampled_indexes, num_samps//2)
+        # insert all elements in rand_indx to sampled_indexes
+        sampled_indexes.extend(rand_indx)
+        # create new dataloader with sampled_indexes
+        train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.target_space, fetch_fixed_index=sampled_indexes, representation=representation, mode='transfer')
+        # full_target_space
+        kdt_l5, spr_l5 = [], []
+
+        start_time = time.time()
+        if args.loss_type == "mse":
+            raise NotImplementedError
+            # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
+        elif args.loss_type == "pwl":
+            if epoch > args.transfer_epochs - 5:
+                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, full_target_space, epoch)
+            else:
+                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, transfer_dataloader, criterion, optimizer, scheduler, mini_target_space, epoch)
+        else:
+            raise NotImplementedError
+        end_time = time.time()
+        if epoch > args.transfer_epochs - 5:
+            kdt_l5.append(kdt)
+            spr_l5.append(spr)
+            print(f'Epoch {epoch + 1}/{args.transfer_epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
+        else:
+            print(f'Epoch {epoch + 1}/{args.transfer_epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
+        epoch += 1

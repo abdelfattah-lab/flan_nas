@@ -88,7 +88,7 @@ class NASBench301:
         else:
             return self.cate_nb301['predicted_accs'][idx]
     
-    def get_numitems(self):
+    def get_numitems(self, space=None):
         return 1000000
     ##################### Key Functions End #####################
     

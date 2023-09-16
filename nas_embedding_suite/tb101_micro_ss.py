@@ -109,7 +109,7 @@ class TransNASBench101Micro:
         task = 'class_scene' if task==None else task
         return self.cate_embeddings[task]['embeddings'][idx].tolist()
     
-    def get_numitems(self):
+    def get_numitems(self, space=None):
         return len(self.hash_iterator_list) 
 
     ##################### Key Functions End #####################

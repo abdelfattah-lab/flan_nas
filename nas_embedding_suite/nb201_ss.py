@@ -141,7 +141,7 @@ class NASBench201:
         zcp_key = str(tuple(cellobj.encode(predictor_encoding='adj')))
         return [self.zcp_nb201['cifar10'][zcp_key][nn] for nn in self.zcps]
 
-    def get_numitems(self):
+    def get_numitems(self, space=None):
         return 15625
     
     def get_valacc(self, idx):

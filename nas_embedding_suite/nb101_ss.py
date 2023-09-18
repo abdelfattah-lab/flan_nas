@@ -91,6 +91,9 @@ class NASBench101:
             valacc = self.unnorm_valacc_list[idx]
         return valacc
     
+    def get_norm_w_d(self, idx, space=None):
+        return [0, 0]
+    
     def get_numitems(self, space=None):
         return len(self.hash_iterator_list)
     

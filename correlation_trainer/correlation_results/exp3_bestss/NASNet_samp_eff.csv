@@ -1,0 +1,4 @@
+name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
+exp3_bestss,42,32,150,NASNet,class_scene,adj_gin,2,pwl,False,ensemble,True,16,0.11668055588493731,0.07822187089648053,0.0028819487727296026,0.001302666184872591
+exp3_bestss,42,32,150,NASNet,class_scene,adj_gin,2,pwl,False,ensemble,True,32,0.17055257041531965,0.114739646529967,0.009386532213086532,0.0043106250480341194
+exp3_bestss,42,32,150,NASNet,class_scene,adj_gin,2,pwl,False,ensemble,True,128,0.36141315317087724,0.24615612436251433,0.00034854077261664893,0.00017365722154568273

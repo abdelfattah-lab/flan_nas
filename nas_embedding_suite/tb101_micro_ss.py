@@ -111,7 +111,9 @@ class TransNASBench101Micro:
     
     def get_numitems(self, space=None):
         return len(self.hash_iterator_list) 
-
+    
+    def get_norm_w_d(self, idx, space=None):
+        return [0, 0]
     ##################### Key Functions End #####################
     def opslist_onehot(self, op_list):
         op_map = [self.OUTPUT, self.INPUT, *self.OPS]

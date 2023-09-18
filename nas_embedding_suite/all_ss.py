@@ -180,6 +180,13 @@ class AllSS:
         else:
             zcp = self.nds.get_zcp(idx, space=space)
         return zcp
+        
+    def get_norm_w_d(self, idx, space="Amoeba"):
+        if space in ["nb101", "nb201", "nb301", "tb101"]:
+            return [0, 0]
+        else:
+            return [self.nds.space_dicts[space][idx]['net']['width'], \
+                    self.nds.space_dicts[space][idx]['net']['depth']]
     
     def get_params(self, idx, space, task="class_scene"):
         if space in ["nb101", "nb201", "nb301", "tb101"]:
@@ -194,12 +201,7 @@ class AllSS:
     
     def get_arch2vec(self, idx, space, joint=False):
         if joint:
-            # class_map = self.ss_mapper[space]
-            # # extract all the features where label == class_map
-            # arch2vec = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_map].values[:, :-1]
-            # return arch2vec[idx]
             return self.joint_arch2vec_idxer[space][idx]
-            # raise NotImplementedError
         else:
             if space in ["nb101", "nb201", "nb301", "tb101"]:
                 arch2vec = eval("self." + space).get_arch2vec(idx)
@@ -210,10 +212,6 @@ class AllSS:
     def get_cate(self, idx, space, joint=False):
         if joint:
             return self.joint_cate_idxer[space][idx]
-            # class_map = self.ss_mapper[space]
-            # cate = self.cate_f_ss[self.cate_f_ss["label"] == class_map].values[:, :-1]
-            # return cate[idx]
-            # raise NotImplementedError
         else:
             if space in ["nb101", "nb201", "nb301", "tb101"]:
                 cate = eval("self." + space).get_cate(idx)

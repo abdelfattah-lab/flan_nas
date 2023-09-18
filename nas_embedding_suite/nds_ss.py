@@ -108,7 +108,10 @@ class NDS:
     
     def get_numitems(self, space="Amoeba"):
         return len(self.space_dicts[space])
-        
+
+    def get_norm_w_d(self, idx, space="Amoeba"):
+        return [self.space_dicts[space][idx]['net']['width']/32., \
+                self.space_dicts[space][idx]['net']['depth']/20.]
     ##################### Key Functions End #####################
 
     def get_flops(self, idx, space="Amoeba"):

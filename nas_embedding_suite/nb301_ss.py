@@ -87,6 +87,9 @@ class NASBench301:
             return self.performance_model.predict(config=cate_nb301_arch, representation="genotype", with_noise=self.noisy_nb3)
         else:
             return self.cate_nb301['predicted_accs'][idx]
+        
+    def get_norm_w_d(self, idx, space=None):
+        return [0, 0]
     
     def get_numitems(self, space=None):
         return 1000000

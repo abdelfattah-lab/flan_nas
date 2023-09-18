@@ -1,0 +1,4 @@
+name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
+expNDSDesign3,42,32,150,DARTS,class_scene,adj_gin,2,pwl,False,ensemble,True,16,0.0839850507809878,0.05639585312642076,0.0038198228926340084,0.0017263559670422056
+expNDSDesign3,42,32,150,DARTS,class_scene,adj_gin,2,pwl,False,ensemble,True,32,0.26870690145799675,0.18105358880087052,0.0007685479347782483,0.00038426982323598694
+expNDSDesign3,42,32,150,DARTS,class_scene,adj_gin,2,pwl,False,ensemble,True,128,0.6878538628453104,0.4977230362656115,0.0010276854171895537,0.000786823643951075

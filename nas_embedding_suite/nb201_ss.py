@@ -144,6 +144,9 @@ class NASBench201:
     def get_numitems(self, space=None):
         return 15625
     
+    def get_norm_w_d(self, idx, space=None):
+        return [0, 0]
+    
     def get_valacc(self, idx):
         arch_str = self.nb2_api.query_by_index(idx).arch_str
         arch_index = self.nb2_api.query_index_by_arch(arch_str)

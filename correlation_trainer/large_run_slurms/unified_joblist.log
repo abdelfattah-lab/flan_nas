@@ -1,0 +1,260 @@
+#execute(True/False),job_id,gpu(True/False),mem,n,command
+#### Question To Answer
+# ------------------------------------------------------------[EXP1]------------------------------------------------------------------------ #
+#### What is the best NN architecture for NAS?
+#### Try: "adj_mlp", "zcp", "arch2vec", "cate", "adj_gin" + "dense", "adj_gin" + "gat", "adj_gin" + "gat_mh", "adj_gin" + "ensemble", "adj_gin" + "ensemble_backdense"
+#### Sample Sizes: Match TA-GATES
+#### 3 Trials For Each Run. Match TA-GATES samples.
+#### NASBench-101 and NASBench-201.
+#### CONCLUSION : A well designed GNN helps. Specifically, GNN with GAT-DenseFlow ensemble is the best [UNCONFIRMED]
+False,exp1_gnnnb1_0,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 72 364 729 --space nb101 --representation "adj_mlp"
+False,exp1_gnnnb1_1,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 72 364 729 --space nb101 --representation "zcp"
+False,exp1_gnnnb1_2,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 72 364 729 --space nb101 --representation "arch2vec"
+False,exp1_gnnnb1_3,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 72 364 729 --space nb101 --representation "cate"
+False,exp1_gnnnb1_4,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 72 364 729 --space nb101 --representation "adj_gin" --gnn_type dense
+False,exp1_gnnnb1_5,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 72 364 729 --space nb101 --representation "adj_gin" --gnn_type gat
+False,exp1_gnnnb1_6,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 72 364 729 --space nb101 --representation "adj_gin" --gnn_type gat_mh
+False,exp1_gnnnb1_7,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 72 364 729 --space nb101 --representation "adj_gin" --gnn_type ensemble
+False,exp1_gnnnb1_8,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 72 364 729 --space nb101 --representation "adj_gin" --gnn_type ensemble --back_dense
+False,exp1_gnnnb2_0,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 8 40 80 --space nb201 --representation "adj_mlp"
+False,exp1_gnnnb2_1,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 8 40 80 --space nb201 --representation "zcp"
+False,exp1_gnnnb2_2,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 8 40 80 --space nb201 --representation "arch2vec"
+False,exp1_gnnnb2_3,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 8 40 80 --space nb201 --representation "cate"
+False,exp1_gnnnb2_4,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 8 40 80 --space nb201 --representation "adj_gin" --gnn_type dense
+False,exp1_gnnnb2_5,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 8 40 80 --space nb201 --representation "adj_gin" --gnn_type gat
+False,exp1_gnnnb2_6,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 8 40 80 --space nb201 --representation "adj_gin" --gnn_type gat_mh
+False,exp1_gnnnb2_7,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 8 40 80 --space nb201 --representation "adj_gin" --gnn_type ensemble
+False,exp1_gnnnb2_8,True,30000,2,python new_main.py --seed 42 --name_desc exp1 --test_tagates --batch_size 8 --sample_sizes 8 40 80 --space nb201 --representation "adj_gin" --gnn_type ensemble --back_dense
+# ------------------------------------------------------------[EXP2]------------------------------------------------------------------------ #
+#### Further ablation of the discovered GNN
+#### Try: "adj_gin"; timesteps: 1 2 3 4; "dense", "gat", "ensemble", "ensemble_backdense"
+#### Sample Sizes: Match TA-GATES
+#### 3 Trials For Each Run. Match TA-GATES samples.
+#### NASBench-101, DARTS_{FIXWD}, TB101, ENAS_{FIXWD}
+False,exp2_gts_0_nb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space nb101 --timesteps 1 --gnn_type dense 
+False,exp2_gts_1_nb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space nb101 --timesteps 2 --gnn_type dense 
+False,exp2_gts_2_nb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space nb101 --timesteps 4 --gnn_type dense 
+False,exp2_gts_0_darts_fixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space DARTS_fix-w-d --timesteps 1 --gnn_type dense 
+False,exp2_gts_1_darts_fixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space DARTS_fix-w-d --timesteps 2 --gnn_type dense 
+False,exp2_gts_2_darts_fixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space DARTS_fix-w-d --timesteps 4 --gnn_type dense 
+False,exp2_gts_0_tb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space tb101 --timesteps 1 --gnn_type dense 
+False,exp2_gts_1_tb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space tb101 --timesteps 2 --gnn_type dense 
+False,exp2_gts_2_tb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space tb101 --timesteps 4 --gnn_type dense 
+False,exp2_genc_0_nb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space nb101 --timesteps 2 --gnn_type gat 
+False,exp2_genc_0_darts_fixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space DARTS_fix-w-d --timesteps 2 --gnn_type gat 
+False,exp2_genc_0_tb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space tb101 --timesteps 2 --gnn_type gat 
+False,exp2_genc_1_nb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space nb101 --timesteps 2 --gnn_type ensemble 
+False,exp2_genc_1_darts_fixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space DARTS_fix-w-d --timesteps 2 --gnn_type ensemble 
+False,exp2_genc_1_tb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space tb101 --timesteps 2 --gnn_type ensemble 
+False,exp2_genc_2_nb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space nb101 --timesteps 2 --gnn_type ensemble --back_dense 
+False,exp2_genc_2_darts_fixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space DARTS_fix-w-d --timesteps 2 --gnn_type ensemble --back_dense 
+False,exp2_genc_2_tb101,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space tb101 --timesteps 2 --gnn_type ensemble --back_dense 
+False,exp2_gts_0_denasfixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space ENAS_fix-w-d --timesteps 1 --gnn_type dense 
+False,exp2_gts_1_denasfixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space ENAS_fix-w-d --timesteps 2 --gnn_type dense 
+False,exp2_gts_2_denasfixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space ENAS_fix-w-d --timesteps 4 --gnn_type dense 
+False,exp2_genc_0_enas_fixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space ENAS_fix-w-d --timesteps 2 --gnn_type gat 
+False,exp2_genc_1_enas_fixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space ENAS_fix-w-d --timesteps 2 --gnn_type ensemble 
+False,exp2_genc_2_enas_fixwd,True,30000,2,python new_main.py --seed 42 --name_desc exp2 --test_size 2000 --representation "adj_gin" --sample_sizes 128 --batch_size 8 --space ENAS_fix-w-d --timesteps 2 --gnn_type ensemble --back_dense 
+# ------------------------------------------------------------[EXP3]------------------------------------------------------------------------ #
+#### What is the best method of encoding NNs for NAS?
+#### [Use Best GNN From Previous Runs]
+#### Try: "adj_gin", "adj_gin_cate", "adj_gin_arch2vec", "adj_gin_zcp"
+#### Sample Sizes: [16, 32, 128, 256, 512]
+#### 3 Trials For Each Run. Unconstrained ENTIRE search space analysis.
+#### NASBench-101, NASBench-201, DARTS, ENAS, DARTS_{FIXWD}, ENAS_{FIXWD}
+#### CONCLUSION : Supplementing the Adjacency Matrix with other information helps. Specifically, GNN with GAT-DenseFlow ensemble and ZCP is the best [UNCONFIRMED]
+False,exp3_enct_nb101_0,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space nb101 --representation "adj_gin"
+True,exp3_enct_nb101_1,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space nb101 --representation "adj_gin_cate"
+True,exp3_enct_nb101_2,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space nb101 --representation "adj_gin_arch2vec"
+True,exp3_enct_nb101_3,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space nb101 --representation "adj_gin_zcp"
+True,exp3_enct_nb201_0,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space nb201 --representation "adj_gin"
+True,exp3_enct_nb201_1,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space nb201 --representation "adj_gin_cate"
+True,exp3_enct_nb201_2,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space nb201 --representation "adj_gin_arch2vec"
+True,exp3_enct_nb201_3,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space nb201 --representation "adj_gin_zcp"
+True,exp3_enct_dartsfixwd_0,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space DARTS_fix-w-d --representation "adj_gin"
+True,exp3_enct_dartsfixwd_1,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space DARTS_fix-w-d --representation "adj_gin_cate"
+True,exp3_enct_dartsfixwd_2,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space DARTS_fix-w-d --representation "adj_gin_arch2vec"
+True,exp3_enct_dartsfixwd_3,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space DARTS_fix-w-d --representation "adj_gin_zcp"
+True,exp3_enct_enasfixwd_0,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space ENAS_fix-w-d --representation "adj_gin"
+True,exp3_enct_enasfixwd_1,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space ENAS_fix-w-d --representation "adj_gin_cate"
+True,exp3_enct_enasfixwd_2,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space ENAS_fix-w-d --representation "adj_gin_arch2vec"
+True,exp3_enct_enasfixwd_3,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space ENAS_fix-w-d --representation "adj_gin_zcp"
+True,exp3_enct_darts_0,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space DARTS --representation "adj_gin"
+True,exp3_enct_darts_1,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space DARTS --representation "adj_gin_cate"
+True,exp3_enct_darts_2,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space DARTS --representation "adj_gin_arch2vec"
+True,exp3_enct_darts_3,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space DARTS --representation "adj_gin_zcp"
+True,exp3_enct_enas_0,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space ENAS --representation "adj_gin"
+True,exp3_enct_enas_1,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space ENAS --representation "adj_gin_cate"
+True,exp3_enct_enas_2,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space ENAS --representation "adj_gin_arch2vec"
+True,exp3_enct_enas_3,True,30000,2,python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space ENAS --representation "adj_gin_zcp"
+# ------------------------------------------------------------[EXP4]------------------------------------------------------------------------ #
+#### Can we enable transfer of predictors with a unified operation matrix?
+#### [Use Best GNN From Previous Runs]
+#### Try: "adj_gin", "adj_gin_cate", "adj_gin_arch2vec", "adj_gin_zcp"
+#### Source sample size fixed at 2048
+#### Target sample size : [4, 8, 16]
+#### 3 Trials For Each Run. Unconstrained ENTIRE search space analysis.
+#### NB201 -> NB101; NB101 -> NB201; ENAS -> DARTS; DARTS -> ENAS; PNAS_FIXWD -> DARTS_FIXWD; NASNet -> ENAS_FIXWD
+#### CONCLUSION : Transfer Learning is possible. Specifically, GNN with GAT-DenseFlow ensemble and ZCP is the best [UNCONFIRMED]
+False,exp4_tft_nb1_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb201 --transfer_space nb101 --representation adj_gin
+False,exp4_tft_nb1_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb201 --transfer_space nb101 --representation adj_gin_cate
+False,exp4_tft_nb1_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb201 --transfer_space nb101 --representation adj_gin_arch2vec
+False,exp4_tft_nb1_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb201 --transfer_space nb101 --representation adj_gin_zcp
+False,exp4_tft_nb2_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb101 --transfer_space nb201 --representation adj_gin
+False,exp4_tft_nb2_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb101 --transfer_space nb201 --representation adj_gin_cate
+False,exp4_tft_nb2_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb101 --transfer_space nb201 --representation adj_gin_arch2vec
+False,exp4_tft_nb2_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb101 --transfer_space nb201 --representation adj_gin_zcp
+False,exp4_tft_darts_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin
+False,exp4_tft_darts_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate
+False,exp4_tft_darts_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_arch2vec
+False,exp4_tft_darts_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_zcp
+False,exp4_tft_enas_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space DARTS --transfer_space ENAS --representation adj_gin
+False,exp4_tft_enas_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space DARTS --transfer_space ENAS --representation adj_gin_cate
+False,exp4_tft_enas_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space DARTS --transfer_space ENAS --representation adj_gin_arch2vec
+False,exp4_tft_enas_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space DARTS --transfer_space ENAS --representation adj_gin_zcp
+False,exp4_tft_dartsfixwd_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space PNAS_fix-w-d --transfer_space DARTS_fix-w-d --representation adj_gin
+True,exp4_tft_dartsfixwd_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space PNAS_fix-w-d --transfer_space DARTS_fix-w-d --representation adj_gin_cate
+True,exp4_tft_dartsfixwd_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space PNAS_fix-w-d --transfer_space DARTS_fix-w-d --representation adj_gin_arch2vec
+True,exp4_tft_dartsfixwd_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space PNAS_fix-w-d --transfer_space DARTS_fix-w-d --representation adj_gin_zcp
+True,exp4_tft_enasfixwd_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --representation adj_gin
+True,exp4_tft_enasfixwd_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --representation adj_gin_cate
+True,exp4_tft_enasfixwd_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --representation adj_gin_arch2vec
+True,exp4_tft_enasfixwd_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --representation adj_gin_zcp
+# ------------------------------------------------------------[EXP411]------------------------------------------------------------------------ #
+#### [Currently, we may have to change the sample size  to a smaller number, maybe to avoid overfitting? --> ANSWERED]
+# No, 512 samples is enough, 4k doesnt overfit. [Below tests do not need to be executed]
+False,exp411_tft_darts_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate --sample_size 128 --test_batch_size 128
+False,exp411_tft_darts_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate --sample_size 256 --test_batch_size 128
+False,exp411_tft_darts_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate --sample_size 512 --test_batch_size 128
+False,exp411_tft_darts_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate --sample_size 1024 --test_batch_size 128
+False,exp411_tft_enasfixwd_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --sample_size 128 --test_batch_size 128 --representation  adj_gin_cate
+False,exp411_tft_enasfixwd_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --sample_size 256 --test_batch_size 128 --representation  adj_gin_cate
+False,exp411_tft_enasfixwd_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --sample_size 512 --test_batch_size 128 --representation  adj_gin_cate
+False,exp411_tft_enasfixwd_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --sample_size 1024 --test_batch_size 128 --representation adj_gin_cate
+False,exp411_tft_darts_jr_0,True,80000,2,python universal_main.py --seed 42 --joint_repr --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate --sample_size 128 --test_batch_size 128
+False,exp411_tft_darts_jr_1,True,80000,2,python universal_main.py --seed 42 --joint_repr --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate --sample_size 256 --test_batch_size 128
+False,exp411_tft_darts_jr_2,True,80000,2,python universal_main.py --seed 42 --joint_repr --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate --sample_size 512 --test_batch_size 128
+False,exp411_tft_darts_jr_3,True,80000,2,python universal_main.py --seed 42 --joint_repr --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate --sample_size 1024 --test_batch_size 128
+False,exp411_tft_enasfixwd_jr_0,True,80000,2,python universal_main.py --seed 42 --joint_repr --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --sample_size 128 --test_batch_size 128 --representation  adj_gin_cate
+False,exp411_tft_enasfixwd_jr_1,True,80000,2,python universal_main.py --seed 42 --joint_repr --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --sample_size 256 --test_batch_size 128 --representation  adj_gin_cate
+False,exp411_tft_enasfixwd_jr_2,True,80000,2,python universal_main.py --seed 42 --joint_repr --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --sample_size 512 --test_batch_size 128 --representation  adj_gin_cate
+False,exp411_tft_enasfixwd_jr_3,True,80000,2,python universal_main.py --seed 42 --joint_repr --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --sample_size 1024 --test_batch_size 128 --representation adj_gin_cate
+# ------------------------------------------------------------[EXP5]------------------------------------------------------------------------ #
+#### Can we enable transfer of predictors with a unified operation matrix and training CATE and Arch2Vec on the unified space?
+#### [Use Best GNN From Previous Runs]
+#### Try: "adj_gin", "adj_gin_cate", "adj_gin_arch2vec", "adj_gin_zcp"
+#### Source sample size fixed at 2048
+#### Target sample size : [4, 8, 16]
+#### 3 Trials For Each Run. Unconstrained ENTIRE search space analysis.
+#### NB201 -> NB101; NB101 -> NB201; ENAS -> DARTS; DARTS -> ENAS; PNAS_FIXWD -> DARTS_FIXWD; NASNet -> ENAS_FIXWD
+#### CONCLUSION : Transfer Learning successful. Specifically, GNN with GAT-DenseFlow ensemble and ZCP is the best [UNCONFIRMED]
+True,exp5_tft_nb1_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb201 --transfer_space nb101 --representation adj_gin
+True,exp5_tft_nb1_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb201 --transfer_space nb101 --representation adj_gin_cate
+True,exp5_tft_nb1_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb201 --transfer_space nb101 --representation adj_gin_arch2vec
+True,exp5_tft_nb1_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb201 --transfer_space nb101 --representation adj_gin_zcp
+True,exp5_tft_nb2_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb101 --transfer_space nb201 --representation adj_gin
+True,exp5_tft_nb2_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb101 --transfer_space nb201 --representation adj_gin_cate
+True,exp5_tft_nb2_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb101 --transfer_space nb201 --representation adj_gin_arch2vec
+True,exp5_tft_nb2_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb101 --transfer_space nb201 --representation adj_gin_zcp
+True,exp5_tft_darts_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin
+True,exp5_tft_darts_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate
+True,exp5_tft_darts_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_arch2vec
+True,exp5_tft_darts_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_zcp
+True,exp5_tft_enas_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space DARTS --transfer_space ENAS --representation adj_gin
+True,exp5_tft_enas_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space DARTS --transfer_space ENAS --representation adj_gin_cate
+True,exp5_tft_enas_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space DARTS --transfer_space ENAS --representation adj_gin_arch2vec
+True,exp5_tft_enas_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space DARTS --transfer_space ENAS --representation adj_gin_zcp
+True,exp5_tft_dartsfixwd_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space PNAS_fix-w-d --transfer_space DARTS_fix-w-d --representation adj_gin
+True,exp5_tft_dartsfixwd_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space PNAS_fix-w-d --transfer_space DARTS_fix-w-d --representation adj_gin_cate
+True,exp5_tft_dartsfixwd_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space PNAS_fix-w-d --transfer_space DARTS_fix-w-d --representation adj_gin_arch2vec
+True,exp5_tft_dartsfixwd_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space PNAS_fix-w-d --transfer_space DARTS_fix-w-d --representation adj_gin_zcp
+True,exp5_tft_enasfixwd_0,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --representation adj_gin
+True,exp5_tft_enasfixwd_1,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --representation adj_gin_cate
+True,exp5_tft_enasfixwd_2,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --representation adj_gin_arch2vec
+True,exp5_tft_enasfixwd_3,True,80000,2,python universal_main.py --seed 42 --name_desc exp5 --joint_repr --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space NASNet --transfer_space ENAS_fix-w-d --representation adj_gin_zcp
+# ------------------------------------------------------------[EXP6]------------------------------------------------------------------------ #
+#### Can we use these predictors for NAS?
+#### [Use Best GNN From Previous Runs]
+#### Try: "adj_gin", "adj_gin_cate", "adj_gin_arch2vec", "adj_gin_zcp"
+#### Test with "scratch_predictor (specific embedding)", "pretrained_predictor (universal embedding)", "pretrained_predictor (joint embedding)"
+#### Sample Sizes: [0, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048] ?? --> Or just give max samples, and save best for every x (10) samples 
+#### 3 Trials For Each Run. Unconstrained ENTIRE search space analysis.
+#### NASBench-101, NASBench-201, DARTS, ENAS, DARTS_{FIXWD}, ENAS_{FIXWD}
+#### CONCLUSION : Transfer Learning based search is most successful. Specifically, GNN with GAT-DenseFlow ensemble and ZCP is the best [UNCONFIRMED]
+#### NB201 -> NB101; NB101 -> NB201; ENAS -> DARTS; DARTS -> ENAS; PNAS_FIXWD -> DARTS_FIXWD; NASNet -> ENAS_FIXWD
+# No Transfer
+False,exp6_nas_nb1,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp6_nas_nb1_cate,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp6_nas_nb1_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp6_nas_nb1_zcp,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+False,exp6_nas_nb2,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp6_nas_nb2_cate,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp6_nas_nb2_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp6_nas_nb2_zcp,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+False,exp6_nas_darts,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp6_nas_darts_cate,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp6_nas_darts_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp6_nas_darts_zcp,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+False,exp6_nas_enas,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp6_nas_enas_cate,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp6_nas_enas_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp6_nas_enas_zcp,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+False,exp6_nas_dartsfwd,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp6_nas_dartsfwd_cate,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp6_nas_dartsfwd_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp6_nas_dartsfwd_zcp,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+False,exp6_nas_enasfwd,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp6_nas_enasfwd_cate,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp6_nas_enasfwd_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp6_nas_enasfwd_zcp,True,80000,2,python search.py --seed 42 --name_desc exp6 --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+# Transfer Unified Op
+False,exp7_nas_s_nb2_nb1,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space nb201 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp7_nas_s_nb2_nb1_cate,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space nb201 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp7_nas_s_nb2_nb1_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space nb201 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp7_nas_s_nb2_nb1_zcp,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space nb201 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+False,exp7_nas_s_nb1_nb2,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space nb101 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp7_nas_s_nb1_nb2_cate,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space nb101 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp7_nas_s_nb1_nb2_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space nb101 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp7_nas_s_nb1_nb2_zcp,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space nb101 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+False,exp7_nas_s_enas_darts,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space ENAS --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp7_nas_s_enas_darts_cate,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space ENAS --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp7_nas_s_enas_darts_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space ENAS --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp7_nas_s_enas_darts_zcp,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space ENAS --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+False,exp7_nas_s_darts_enas,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space DARTS --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp7_nas_s_darts_enas_cate,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space DARTS --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp7_nas_s_darts_enas_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space DARTS --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp7_nas_s_darts_enas_zcp,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space DARTS --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+False,exp7_nas_dartsfwd,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space PNAS_fix-w-d --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp7_nas_dartsfwd_cate,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space PNAS_fix-w-d --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp7_nas_dartsfwd_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space PNAS_fix-w-d --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp7_nas_dartsfwd_zcp,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space PNAS_fix-w-d --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+False,exp7_nas_enasfwd,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space NASNet --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin
+False,exp7_nas_enasfwd_cate,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space NASNet --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate
+False,exp7_nas_enasfwd_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space NASNet --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec
+False,exp7_nas_enasfwd_zcp,True,80000,2,python search.py --seed 42 --name_desc exp7 --source_space NASNet --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp
+# Transfer Unified Op Unified Enc
+False,exp8_nas_s_nb2_nb1,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space nb201 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin --joint_repr
+False,exp8_nas_s_nb2_nb1_cate,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space nb201 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate --joint_repr
+False,exp8_nas_s_nb2_nb1_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space nb201 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec --joint_repr
+False,exp8_nas_s_nb2_nb1_zcp,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space nb201 --target_space nb101 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp --joint_repr
+False,exp8_nas_s_nb1_nb2,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space nb101 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin --joint_repr
+False,exp8_nas_s_nb1_nb2_cate,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space nb101 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate --joint_repr
+False,exp8_nas_s_nb1_nb2_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space nb101 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec --joint_repr
+False,exp8_nas_s_nb1_nb2_zcp,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space nb101 --target_space nb201 --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp --joint_repr
+False,exp8_nas_s_enas_darts,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space ENAS --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin --joint_repr
+False,exp8_nas_s_enas_darts_cate,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space ENAS --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate --joint_repr
+False,exp8_nas_s_enas_darts_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space ENAS --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec --joint_repr
+False,exp8_nas_s_enas_darts_zcp,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space ENAS --target_space DARTS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp --joint_repr
+False,exp8_nas_s_darts_enas,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space DARTS --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin --joint_repr
+False,exp8_nas_s_darts_enas_cate,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space DARTS --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate --joint_repr
+False,exp8_nas_s_darts_enas_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space DARTS --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec --joint_repr
+False,exp8_nas_s_darts_enas_zcp,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space DARTS --target_space ENAS --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp --joint_repr
+False,exp8_nas_dartsfwd,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space PNAS_fix-w-d --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin --joint_repr
+False,exp8_nas_dartsfwd_cate,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space PNAS_fix-w-d --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate --joint_repr
+False,exp8_nas_dartsfwd_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space PNAS_fix-w-d --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec --joint_repr
+False,exp8_nas_dartsfwd_zcp,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space PNAS_fix-w-d --target_space DARTS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp --joint_repr
+False,exp8_nas_enasfwd,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space NASNet --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin --joint_repr
+False,exp8_nas_enasfwd_cate,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space NASNet --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_cate --joint_repr
+False,exp8_nas_enasfwd_arch2vec,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space NASNet --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_arch2vec --joint_repr
+False,exp8_nas_enasfwd_zcp,True,80000,2,python search.py --seed 42 --name_desc exp8 --source_space NASNet --target_space ENAS_fix-w-d --gnn_type ensemble --back_dense --periter_samps 10 --samp_lim 4000 --representation adj_gin_zcp --joint_repr
+# ------------------------------------------------------------[EXP?]------------------------------------------------------------------------ #

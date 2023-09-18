@@ -202,6 +202,7 @@ class AllSS:
                 adj_op_mat = eval("self." + space).get_adj_op(idx)
                 opmat = np.asarray(adj_op_mat["module_operations"])
                 final_mat = self.pad_operation_matrix(opmat, space)
+                new_adj_op_mat = copy.deepcopy(adj_op_mat)
                 new_adj_op_mat["module_operations"] = final_mat.tolist()
             else:
                 adj_op_mat = self.nds.get_adj_op(idx, space=space)

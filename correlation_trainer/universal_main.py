@@ -33,11 +33,11 @@ parser.add_argument('--gnn_type', type=str, default='dense')         # dense, ga
 parser.add_argument('--num_trials', type=int, default=3)
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
-parser.add_argument('--sample_size', type=int, default=4000)
+parser.add_argument('--sample_size', type=int, default=512)
 parser.add_argument('--transfer_sample_sizes', nargs='+', type=int, default=[4, 8, 16, 32]) # Default NB101
 parser.add_argument('--device', type=str, default='cuda:0')
 parser.add_argument('--batch_size', type=int, default=16)
-parser.add_argument('--test_batch_size', type=int, default=5000)
+parser.add_argument('--test_batch_size', type=int, default=128)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--timesteps', type=int, default=2)
 parser.add_argument('--test_size', type=int, default=None)
@@ -311,7 +311,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space).values()
                     method_name = 'get_{}'.format(representation.split("_")[-1])
                     method_to_call = getattr(embedding_gen, method_name)
-                    zcp_ = method_to_call(i, space=space)
+                    zcp_ = method_to_call(i, space=space, joint=args.joint_repr)
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
                     accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zcp_)))

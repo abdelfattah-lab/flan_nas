@@ -2,7 +2,7 @@ import pandas as pd
 import os, re
 
 # Directory
-dir_exp1 = "correlation_results/exp1"
+dir_exp3 = "correlation_results/exp3"
 
 def surround_with_dollar(value):
     # Check if value matches the pattern 0.2002_{0.0001} or is a number
@@ -38,7 +38,7 @@ def load_csvs_from_directory(directory):
     return dfs
 
 # Load CSVs
-exp1_dfs = load_csvs_from_directory(dir_exp1)
+exp1_dfs = load_csvs_from_directory(dir_exp3)
 
 # Concatenate all dataframes
 df = pd.concat(exp1_dfs, axis=0, ignore_index=True)

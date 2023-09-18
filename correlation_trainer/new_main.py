@@ -33,7 +33,7 @@ parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--sample_sizes', nargs='+', type=int, default=[72, 364, 728, 3645, 7280]) # Default NB101
 parser.add_argument('--device', type=str, default='cuda:0')
 parser.add_argument('--batch_size', type=int, default=16)
-parser.add_argument('--test_batch_size', type=int, default=5000)
+parser.add_argument('--test_batch_size', type=int, default=128)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--timesteps', type=int, default=2)
 parser.add_argument('--test_size', type=int, default=None)

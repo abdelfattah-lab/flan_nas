@@ -22,11 +22,12 @@ rep_mapping = {
     }
 
 mode_mapping = {
-    'dense': '$_{DGF}$',
-    'ensemble': '$_{DGF.GAT}$',
-    'gat': '$_{GAT}$',
-    'gat_mh': '$_{MHGAT}$',
+    'dense': '$^{dgf}_{dgf}$',
+    'ensemble': '$^{dgf.gat}_{dgf.gat}$',
+    'gat': '$^{gat}_{gat}$',
+    'gat_mh': '$%{mhgat}_{mhgat}$',
 }
+
 # Create a new column combining 'representation', 'gnn_type', and 'back_dense'
 def create_column_name(row):
     if row['representation'] in ["arch2vec", "cate", "zcp", "adj_mlp"]:
@@ -35,7 +36,8 @@ def create_column_name(row):
         name = f"{row['representation']}{mode_mapping[row['gnn_type']]}"
         if row['back_dense']:
             # name += "_back_dense"
-            name = name[:-2] + "-bd}$"
+            # name = name[:-2] + "-bd}$"
+            name = name[:-6] + "}$"
         return name
 
 

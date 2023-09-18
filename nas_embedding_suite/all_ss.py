@@ -185,8 +185,7 @@ class AllSS:
         if space in ["nb101", "nb201", "nb301", "tb101"]:
             return [0, 0]
         else:
-            return [self.nds.space_dicts[space][idx]['net']['width'], \
-                    self.nds.space_dicts[space][idx]['net']['depth']]
+            return self.nds.get_norm_w_d(idx, space=space)
     
     def get_params(self, idx, space, task="class_scene"):
         if space in ["nb101", "nb201", "nb301", "tb101"]:

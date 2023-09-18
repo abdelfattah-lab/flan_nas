@@ -230,12 +230,12 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
             sample_indexes = nb101_tagates_sample_indices
     else:
         if mode == "train":
-            if args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+            if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                 sample_indexes = random.sample(range(embedding_gen.get_numitems(space)-1), sample_count)
             else:
                 sample_indexes = random.sample(range(embedding_gen.get_numitems()-1), sample_count)
         else:
-            if args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+            if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                 remaining_indexes = list(set(range(embedding_gen.get_numitems(space)-1)) - set(train_indexes))
             else:
                 remaining_indexes = list(set(range(embedding_gen.get_numitems()-1)) - set(train_indexes))
@@ -247,10 +247,10 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
         if representation == "adj_mlp": # adj_mlp --> FullyConnectedNN
             for i in tqdm(sample_indexes):
                 if space not in ["nb101", "nb201", "nb301", "tb101"]:
-                    adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=args.space).values()
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=space).values()
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
-                    accs.append(embedding_gen.get_valacc(i, space=args.space))
+                    accs.append(embedding_gen.get_valacc(i, space=space))
                     adj_mat_norm = np.asarray(adj_mat_norm).flatten()
                     adj_mat_red = np.asarray(adj_mat_red).flatten()
                     op_mat_norm = torch.Tensor(np.asarray(op_mat_norm)).argmax(dim=1).numpy().flatten() # Careful here.
@@ -262,7 +262,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                         accs.append(embedding_gen.get_valacc(i, task=args.task))
                     else:
                         accs.append(embedding_gen.get_valacc(i))
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     adj_mat = np.asarray(adj_mat).flatten()
                     op_mat = torch.Tensor(np.asarray(op_mat)).argmax(dim=1).numpy().flatten() # Careful here.
@@ -270,15 +270,15 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
         else:                           # zcp, arch2vec, cate --> FullyConnectedNN
             for i in tqdm(sample_indexes):
                 if space in ['nb101', 'nb201', 'nb301']:
-                    exec('representations.append(np.concatenate((embedding_gen.get_{}(i), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, args.space))
+                    exec('representations.append(np.concatenate((embedding_gen.get_{}(i), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, space))
                 elif space=='tb101':
                     exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}"), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, args.task, args.task))
                 else:
-                    exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}"), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, args.space, args.space))
+                    exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}"), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, space, space))
                 if space=='tb101':
                     accs.append(embedding_gen.get_valacc(i, task=args.task))
                 elif space not in ['nb101', 'nb201', 'nb301']:
-                    accs.append(embedding_gen.get_valacc(i, space=args.space))
+                    accs.append(embedding_gen.get_valacc(i, space=space))
                 else:
                     accs.append(embedding_gen.get_valacc(i))
         representations = torch.stack([torch.FloatTensor(nxx) for nxx in representations])
@@ -287,35 +287,35 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
         if args.representation == "adj_gin":
             for i in tqdm(sample_indexes):
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
-                    adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=args.space).values()
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=space).values()
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat_norm = torch.Tensor(np.array(op_mat_norm)).argmax(dim=1)
                     op_mat_red = torch.Tensor(np.array(op_mat_red)).argmax(dim=1)
-                    accs.append(embedding_gen.get_valacc(i, space=args.space))
+                    accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red), torch.Tensor(norm_w_d)))
                 else:
                     adj_mat, op_mat = embedding_gen.get_adj_op(i).values()
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     if space == 'tb101':
-                        accs.append(embedding_gen.get_valacc(i, task=args.task))
+                        accs.append(embedding_gen.get_valacc(i, task=task))
                     else:
                         accs.append(embedding_gen.get_valacc(i))
                     representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat), torch.Tensor(norm_w_d)))
         else: # "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"
             for i in tqdm(sample_indexes):
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
-                    adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=args.space).values()
+                    adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=space).values()
                     method_name = 'get_{}'.format(args.representation.split("_")[-1])
                     method_to_call = getattr(embedding_gen, method_name)
-                    zcp_ = method_to_call(i, space=args.space)
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    zcp_ = method_to_call(i, space=space)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat_norm = torch.Tensor(np.array(op_mat_norm)).argmax(dim=1)
                     op_mat_red = torch.Tensor(np.array(op_mat_red)).argmax(dim=1)
-                    accs.append(embedding_gen.get_valacc(i, space=args.space))
+                    accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red), torch.Tensor(zcp_), torch.Tensor(norm_w_d)))
                 else:
                     adj_mat, op_mat = embedding_gen.get_adj_op(i).values()
@@ -325,7 +325,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                         zcp_ = method_to_call(i, task=args.task)
                     else:
                         zcp_ = method_to_call(i)
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
                     if space == 'tb101':

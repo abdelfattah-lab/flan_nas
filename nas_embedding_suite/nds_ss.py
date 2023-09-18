@@ -110,8 +110,12 @@ class NDS:
         return len(self.space_dicts[space])
 
     def get_norm_w_d(self, idx, space="Amoeba"):
-        return [self.space_dicts[space][idx]['net']['width']/32., \
-                self.space_dicts[space][idx]['net']['depth']/20.]
+        try:
+            return [self.space_dicts[space][idx]['net']['width']/32., \
+                    self.space_dicts[space][idx]['net']['depth']/20.]
+        except:
+            print("WARNING: No width/depth information found for idx: ", idx, ",", space)
+            exit(0)
     ##################### Key Functions End #####################
 
     def get_flops(self, idx, space="Amoeba"):

@@ -78,14 +78,14 @@ if args.seed is not None:
 nb101_train_tagates_sample_indices, \
     nb101_tagates_sample_indices = get_tagates_sample_indices(args)
 
-def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloader, epoch):
+def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, test_dataloader, epoch):
     model.training = True
     model.train()
     running_loss = 0.0
     for inputs, targets in dataloader:
-        if inputs[0].shape[0] == 1 and args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+        if inputs[0].shape[0] == 1 and space in ['nb101', 'nb201', 'nb301', 'tb101']:
             continue
-        elif inputs[0].shape[0] == 2 and args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+        elif inputs[0].shape[0] == 2 and space not in ['nb101', 'nb201', 'nb301', 'tb101']:
             continue
         #### Params for PWL Loss
         accs = targets
@@ -112,7 +112,7 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
             X_input_2 = archs_2[0].to(device)
             s_2 = model(X_input_2).squeeze()
         elif args.representation in ["adj_gin"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))),
                         torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))),
                         torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[1])))]
@@ -139,7 +139,7 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
                 X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, norm_w_d_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device)
                 s_2 = model(x_ops_1=X_ops_a_2, x_adj_1=X_adj_a_2.to(torch.long), x_ops_2=X_ops_b_2, x_adj_2=X_adj_b_2.to(torch.long), zcp=None, norm_w_d=norm_w_d_2).squeeze()
         elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))),
                         torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))),
                         torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[1]))),
@@ -192,12 +192,12 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
             pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())
         elif args.representation in ["adj_gin"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None, norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
             else:
                 pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=None, norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
         elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=reprs[2].to(device), norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
             else:
                 pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=reprs[4].to(device), norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
@@ -209,46 +209,7 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
     num_test_items = len(pred_scores)
     return model, num_test_items, running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
 
-def test(args, model, dataloader, criterion):
-    model.training = False
-    model.eval()
-    running_loss = 0.0
-    numitems = 0
-    with torch.no_grad():
-        pred_scores, true_scores = [], []
-        for idx, (reprs, scores) in enumerate(dataloader):
-            if idx < 10:
-                if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
-                    pred_ = model(reprs.to(device)).squeeze().detach().cpu()
-                elif args.representation in ["adj_gin"]:
-                    if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                        pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None).squeeze().detach().cpu()
-                    else:
-                        pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=None).squeeze().detach().cpu()
-                elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
-                    if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                        pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=reprs[2].to(device)).squeeze().detach().cpu()
-                    else:
-                        pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=reprs[4].to(device)).squeeze().detach().cpu()
-                else:
-                    raise NotImplementedError
-                running_loss += criterion(pred_, scores).item()
-                pred_scores.append(pred_.tolist())
-                true_scores.append(scores.cpu().tolist())
-        pred_scores = [t for sublist in pred_scores for t in sublist]
-        true_scores = [t for sublist in true_scores for t in sublist]
-        num_items = len(pred_scores)
-    return running_loss / len(dataloader), num_items, spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
-
-
 sys.path.append("..")
-# if args.space in ['Amoeba', 'DARTS', 'DARTS_fix-w-d', 'DARTS_lr-wd', 'ENAS', 'ENAS_fix-w-d', 'NASNet', 'PNAS', 'PNAS_fix-w-d']:
-#     from nas_embedding_suite.nds_ss import NDS as EmbGenClass
-# elif args.space in ['nb101', 'nb201', 'nb301']:
-#     exec("from nas_embedding_suite.nb{}_ss import NASBench{} as EmbGenClass".format(args.space[-3:], args.space[-3:]))
-# elif args.space in ['tb101']:
-#     from nas_embedding_suite.tb101_micro_ss import TransNASBench101Micro as EmbGenClass
-
 from nas_embedding_suite.all_ss import AllSS as EmbGenClass
 embedding_gen = EmbGenClass()
 
@@ -271,10 +232,10 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
         if representation == "adj_mlp": # adj_mlp --> FullyConnectedNN
             for i in tqdm(sample_indexes):
                 if space not in ["nb101", "nb201", "nb301", "tb101"]:
-                    adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=args.space).values()
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=space).values()
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
-                    accs.append(embedding_gen.get_valacc(i, space=args.space))
+                    accs.append(embedding_gen.get_valacc(i, space=space))
                     adj_mat_norm = np.asarray(adj_mat_norm).flatten()
                     adj_mat_red = np.asarray(adj_mat_red).flatten()
                     op_mat_norm = torch.Tensor(np.asarray(op_mat_norm)).argmax(dim=1).numpy().flatten() # Careful here.
@@ -286,23 +247,24 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                         accs.append(embedding_gen.get_valacc(i, task=args.task))
                     else:
                         accs.append(embedding_gen.get_valacc(i))
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     adj_mat = np.asarray(adj_mat).flatten()
                     op_mat = torch.Tensor(np.asarray(op_mat)).argmax(dim=1).numpy().flatten() # Careful here.
                     representations.append(np.concatenate((adj_mat, op_mat, norm_w_d)).tolist())
         else:                           # zcp, arch2vec, cate --> FullyConnectedNN
             for i in tqdm(sample_indexes):
-                exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}", joint={}), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, space, args.joint_repr, args.space))
+                exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}", joint={}), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, space, args.joint_repr, space))
                 accs.append(embedding_gen.get_valacc(i, space=space))
         representations = torch.stack([torch.FloatTensor(nxx) for nxx in representations])
     else: # adj_gin, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate --> GIN_Model
         assert representation in ["adj_gin", "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"], "Representation Not Supported!"
         if representation == "adj_gin":
             for i in tqdm(sample_indexes):
+                if i == 4999 and space
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                     adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=space).values()
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat_norm = torch.Tensor(np.array(op_mat_norm)).argmax(dim=1)
                     op_mat_red = torch.Tensor(np.array(op_mat_red)).argmax(dim=1)
@@ -311,7 +273,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                 else:
                     adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space).values()
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat), torch.Tensor(norm_w_d)))
@@ -322,7 +284,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     method_name = 'get_{}'.format(representation.split("_")[-1])
                     method_to_call = getattr(embedding_gen, method_name)
                     zcp_ = method_to_call(i, space=space, joint=args.joint_repr)
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat_norm = torch.Tensor(np.array(op_mat_norm)).argmax(dim=1)
                     op_mat_red = torch.Tensor(np.array(op_mat_red)).argmax(dim=1)
@@ -333,7 +295,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     method_name = 'get_{}'.format(representation.split("_")[-1])
                     method_to_call = getattr(embedding_gen, method_name)
                     zcp_ = method_to_call(i, space=space, joint=args.joint_repr)
-                    norm_w_d = embedding_gen.get_norm_w_d(i, space=args.space)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
                     accs.append(embedding_gen.get_valacc(i, space=space))
@@ -419,9 +381,9 @@ for tr_ in range(args.num_trials):
             # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
         elif args.loss_type == "pwl":
             if epoch > args.epochs - 5:
-                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_full, epoch)
+                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_full, epoch)
             else:
-                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_smallset, epoch)
+                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_smallset, epoch)
         else:
             raise NotImplementedError
         # test_loss, num_test_items, test_spearmanr, test_kendalltau = test(args, model, test_dataloader, criterion)
@@ -459,9 +421,9 @@ for tr_ in range(args.num_trials):
                 # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
             elif args.loss_type == "pwl":
                 if epoch > args.transfer_epochs - 5:
-                    model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, transfer_dataloader, criterion, optimizer, scheduler, test_dataloader_target_full, epoch)
+                    model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.transfer_space, model, transfer_dataloader, criterion, optimizer, scheduler, test_dataloader_target_full, epoch)
                 else:
-                    model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, transfer_dataloader, criterion, optimizer, scheduler, test_dataloader_target_smallset, epoch)
+                    model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.transfer_space, model, transfer_dataloader, criterion, optimizer, scheduler, test_dataloader_target_smallset, epoch)
             else:
                 raise NotImplementedError
             # test_loss, num_test_items, test_spearmanr, test_kendalltau = test(args, model, test_dataloader, criterion)

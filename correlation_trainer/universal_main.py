@@ -31,6 +31,7 @@ parser.add_argument('--loss_type', type=str, default='pwl')          # mse, pwl 
 parser.add_argument('--back_dense', action="store_true")           # If True, backward flow will be DenseFlow
 parser.add_argument('--gnn_type', type=str, default='dense')         # dense, gat, gat_mh, ensemble supported
 parser.add_argument('--num_trials', type=int, default=3)
+parser.add_argument('--no_modify_emb_pretransfer', action='store_true')
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--sample_size', type=int, default=512)
@@ -56,6 +57,10 @@ args = parser.parse_args()
 device = args.device
 transfer_sample_tests = {}
 transfer_sample_tests[args.transfer_space] = args.transfer_sample_sizes
+if args.no_modify_emb_pretransfer:
+    args.modify_emb_pretransfer = False
+else:
+    args.modify_emb_pretransfer = True
 
 assert args.name_desc is not None, "Please provide a name description for the experiment."
 
@@ -317,7 +322,7 @@ for tr_ in range(args.num_trials):
     if representation == "adj_gin":
         # input_dim = max(next(iter(train_dataloader))[0][1].shape[1], next(iter(transfer_dataloader))[0][1].shape[1])
         input_dim = next(iter(train_dataloader))[0][1].shape[1]
-        none_op_ind = 50 # placeholder
+        none_op_ind = 130 # placeholder
         if args.space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
@@ -341,7 +346,7 @@ for tr_ in range(args.num_trials):
         # input_dim = max(next(iter(train_dataloader))[0][1].shape[1], next(iter(transfer_dataloader))[0][1].shape[1])
         input_dim = next(iter(train_dataloader))[0][1].shape[1]
         num_zcps = next(iter(train_dataloader))[0][-2].shape[1]
-        none_op_ind = 50
+        none_op_ind = 130
         if args.space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
@@ -394,8 +399,27 @@ for tr_ in range(args.num_trials):
         else:
             print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
     preserved_state = copy.deepcopy(model.state_dict())
+    # import pdb; pdb.set_trace()
+    # Ideally, we want to find the indexes of the transfer space embeddings and initialize it with the train space embeddings
+    # Find the index rows of the train space embeddings with the embedding_gen.ss_mapper_oprange
+# if True:
+    num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.space]
+    source_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
+    source_end_idx = source_start_idx + num_ops
+    # Find the index rows of the transfer space embeddings with the embedding_gen.ss_mapper_oprange
+# if True:
+    num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.transfer_space]
+    transfer_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
+    transfer_end_idx = transfer_start_idx + num_ops
+    # Initialize the transfer space embeddings with the train space embeddings
+    # model.state_dict()['fc1.weight'][transfer_start_idx:transfer_end_idx] = preserved_state['fc1.weight'][source_start_idx:source_end_idx]
+# if True:
     for transfer_sample_count in transfer_sample_counts:
         model.load_state_dict(preserved_state)
+        if args.modify_emb_pretransfer:
+            modified_tensor = model.op_emb.weight.clone()
+            modified_tensor[transfer_start_idx:transfer_end_idx] = torch.cat((preserved_state['op_emb.weight'][source_start_idx:source_end_idx].detach(),)*40, dim=0)[:(transfer_end_idx - transfer_start_idx)]
+            model.op_emb.weight.data = modified_tensor
         if transfer_sample_count > 32:
             args.batch_size = int(transfer_sample_count//4)
         transfer_dataloader, transfer_indexes = get_dataloader(args, embedding_gen, args.transfer_space, sample_count=transfer_sample_count, representation=representation, mode='transfer')

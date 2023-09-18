@@ -354,7 +354,7 @@ for tr_ in range(args.num_trials):
 
         if representation == "adj_gin":
             input_dim = next(iter(train_dataloader))[0][1].shape[1]
-            none_op_ind = 50 # placeholder
+            none_op_ind = 130 # placeholder
             if args.space in ["nb101", "nb201", "nb301", "tb101"]:
                 model = GIN_Model(device=args.device,
                                 gtype = args.gnn_type,
@@ -376,7 +376,7 @@ for tr_ in range(args.num_trials):
         elif representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
             input_dim = next(iter(train_dataloader))[0][1].shape[1]
             num_zcps = next(iter(train_dataloader))[0][-2].shape[1]
-            none_op_ind = 50
+            none_op_ind = 130 # placeholder
             if args.space in ["nb101", "nb201", "nb301", "tb101"]:
                 model = GIN_Model(device=args.device,
                                 gtype = args.gnn_type,

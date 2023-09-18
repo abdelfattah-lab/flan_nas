@@ -91,6 +91,12 @@ class AllSS:
             self.joint_cate_idxer[space] = self.cate_f_ss[self.cate_f_ss["label"] == class_map].values[:, :-1]
         self.max_oplen = self.get_max_oplen()
         print("Time taken to load all_ss: {}".format(time.time() - start_))
+        self.ss_mapper_oprange = {}
+        for space, space_idx in self.ss_mapper.items():
+            if space in ["nb101", "nb201", "nb301", "tb101"]:
+                exec(f'self.ss_mapper_oprange[space] = (np.asarray(self.{space}.get_adj_op(0)["module_operations"]).shape[-1], space_idx)')
+            else:
+                exec(f'self.ss_mapper_oprange[space] = (np.asarray(self.nds.get_adj_op(0, space="{space}")["normal_ops"]).shape[-1], space_idx)')
 
     def prep_cate_joint(self):
         features = []
@@ -138,39 +144,74 @@ class AllSS:
         # from arch2vec_f_ss, get the indices where label == class_idx
         idxs = self.arch2vec_f_ss[self.arch2vec_f_ss["label"] == class_idx].index.tolist()
         return idxs
-    
-    def get_adj_op(self, idx, space):
-        if space in ["nb101", "nb201", "nb301", "tb101"]:
-            adj_op_mat = eval("self." + space).get_adj_op(idx)
-            opmat = np.asarray(adj_op_mat["module_operations"])
-            # opmat will have a shape like 7 x 5
-            # Convert it into 7 x max_oplen with leading zero padding
-            padded_opmat = np.zeros((opmat.shape[0], self.max_oplen))
-            for i in range(opmat.shape[0]):
-                padded_opmat[i, -opmat.shape[1]:] = opmat[i]
-            # ss_pad will have a 1 x 4 opmat will have a shape 7 x max_oplen
-            # replicate ss_pad on each row of opmat to make it 7 x (max_oplen + 4)
-            ss_pad = self.ss_to_binary(space) 
-            final_mat = np.hstack([padded_opmat, np.tile(ss_pad, (padded_opmat.shape[0], 1))])
-            new_adj_op_mat = copy.deepcopy(adj_op_mat)
-            new_adj_op_mat["module_operations"] = final_mat.tolist()
-        else:
-            adj_op_mat = self.nds.get_adj_op(idx, space=space)
-            new_adj_op_mat = copy.deepcopy(adj_op_mat)
-            for matkey in ["reduce_ops", "normal_ops"]:
-                ropmat = np.asarray(new_adj_op_mat[matkey])
+
+    def pad_operation_matrix(self, op_matrix, space_name):
+        # Calculate the total number of operations across all search spaces
+        total_ops = sum([x[0] for x in self.ss_mapper_oprange.values()])
+        
+        # Create a zero matrix of size (num_edges, total_number_of_operations)
+        padded_matrix = np.zeros((op_matrix.shape[0], total_ops))
+        
+        # Get the number of operations and space index for the given search space
+        num_ops, space_idx = self.ss_mapper_oprange[space_name]
+        
+        # Calculate the start and end column indices for the operation matrix
+        start_idx = sum([x[0] for _, x in sorted(self.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
+        end_idx = start_idx + num_ops
+        
+        # Fill in the appropriate columns of the zero matrix
+        padded_matrix[:, start_idx:end_idx] = op_matrix
+        
+        return padded_matrix
+
+
+    def get_adj_op(self, idx, space, bin_space=False):
+        if bin_space:
+            if space in ["nb101", "nb201", "nb301", "tb101"]:
+                adj_op_mat = eval("self." + space).get_adj_op(idx)
+                opmat = np.asarray(adj_op_mat["module_operations"])
                 # opmat will have a shape like 7 x 5
                 # Convert it into 7 x max_oplen with leading zero padding
-                padded_ropmat = np.zeros((ropmat.shape[0], self.max_oplen))
-                for i in range(ropmat.shape[0]):
-                    padded_ropmat[i, -ropmat.shape[1]:] = ropmat[i]
+                padded_opmat = np.zeros((opmat.shape[0], self.max_oplen))
+                for i in range(opmat.shape[0]):
+                    padded_opmat[i, -opmat.shape[1]:] = opmat[i]
                 # ss_pad will have a 1 x 4 opmat will have a shape 7 x max_oplen
                 # replicate ss_pad on each row of opmat to make it 7 x (max_oplen + 4)
                 ss_pad = self.ss_to_binary(space) 
-                final_mat = np.hstack([padded_ropmat, np.tile(ss_pad, (padded_ropmat.shape[0], 1))])
-                new_adj_op_mat[matkey] = final_mat.tolist()
-        return new_adj_op_mat
-    
+                final_mat = np.hstack([padded_opmat, np.tile(ss_pad, (padded_opmat.shape[0], 1))])
+                new_adj_op_mat = copy.deepcopy(adj_op_mat)
+                new_adj_op_mat["module_operations"] = final_mat.tolist()
+            else:
+                adj_op_mat = self.nds.get_adj_op(idx, space=space)
+                new_adj_op_mat = copy.deepcopy(adj_op_mat)
+                for matkey in ["reduce_ops", "normal_ops"]:
+                    ropmat = np.asarray(new_adj_op_mat[matkey])
+                    # opmat will have a shape like 7 x 5
+                    # Convert it into 7 x max_oplen with leading zero padding
+                    padded_ropmat = np.zeros((ropmat.shape[0], self.max_oplen))
+                    for i in range(ropmat.shape[0]):
+                        padded_ropmat[i, -ropmat.shape[1]:] = ropmat[i]
+                    # ss_pad will have a 1 x 4 opmat will have a shape 7 x max_oplen
+                    # replicate ss_pad on each row of opmat to make it 7 x (max_oplen + 4)
+                    ss_pad = self.ss_to_binary(space) 
+                    final_mat = np.hstack([padded_ropmat, np.tile(ss_pad, (padded_ropmat.shape[0], 1))])
+                    new_adj_op_mat[matkey] = final_mat.tolist()
+            return new_adj_op_mat
+        else:
+            if space in ["nb101", "nb201", "nb301", "tb101"]:
+                adj_op_mat = eval("self." + space).get_adj_op(idx)
+                opmat = np.asarray(adj_op_mat["module_operations"])
+                final_mat = self.pad_operation_matrix(opmat, space)
+                new_adj_op_mat["module_operations"] = final_mat.tolist()
+            else:
+                adj_op_mat = self.nds.get_adj_op(idx, space=space)
+                new_adj_op_mat = copy.deepcopy(adj_op_mat)
+                for matkey in ["reduce_ops", "normal_ops"]:
+                    ropmat = np.asarray(new_adj_op_mat[matkey])
+                    final_mat = self.pad_operation_matrix(ropmat, space)
+                    new_adj_op_mat[matkey] = final_mat.tolist()
+            return new_adj_op_mat
+        
     def get_zcp(self, idx, space, task="class_scene", joint=None):
         if space in ["nb101", "nb201", "nb301", "tb101"]:
             if space == "tb101":

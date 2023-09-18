@@ -261,7 +261,6 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
         assert representation in ["adj_gin", "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"], "Representation Not Supported!"
         if representation == "adj_gin":
             for i in tqdm(sample_indexes):
-                if i == 4999 and space
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                     adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=space).values()
                     norm_w_d = embedding_gen.get_norm_w_d(i, space=space)

@@ -37,7 +37,7 @@ parser.add_argument('--no_modify_emb_pretransfer', action='store_true')
 parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--device', type=str, default='cuda:0')
 parser.add_argument('--batch_size', type=int, default=16)
-parser.add_argument('--test_batch_size', type=int, default=5000)
+parser.add_argument('--test_batch_size', type=int, default=128)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--timesteps', type=int, default=2)
 parser.add_argument('--test_size', type=int, default=None)
@@ -501,7 +501,7 @@ else:
     model.to(device)
     preserved_state = copy.deepcopy(model.state_dict())
 
-jli = list(range(embedding_gen.get_numitems(space=args.target_space)))
+jli = embedding_gen.get_ss_idxrange(space=args.target_space)
 jli_min = min(jli)
 jli = [zlm - jli_min for zlm in jli]
 full_target_space, _ = get_dataloader(args, embedding_gen, args.target_space, sample_count=None, representation=representation, mode='test', train_indexes=None, fetch_fixed_index=jli)
@@ -537,10 +537,18 @@ for tr_ in range(args.num_trials):
     params_optimize = list(model.parameters())
     optimizer = torch.optim.AdamW(params_optimize, lr = args.transfer_lr, weight_decay = args.weight_decay)
     scheduler = CosineAnnealingLR(optimizer, T_max = args.transf_ep, eta_min = args.eta_min)
+    model.vertices = next(iter(mini_target_space))[0][1].shape[1]
+    if args.target_space not in ["nb101", "nb201", "nb301", "tb101"]:
+        model.dual_gcn = True
+    if args.target_space in ["nb101", "nb201", "nb301", "tb101"]:
+        model.dual_gcn = False
     for num_samps in list(range(args.periter_samps, args.samp_lim, args.periter_samps)):
         # predict score on entire search space
         pred_scores = get_all_scores(model, full_target_space, space=args.target_space)
-        best_candidates = sorted(zip(list(range(embedding_gen.get_numitems(space=args.target_space))), pred_scores), key=lambda p: p[1], reverse=True)
+        jli = embedding_gen.get_ss_idxrange(space=args.target_space)
+        jli_min = min(jli)
+        jli = [zlm - jli_min for zlm in jli]
+        best_candidates = sorted(zip(jli, pred_scores), key=lambda p: p[1], reverse=True)
             # iterate best_candidates, and if index, doesnt match, add it to sampled_indexes.
         # Sample best candidates
         cand_tracker = 0
@@ -552,15 +560,17 @@ for tr_ in range(args.num_trials):
                 accuracy_predicted.append(cand[1])
                 accuracy_sampled.append(embedding_gen.get_valacc(cand[0], space=args.target_space))
             cand_tracker += 1
-        
+
+        # Sample random candidates
+        rand_indx = random.sample(set(jli) - set(sampled_indexes), args.periter_samps//2)
+        # insert all elements in rand_indx to sampled_indexes
+        sampled_indexes.extend(rand_indx)
+        for idx in rand_indx:
+            accuracy_sampled.append(embedding_gen.get_valacc(idx, space=args.target_space))
         # Calculate statistics for the current num_samps
         best_accuracies.setdefault(len(sampled_indexes), []).append(max(accuracy_sampled))
         median_accuracies.setdefault(len(sampled_indexes), []).append(np.median(accuracy_sampled))
         mean_accuracies.setdefault(len(sampled_indexes), []).append(np.mean(accuracy_sampled))
-        # Sample random candidates
-        rand_indx = random.sample(set(list(range(embedding_gen.get_numitems(space=args.target_space)))) - set(sampled_indexes), args.periter_samps//2)
-        # insert all elements in rand_indx to sampled_indexes
-        sampled_indexes.extend(rand_indx)
         # create new dataloader with sampled_indexes
         train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.target_space, sample_count=None, fetch_fixed_index=sampled_indexes, representation=representation, mode='transfer')
         # full_target_space
@@ -593,6 +603,9 @@ if not os.path.exists(f'search_results/'):
 if not os.path.exists(f'search_results/{args.name_desc}/'):
     os.makedirs(f'search_results/{args.name_desc}/')
 
+# if args.source_space is None:
+#     filename = f'search_results/{args.name_desc}/{args.target_space}_search_eff_transfer.csv'
+# else:
 filename = f'search_results/{args.name_desc}/{args.target_space}_search_eff.csv'
 header = "name_desc,seed,batch_size,epochs,source_space,target_space,task,representation,joint_repr,loss_type,gnn_type,back_dense,periter_sampes,samp_lim,source_samps,timesteps,transf_ep,lr,transfer_lr,num_samps,av_best_acc,av_median_acc,av_mean_acc,best_acc_std,median_acc_std,mean_acc_std"
 if not os.path.isfile(filename):
@@ -600,7 +613,7 @@ if not os.path.isfile(filename):
         f.write(header + "\n")
 
 with open(filename, 'a') as f:
-    for num_samps in list(range(0, args.samp_lim, args.periter_samps)):
+    for num_samps in list(range(args.periter_samps, args.samp_lim, args.periter_samps)):
         f.write(f"{args.name_desc},\
                   {args.seed},\
                   {args.batch_size},\

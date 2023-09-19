@@ -60,6 +60,23 @@ args.modify_emb_pretransfer = not args.no_modify_emb_pretransfer
 
 assert args.name_desc is not None, "Please provide a name description for the experiment."
 
+sys.path.append("..")
+
+if args.source_space is None:
+    if args.target_space in ['Amoeba', 'DARTS', 'DARTS_fix-w-d', 'DARTS_lr-wd', 'ENAS', 'ENAS_fix-w-d', 'NASNet', 'PNAS', 'PNAS_fix-w-d']:
+        from nas_embedding_suite.nds_ss import NDS as EmbGenClass
+    elif args.target_space in ['nb101', 'nb201', 'nb301']:
+        exec("from nas_embedding_suite.nb{}_ss import NASBench{} as EmbGenClass".format(args.target_space[-3:], args.target_space[-3:]))
+    elif args.target_space in ['tb101']:
+        from nas_embedding_suite.tb101_micro_ss import TransNASBench101Micro as EmbGenClass
+    else:
+        raise NotImplementedError
+    embedding_gen = EmbGenClass(normalize_zcp=True, log_synflow=True)
+else:
+    print("Pre-training predictor with {} samples of source space: {}".format(args.source_samps, args.source_space))
+    from nas_embedding_suite.all_ss import AllSS as EmbGenClass
+    embedding_gen = EmbGenClass()
+
 # Set random seeds
 def seed_everything(seed: int):
     import random, os
@@ -76,14 +93,14 @@ def seed_everything(seed: int):
 if args.seed is not None:
     seed_everything(args.seed)
 
-def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloader, epoch):
+def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, test_dataloader, epoch):
     model.training = True
     model.train()
     running_loss = 0.0
     for inputs, targets in dataloader:
-        if inputs[0].shape[0] == 1 and args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+        if inputs[0].shape[0] == 1 and space in ['nb101', 'nb201', 'nb301', 'tb101']:
             continue
-        elif inputs[0].shape[0] == 2 and args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+        elif inputs[0].shape[0] == 2 and space not in ['nb101', 'nb201', 'nb301', 'tb101']:
             continue
         #### Params for PWL Loss
         accs = targets
@@ -137,7 +154,7 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
                 X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, norm_w_d_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device)
                 s_2 = model(x_ops_1=X_ops_a_2, x_adj_1=X_adj_a_2.to(torch.long), x_ops_2=X_ops_b_2, x_adj_2=X_adj_b_2.to(torch.long), zcp=None, norm_w_d=norm_w_d_2).squeeze()
         elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))),
                         torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))),
                         torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[1]))),
@@ -180,22 +197,6 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         running_loss += pair_loss.item()
     scheduler.step()
     return model, num_test_items, running_loss / len(dataloader), 0, 0
-
-
-
-sys.path.append("..")
-
-if args.source_space is None:
-    if args.space in ['Amoeba', 'DARTS', 'DARTS_fix-w-d', 'DARTS_lr-wd', 'ENAS', 'ENAS_fix-w-d', 'NASNet', 'PNAS', 'PNAS_fix-w-d']:
-        from nas_embedding_suite.nds_ss import NDS as EmbGenClass
-    elif args.space in ['nb101', 'nb201', 'nb301']:
-        exec("from nas_embedding_suite.nb{}_ss import NASBench{} as EmbGenClass".format(args.space[-3:], args.space[-3:]))
-    elif args.space in ['tb101']:
-        from nas_embedding_suite.tb101_micro_ss import TransNASBench101Micro as EmbGenClass
-else:
-    print("Pre-training predictor with {} samples of source space: {}".format(args.source_samps, args.source_space))
-    from nas_embedding_suite.all_ss import AllSS as EmbGenClass
-    embedding_gen = EmbGenClass()
 
 def get_dataloader(args, embedding_gen, space, sample_count, representation, mode, train_indexes=None, test_size=None, fetch_fixed_index=None, explicit_batch_size=None):
     representations = []
@@ -304,7 +305,7 @@ if args.source_space is not None:
     if representation == "adj_gin":
         input_dim = next(iter(train_dataloader))[0][1].shape[1]
         none_op_ind = 130 # placeholder
-        if args.space in ["nb101", "nb201", "nb301", "tb101"]:
+        if args.source_space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
                             back_dense=args.back_dense,
@@ -327,7 +328,7 @@ if args.source_space is not None:
         input_dim = next(iter(train_dataloader))[0][1].shape[1]
         num_zcps = next(iter(train_dataloader))[0][-2].shape[1]
         none_op_ind = 130 # placeholder
-        if args.space in ["nb101", "nb201", "nb301", "tb101"]:
+        if args.source_space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
                             back_dense=args.back_dense,
@@ -364,9 +365,9 @@ if args.source_space is not None:
             raise NotImplementedError
         elif args.loss_type == "pwl":
             if epoch > args.epochs - 5:
-                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_full, epoch)
+                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.source_space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_full, epoch)
             else:
-                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_smallset, epoch)
+                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.source_space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_smallset, epoch)
         else:
             raise NotImplementedError
         end_time = time.time()

@@ -291,15 +291,16 @@ class GIN_Model(nn.Module):
                 nn.Linear(self.gcn_out_dims[-1], self.gcn_out_dims[-1])
             )
 
-        # wd embedder
-        self.norm_wd_embedder = []
-        in_dim = 2
-        for embedder_dim in [self.wd_repr_dims]:
-            self.norm_wd_embedder.append(nn.Linear(in_dim, embedder_dim))
-            self.norm_wd_embedder.append(nn.ReLU(inplace = False))
-            in_dim = embedder_dim
-        self.norm_wd_embedder.append(nn.Linear(in_dim, self.wd_repr_dims))
-        self.norm_wd_embedder = nn.Sequential(*self.norm_wd_embedder)
+        if self.dual_gcn:
+            # wd embedder
+            self.norm_wd_embedder = []
+            in_dim = 2
+            for embedder_dim in [self.wd_repr_dims]:
+                self.norm_wd_embedder.append(nn.Linear(in_dim, embedder_dim))
+                self.norm_wd_embedder.append(nn.ReLU(inplace = False))
+                in_dim = embedder_dim
+            self.norm_wd_embedder.append(nn.Linear(in_dim, self.wd_repr_dims))
+            self.norm_wd_embedder = nn.Sequential(*self.norm_wd_embedder)
 
         
     def embed_and_transform_arch(self, archs):
@@ -425,7 +426,6 @@ class GIN_Model(nn.Module):
         if zcp is not None:
             zcp = zcp.to(self.device)
         # import pdb; pdb.set_trace()
-        norm_w_d = norm_w_d.to(self.device)
         adjs_1, x_1, op_emb_1, op_inds_1 = self.embed_and_transform_arch(archs_1)
         adjs_1, x_1, op_emb_1, op_inds_1 = adjs_1.to(self.device), x_1.to(self.device), op_emb_1.to(self.device), op_inds_1.to(self.device)
         for tst in range(self.num_time_steps):
@@ -453,6 +453,7 @@ class GIN_Model(nn.Module):
             zcp = self.zcp_embedder(zcp)
             y_1 = torch.cat((y_1, zcp), dim = -1)
         if self.dual_gcn:
+            norm_w_d = norm_w_d.to(self.device)
             norm_w_d = self.norm_wd_embedder(norm_w_d)
             y_1 = torch.cat((y_1, norm_w_d), dim = -1)
         y_1 = self.mlp(y_1)

@@ -57,10 +57,7 @@ args = parser.parse_args()
 device = args.device
 transfer_sample_tests = {}
 transfer_sample_tests[args.transfer_space] = args.transfer_sample_sizes
-if args.no_modify_emb_pretransfer:
-    args.modify_emb_pretransfer = False
-else:
-    args.modify_emb_pretransfer = True
+args.modify_emb_pretransfer = not args.no_modify_emb_pretransfer
 
 assert args.name_desc is not None, "Please provide a name description for the experiment."
 
@@ -247,7 +244,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     op_mat_red = torch.Tensor(np.asarray(op_mat_red)).argmax(dim=1).numpy().flatten() # Careful here.
                     representations.append(np.concatenate((adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red, norm_w_d)).tolist())
                 else:
-                    adj_mat, op_mat = embedding_gen.get_adj_op(i).values()
+                    adj_mat, op_mat = embedding_gen.get_adj_op(i, bin_space=True).values()
                     if space == 'tb101':
                         accs.append(embedding_gen.get_valacc(i, task=args.task))
                     else:
@@ -275,7 +272,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red), torch.Tensor(norm_w_d)))
                 else:
-                    adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space).values()
+                    adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space, bin_space=True).values()
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
                     norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
@@ -295,7 +292,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red), torch.Tensor(zcp_), torch.Tensor(norm_w_d)))
                 else:
-                    adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space).values()
+                    adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space, bin_space=True).values()
                     method_name = 'get_{}'.format(representation.split("_")[-1])
                     method_to_call = getattr(embedding_gen, method_name)
                     zcp_ = method_to_call(i, space=space, joint=args.joint_repr)
@@ -399,21 +396,16 @@ for tr_ in range(args.num_trials):
         else:
             print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
     preserved_state = copy.deepcopy(model.state_dict())
-    # import pdb; pdb.set_trace()
-    # Ideally, we want to find the indexes of the transfer space embeddings and initialize it with the train space embeddings
-    # Find the index rows of the train space embeddings with the embedding_gen.ss_mapper_oprange
-# if True:
-    num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.space]
-    source_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
-    source_end_idx = source_start_idx + num_ops
-    # Find the index rows of the transfer space embeddings with the embedding_gen.ss_mapper_oprange
-# if True:
-    num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.transfer_space]
-    transfer_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
-    transfer_end_idx = transfer_start_idx + num_ops
-    # Initialize the transfer space embeddings with the train space embeddings
-    # model.state_dict()['fc1.weight'][transfer_start_idx:transfer_end_idx] = preserved_state['fc1.weight'][source_start_idx:source_end_idx]
-# if True:
+
+
+    if args.modify_emb_pretransfer:
+        num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.space]
+        source_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
+        source_end_idx = source_start_idx + num_ops
+        num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.transfer_space]
+        transfer_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
+        transfer_end_idx = transfer_start_idx + num_ops
+
     for transfer_sample_count in transfer_sample_counts:
         model.load_state_dict(preserved_state)
         if args.modify_emb_pretransfer:

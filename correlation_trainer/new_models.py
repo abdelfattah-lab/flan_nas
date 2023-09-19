@@ -192,7 +192,8 @@ class GIN_Model(nn.Module):
         reg_inp_dims = self.nn_emb_dims
         if self.input_zcp:
             reg_inp_dims += self.zcp_embedding_dim
-        reg_inp_dims += self.wd_repr_dims
+        if self.dual_gcn:
+            reg_inp_dims += self.wd_repr_dims
         dim = reg_inp_dims
         for hidden_size in self.mlp_dims:
             self.mlp.append(nn.Sequential(
@@ -451,7 +452,8 @@ class GIN_Model(nn.Module):
         if self.input_zcp:
             zcp = self.zcp_embedder(zcp)
             y_1 = torch.cat((y_1, zcp), dim = -1)
-        norm_w_d = self.norm_wd_embedder(norm_w_d)
-        y_1 = torch.cat((y_1, norm_w_d), dim = -1)
+        if self.dual_gcn:
+            norm_w_d = self.norm_wd_embedder(norm_w_d)
+            y_1 = torch.cat((y_1, norm_w_d), dim = -1)
         y_1 = self.mlp(y_1)
         return y_1

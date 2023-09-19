@@ -42,7 +42,7 @@ parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--timesteps', type=int, default=2)
 parser.add_argument('--test_size', type=int, default=None)
 parser.add_argument('--epochs', type=int, default=150)
-parser.add_argument('--transf_ep', type=int, default=150)
+parser.add_argument('--transf_ep', type=int, default=5)
 parser.add_argument('--lr_step', type=int, default=10)
 parser.add_argument('--lr_gamma', type=float, default=0.6)
 parser.add_argument('--lr', type=float, default=1e-3)
@@ -55,8 +55,11 @@ parser.add_argument('--id', type=int, default=0)
 args = parser.parse_args()
 device = args.device
 
-args.transf_ep = args.samp_lim//args.periter_samps
 args.modify_emb_pretransfer = not args.no_modify_emb_pretransfer
+
+if args.source_space is None:
+    args.transfer_lr = args.lr
+    args.transf_ep = args.epochs
 
 assert args.name_desc is not None, "Please provide a name description for the experiment."
 
@@ -528,21 +531,18 @@ for tr_ in range(args.num_trials):
         modified_tensor = model.op_emb.weight.clone()
         modified_tensor[transfer_start_idx:transfer_end_idx] = torch.cat((preserved_state['op_emb.weight'][source_start_idx:source_end_idx].detach(),)*40, dim=0)[:(transfer_end_idx - transfer_start_idx)]
         model.op_emb.weight.data = modified_tensor
-
     sampled_indexes = []
     accuracy_sampled = []
     accuracy_predicted = []
-    epoch = 0
-    criterion = torch.nn.MSELoss()
-    params_optimize = list(model.parameters())
-    optimizer = torch.optim.AdamW(params_optimize, lr = args.transfer_lr, weight_decay = args.weight_decay)
-    scheduler = CosineAnnealingLR(optimizer, T_max = args.transf_ep, eta_min = args.eta_min)
     model.vertices = next(iter(mini_target_space))[0][1].shape[1]
     if args.target_space not in ["nb101", "nb201", "nb301", "tb101"]:
         model.dual_gcn = True
     if args.target_space in ["nb101", "nb201", "nb301", "tb101"]:
         model.dual_gcn = False
-    for num_samps in list(range(args.periter_samps, args.samp_lim, args.periter_samps)):
+    sample_cts = [(2,2),(2,2),(2,2),(2,2),(4,4),(2,2),(2,2),(8,8),(8,8),(16,16),(16,16),(32,32)]
+    # 
+    # for halv_rate, num_samps in enumerate(list(range(args.periter_samps, args.samp_lim, args.periter_samps))):
+    for halv_rate, samp_tuple in enumerate(sample_cts):
         # predict score on entire search space
         pred_scores = get_all_scores(model, full_target_space, space=args.target_space)
         jli = embedding_gen.get_ss_idxrange(space=args.target_space)
@@ -553,7 +553,7 @@ for tr_ in range(args.num_trials):
         # Sample best candidates
         cand_tracker = 0
         start_len = len(sampled_indexes)
-        while len(sampled_indexes) < start_len + args.periter_samps//2:
+        while len(sampled_indexes) < start_len + samp_tuple[0]:
             cand = best_candidates[cand_tracker]
             if cand[0] not in sampled_indexes:
                 sampled_indexes.append(cand[0])
@@ -562,7 +562,10 @@ for tr_ in range(args.num_trials):
             cand_tracker += 1
 
         # Sample random candidates
-        rand_indx = random.sample(set(jli) - set(sampled_indexes), args.periter_samps//2)
+        # rand_indx = random.sample(set(jli) - set(sampled_indexes), args.periter_samps//2)
+        halv_candlen = max(512, len(jli)//(2**halv_rate))
+        # take the top :halv_candlen candidates from best_candidates
+        rand_indx = random.sample(set([x[0] for x in best_candidates[:halv_candlen]]) - set(sampled_indexes), min(samp_tuple[1], len(set([x[0] for x in best_candidates[:halv_candlen]]) - set(sampled_indexes))))
         # insert all elements in rand_indx to sampled_indexes
         sampled_indexes.extend(rand_indx)
         for idx in rand_indx:
@@ -579,13 +582,38 @@ for tr_ in range(args.num_trials):
         if args.loss_type == "mse":
             raise NotImplementedError
         elif args.loss_type == "pwl":
-            model, num_test_items, mse_loss, _, _ = pwl_train(args=args, space=args.target_space, model=model, dataloader=train_dataloader, criterion=criterion, optimizer=optimizer, scheduler=scheduler, test_dataloader=full_target_space, epoch=epoch)
+            # Reset to pre-trained state
+            model.load_state_dict(preserved_state)
+            if args.modify_emb_pretransfer:
+                modified_tensor = model.op_emb.weight.clone()
+                modified_tensor[transfer_start_idx:transfer_end_idx] = torch.cat((preserved_state['op_emb.weight'][source_start_idx:source_end_idx].detach(),)*40, dim=0)[:(transfer_end_idx - transfer_start_idx)]
+                model.op_emb.weight.data = modified_tensor
+            criterion = torch.nn.MSELoss()
+            # Initialize optimizers and schedulers
+            params_optimize = list(model.parameters())
+            optimizer = torch.optim.AdamW(params_optimize, lr = args.transfer_lr, weight_decay = args.weight_decay)
+            scheduler = CosineAnnealingLR(optimizer, T_max = args.transf_ep, eta_min = args.eta_min)
+            # Train on training dataloader
+            for epoch in range(args.transf_ep):
+                model, num_test_items, mse_loss, _, _ = pwl_train(args=args, space=args.target_space, model=model, dataloader=train_dataloader, criterion=criterion, optimizer=optimizer, scheduler=scheduler, test_dataloader=full_target_space, epoch=epoch)
         else:
             raise NotImplementedError
         # Print statistics for the current num_samps (best_accuracy, median_accuracy, mean_accuracy)
         print(f'Num Samples: {len(sampled_indexes)} | Best Accuracy: {max(accuracy_sampled):.4f} | Median Accuracy: {np.median(accuracy_sampled):.4f} | Mean Accuracy: {np.mean(accuracy_sampled):.4f}')
         end_time = time.time()
-        epoch += 1
+    filename = f'search_results/{args.name_desc}/sample_idxs/{args.target_space}_{args.representation}_samples.csv'
+    # make /sample_idxs folder if it doesnt exist
+    if not os.path.exists(f'search_results/{args.name_desc}/sample_idxs/'):
+        os.makedirs(f'search_results/{args.name_desc}/sample_idxs/')
+    # Open the file in append mode
+    with open(filename, 'a') as f:
+        # write trial number and the sampled_indexes list
+        sindx = ",".join([str(x) for x in sampled_indexes])
+        s_acc_pred = ",".join([str(x) for x in accuracy_predicted])
+        s_acc_sampled = ",".join([str(x) for x in accuracy_sampled])
+        f.write(f"{tr_},{sindx}\n")
+        f.write(f"{tr_},{s_acc_sampled}\n")
+        f.write(f"{tr_},{s_acc_pred}\n")
 
 # Calculate average and standard deviation for each statistic across all trials for each num_samps
 av_best_acc = {k: np.mean(v) for k, v in best_accuracies.items()}
@@ -613,7 +641,8 @@ if not os.path.isfile(filename):
         f.write(header + "\n")
 
 with open(filename, 'a') as f:
-    for num_samps in list(range(args.periter_samps, args.samp_lim, args.periter_samps)):
+    # for num_samps in list(range(args.periter_samps, args.samp_lim, args.periter_samps)):
+    for num_samps in av_median_acc.keys():
         f.write(f"{args.name_desc},\
                   {args.seed},\
                   {args.batch_size},\

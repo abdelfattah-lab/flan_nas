@@ -14,6 +14,7 @@ from new_models import GIN_Model, FullyConnectedNN
 from torch.optim.lr_scheduler import StepLR
 from pprint import pprint
 from torch.optim.lr_scheduler import CosineAnnealingLR
+import copy
 
 sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 
@@ -31,6 +32,7 @@ parser.add_argument('--periter_samps', type=int, default=10)       # Number of s
 parser.add_argument('--samp_lim', type=int, default=2000)          # Number of samples per search iteration
 parser.add_argument('--source_samps', type=int, default=2048)
 parser.add_argument('--num_trials', type=int, default=3)
+parser.add_argument('--no_modify_emb_pretransfer', action='store_true')
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--device', type=str, default='cuda:0')
@@ -54,6 +56,8 @@ args = parser.parse_args()
 device = args.device
 
 args.transf_ep = args.samp_lim//args.periter_samps
+args.modify_emb_pretransfer = not args.no_modify_emb_pretransfer
+
 assert args.name_desc is not None, "Please provide a name description for the experiment."
 
 # Set random seeds
@@ -106,40 +110,17 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
             X_input_2 = archs_2[0].to(device)
             s_2 = model(X_input_2).squeeze()
         elif args.representation in ["adj_gin"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))),
-                        torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1])))]
-                archs_2 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[0]))),
-                        torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[0])))]
-                X_adj_1, X_ops_1 = archs_1[0].to(device), archs_1[1].to(device)
-                s_1 = model(x_ops_1=X_ops_1, x_adj_1=X_adj_1.to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None).squeeze()
-                X_adj_2, X_ops_2 = archs_2[0].to(device), archs_2[1].to(device)
-                s_2 = model(x_ops_1=X_ops_2, x_adj_1=X_adj_2.to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None).squeeze()
-            else:
-                archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))),
-                        torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))),
-                        torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[1]))),
-                        torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[1])))]
-                archs_2 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[0]))),
-                        torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[0]))),
-                        torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[0]))),
-                        torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[0])))]
-                X_adj_a_1, X_ops_a_1, X_adj_b_1, X_ops_b_1 = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device)
-                s_1 = model(x_ops_1=X_ops_a_1, x_adj_1=X_adj_a_1.to(torch.long), x_ops_2=X_ops_b_1, x_adj_2=X_adj_b_1.to(torch.long), zcp=None).squeeze()
-                X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device)
-                s_2 = model(x_ops_1=X_ops_a_2, x_adj_1=X_adj_a_2.to(torch.long), x_ops_2=X_ops_b_2, x_adj_2=X_adj_b_2.to(torch.long), zcp=None).squeeze()
-        elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))),
                         torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))),
                         torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[1])))]
                 archs_2 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[0]))),
                         torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[0]))),
                         torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[0])))]
-                X_adj_1, X_ops_1, zcp = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device)
-                s_1 = model(x_ops_1=X_ops_1, x_adj_1=X_adj_1.to(torch.long), x_ops_2=None, x_adj_2=None, zcp=zcp).squeeze()
-                X_adj_2, X_ops_2, zcp = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device)
-                s_2 = model(x_ops_1=X_ops_2, x_adj_1=X_adj_2.to(torch.long), x_ops_2=None, x_adj_2=None, zcp=zcp).squeeze()
+                X_adj_1, X_ops_1, norm_w_d_1 = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device)
+                s_1 = model(x_ops_1=X_ops_1, x_adj_1=X_adj_1.to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None, norm_w_d=norm_w_d_1).squeeze()
+                X_adj_2, X_ops_2, norm_w_d_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device)
+                s_2 = model(x_ops_1=X_ops_2, x_adj_1=X_adj_2.to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None, norm_w_d=norm_w_d_2).squeeze()
             else:
                 archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))),
                         torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))),
@@ -151,10 +132,41 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
                         torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[0]))),
                         torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[0]))),
                         torch.stack(list((inputs[4][indx] for indx in ex_thresh_inds[0])))]
-                X_adj_a_1, X_ops_a_1, X_adj_b_1, X_ops_b_1, zcp = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device), archs_1[4].to(device)
-                s_1 = model(x_ops_1 = X_ops_a_1, x_adj_1 = X_adj_a_1.to(torch.long), x_ops_2 = X_ops_b_1, x_adj_2 = X_adj_b_1.to(torch.long), zcp = zcp).squeeze()
-                X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, zcp = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device)
-                s_2 = model(x_ops_1 = X_ops_a_2, x_adj_1 = X_adj_a_2.to(torch.long), x_ops_2 = X_ops_b_2, x_adj_2 = X_adj_b_2.to(torch.long), zcp = zcp).squeeze()
+                X_adj_a_1, X_ops_a_1, X_adj_b_1, X_ops_b_1, norm_w_d_1 = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device), archs_1[4].to(device)
+                s_1 = model(x_ops_1=X_ops_a_1, x_adj_1=X_adj_a_1.to(torch.long), x_ops_2=X_ops_b_1, x_adj_2=X_adj_b_1.to(torch.long), zcp=None, norm_w_d=norm_w_d_1).squeeze()
+                X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, norm_w_d_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device)
+                s_2 = model(x_ops_1=X_ops_a_2, x_adj_1=X_adj_a_2.to(torch.long), x_ops_2=X_ops_b_2, x_adj_2=X_adj_b_2.to(torch.long), zcp=None, norm_w_d=norm_w_d_2).squeeze()
+        elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
+            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))),
+                        torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))),
+                        torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[1]))),
+                        torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[1])))]
+                archs_2 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[0]))),
+                        torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[0]))),
+                        torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[0]))),
+                        torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[0])))]
+                X_adj_1, X_ops_1, zcp, norm_w_d_1 = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device)
+                s_1 = model(x_ops_1=X_ops_1, x_adj_1=X_adj_1.to(torch.long), x_ops_2=None, x_adj_2=None, zcp=zcp, norm_w_d=norm_w_d_1).squeeze()
+                X_adj_2, X_ops_2, zcp, norm_w_d_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device)
+                s_2 = model(x_ops_1=X_ops_2, x_adj_1=X_adj_2.to(torch.long), x_ops_2=None, x_adj_2=None, zcp=zcp, norm_w_d=norm_w_d_2).squeeze()
+            else:
+                archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))),
+                        torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))),
+                        torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[1]))),
+                        torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[1]))),
+                        torch.stack(list((inputs[4][indx] for indx in ex_thresh_inds[1]))),
+                        torch.stack(list((inputs[5][indx] for indx in ex_thresh_inds[1])))]
+                archs_2 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[0]))),
+                        torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[0]))),
+                        torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[0]))),
+                        torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[0]))),
+                        torch.stack(list((inputs[4][indx] for indx in ex_thresh_inds[0]))),
+                        torch.stack(list((inputs[5][indx] for indx in ex_thresh_inds[0])))]
+                X_adj_a_1, X_ops_a_1, X_adj_b_1, X_ops_b_1, zcp, norm_w_d_1 = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device), archs_1[4].to(device), archs_1[5].to(device)
+                s_1 = model(x_ops_1 = X_ops_a_1, x_adj_1 = X_adj_a_1.to(torch.long), x_ops_2 = X_ops_b_1, x_adj_2 = X_adj_b_1.to(torch.long), zcp = zcp, norm_w_d=norm_w_d_1).squeeze()
+                X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, zcp, norm_w_d_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device), archs_2[5].to(device)
+                s_2 = model(x_ops_1 = X_ops_a_2, x_adj_1 = X_adj_a_2.to(torch.long), x_ops_2 = X_ops_b_2, x_adj_2 = X_adj_b_2.to(torch.long), zcp = zcp, norm_w_d=norm_w_d_2).squeeze()
         else:
             raise NotImplementedError
         better_lst = (acc_diff>0)[ex_thresh_inds]
@@ -167,33 +179,6 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         optimizer.step()
         running_loss += pair_loss.item()
     scheduler.step()
-
-    # model.training = False
-    # model.eval()
-    # pred_scores, true_scores = [], []
-    # repr_max = int(80/args.test_batch_size)
-    # for repr_idx, (reprs, scores) in enumerate(tqdm(test_dataloader)):
-    #     if epoch < args.epochs - 5 and repr_idx > repr_max:
-    #         break
-    #     if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
-    #         pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())
-    #     elif args.representation in ["adj_gin"]:
-    #         if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
-    #             pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None).squeeze().detach().cpu().tolist())
-    #         else:
-    #             pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=None).squeeze().detach().cpu().tolist())
-    #     elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
-    #         if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
-    #             pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=reprs[2].to(device)).squeeze().detach().cpu().tolist())
-    #         else:
-    #             pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=reprs[4].to(device)).squeeze().detach().cpu().tolist())
-    #     else:
-    #         raise NotImplementedError
-    #     true_scores.append(scores.cpu().tolist())
-    # pred_scores = [t for sublist in pred_scores for t in sublist]
-    # true_scores = [t for sublist in true_scores for t in sublist]
-    # num_test_items = len(pred_scores)
-    # return model, num_test_items, running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
     return model, num_test_items, running_loss / len(dataloader), 0, 0
 
 
@@ -235,21 +220,28 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
             for i in tqdm(sample_indexes):
                 if space not in ["nb101", "nb201", "nb301", "tb101"]:
                     adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=space).values()
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
+                    norm_w_d = np.asarray(norm_w_d).flatten()
                     accs.append(embedding_gen.get_valacc(i, space=space))
                     adj_mat_norm = np.asarray(adj_mat_norm).flatten()
                     adj_mat_red = np.asarray(adj_mat_red).flatten()
                     op_mat_norm = torch.Tensor(np.asarray(op_mat_norm)).argmax(dim=1).numpy().flatten() # Careful here.
                     op_mat_red = torch.Tensor(np.asarray(op_mat_red)).argmax(dim=1).numpy().flatten() # Careful here.
-                    representations.append(np.concatenate((adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red)).tolist())
+                    representations.append(np.concatenate((adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red, norm_w_d)).tolist())
                 else:
-                    adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space).values()
-                    accs.append(embedding_gen.get_valacc(i, space=space))
+                    adj_mat, op_mat = embedding_gen.get_adj_op(i, bin_space=True).values()
+                    if space == 'tb101':
+                        accs.append(embedding_gen.get_valacc(i, task=args.task))
+                    else:
+                        accs.append(embedding_gen.get_valacc(i))
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
+                    norm_w_d = np.asarray(norm_w_d).flatten()
                     adj_mat = np.asarray(adj_mat).flatten()
                     op_mat = torch.Tensor(np.asarray(op_mat)).argmax(dim=1).numpy().flatten() # Careful here.
-                    representations.append(np.concatenate((adj_mat, op_mat)).tolist())
+                    representations.append(np.concatenate((adj_mat, op_mat, norm_w_d)).tolist())
         else:                           # zcp, arch2vec, cate --> FullyConnectedNN
             for i in tqdm(sample_indexes):
-                exec('representations.append(embedding_gen.get_{}(i, "{}", joint={}))'.format(representation, space, args.joint_repr))
+                exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}", joint={}), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, space, args.joint_repr, space))
                 accs.append(embedding_gen.get_valacc(i, space=space))
         representations = torch.stack([torch.FloatTensor(nxx) for nxx in representations])
     else: # adj_gin, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate --> GIN_Model
@@ -258,15 +250,19 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
             for i in tqdm(sample_indexes):
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                     adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=space).values()
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
+                    norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat_norm = torch.Tensor(np.array(op_mat_norm)).argmax(dim=1)
                     op_mat_red = torch.Tensor(np.array(op_mat_red)).argmax(dim=1)
                     accs.append(embedding_gen.get_valacc(i, space=space))
-                    representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red)))
+                    representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red), torch.Tensor(norm_w_d)))
                 else:
-                    adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space).values()
+                    adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space, bin_space=True).values()
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
+                    norm_w_d = np.asarray(norm_w_d).flatten()
                     accs.append(embedding_gen.get_valacc(i, space=space))
-                    representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat)))
+                    representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat), torch.Tensor(norm_w_d)))
         else: # "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"
             for i in tqdm(sample_indexes):
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
@@ -274,18 +270,22 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     method_name = 'get_{}'.format(representation.split("_")[-1])
                     method_to_call = getattr(embedding_gen, method_name)
                     zcp_ = method_to_call(i, space=space, joint=args.joint_repr)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
+                    norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat_norm = torch.Tensor(np.array(op_mat_norm)).argmax(dim=1)
                     op_mat_red = torch.Tensor(np.array(op_mat_red)).argmax(dim=1)
                     accs.append(embedding_gen.get_valacc(i, space=space))
-                    representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red), torch.Tensor(zcp_)))
+                    representations.append((torch.Tensor(adj_mat_norm), torch.Tensor(op_mat_norm), torch.Tensor(adj_mat_red), torch.Tensor(op_mat_red), torch.Tensor(zcp_), torch.Tensor(norm_w_d)))
                 else:
-                    adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space).values()
+                    adj_mat, op_mat = embedding_gen.get_adj_op(i, space=space, bin_space=True).values()
                     method_name = 'get_{}'.format(representation.split("_")[-1])
                     method_to_call = getattr(embedding_gen, method_name)
-                    zcp_ = method_to_call(i, space=space)
+                    zcp_ = method_to_call(i, space=space, joint=args.joint_repr)
+                    norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
+                    norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
                     accs.append(embedding_gen.get_valacc(i, space=space))
-                    representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zcp_)))
+                    representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zcp_), torch.Tensor(norm_w_d)))
 
     dataset = CustomDataset(representations, accs)
     if explicit_batch_size is None:
@@ -295,7 +295,6 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
     return dataloader, sample_indexes
     
 representation = args.representation
-across_trials = {transfer_sample_count: [] for transfer_sample_count in transfer_sample_counts}
 
 # Pre-train predictor and preserve state_dict
 if args.source_space is not None:
@@ -304,7 +303,7 @@ if args.source_space is not None:
     test_dataloader_source_full, test_indexes = get_dataloader(args, embedding_gen, args.source_space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=2048)
     if representation == "adj_gin":
         input_dim = next(iter(train_dataloader))[0][1].shape[1]
-        none_op_ind = 50 # placeholder
+        none_op_ind = 130 # placeholder
         if args.space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
@@ -326,8 +325,8 @@ if args.source_space is not None:
                             input_zcp = False)
     elif representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
         input_dim = next(iter(train_dataloader))[0][1].shape[1]
-        num_zcps = next(iter(train_dataloader))[0][-1].shape[1]
-        none_op_ind = 50
+        num_zcps = next(iter(train_dataloader))[0][-2].shape[1]
+        none_op_ind = 130 # placeholder
         if args.space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
@@ -363,7 +362,6 @@ if args.source_space is not None:
         start_time = time.time()
         if args.loss_type == "mse":
             raise NotImplementedError
-            # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
         elif args.loss_type == "pwl":
             if epoch > args.epochs - 5:
                 model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_full, epoch)
@@ -371,7 +369,6 @@ if args.source_space is not None:
                 model, num_test_items, mse_loss, spr, kdt = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_smallset, epoch)
         else:
             raise NotImplementedError
-        # test_loss, num_test_items, test_spearmanr, test_kendalltau = test(args, model, test_dataloader, criterion)
         end_time = time.time()
         if epoch > args.epochs - 5:
             kdt_l5.append(kdt)
@@ -384,20 +381,20 @@ if args.source_space is not None:
 full_target_space, _ = get_dataloader(args, embedding_gen, args.target_space, sample_count=None, representation=representation, mode='test', train_indexes=None, fetch_fixed_index=list(range(embedding_gen.get_numitems(space=args.target_space))))
 mini_target_space, _ = get_dataloader(args, embedding_gen, args.target_space, sample_count=None, representation=representation, mode='test', train_indexes=None, fetch_fixed_index=random.sample(list(range(embedding_gen.get_numitems(space=args.target_space))), 40))
 
-def get_all_scores(model, dataloader):
+def get_all_scores(model, dataloader, space):
     for idx, (reprs, scores) in enumerate(dataloader):
         if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
             pred_ = model(reprs.to(device)).squeeze().detach().cpu()
         elif args.representation in ["adj_gin"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None).squeeze().detach().cpu()
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None, norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu()
             else:
-                pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=None).squeeze().detach().cpu()
+                pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=None, norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu()
         elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
-            if args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
-                pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=reprs[2].to(device)).squeeze().detach().cpu()
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=reprs[2].to(device), norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu()
             else:
-                pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=reprs[4].to(device)).squeeze().detach().cpu()
+                pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=reprs[4].to(device), norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu()
         else:
             raise NotImplementedError
         pred_scores.append(pred_.tolist())
@@ -408,9 +405,20 @@ def get_all_scores(model, dataloader):
 best_accuracies = {}
 median_accuracies = {}
 mean_accuracies = {}
+if args.modify_emb_pretransfer:
+    num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.source_space]
+    source_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
+    source_end_idx = source_start_idx + num_ops
+    num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.target_space]
+    transfer_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
+    transfer_end_idx = transfer_start_idx + num_ops
 for tr_ in range(args.num_trials):
     print("Trial number: {}".format(tr_))
     model.load_state_dict(preserved_state)
+    if args.modify_emb_pretransfer:
+        modified_tensor = model.op_emb.weight.clone()
+        modified_tensor[transfer_start_idx:transfer_end_idx] = torch.cat((preserved_state['op_emb.weight'][source_start_idx:source_end_idx].detach(),)*40, dim=0)[:(transfer_end_idx - transfer_start_idx)]
+        model.op_emb.weight.data = modified_tensor
     sampled_indexes = []
     accuracy_sampled = []
     accuracy_predicted = []
@@ -421,7 +429,7 @@ for tr_ in range(args.num_trials):
         optimizer = torch.optim.AdamW(params_optimize, lr = args.transfer_lr, weight_decay = args.weight_decay)
         scheduler = CosineAnnealingLR(optimizer, T_max = args.transf_ep, eta_min = args.eta_min)
         # predict score on entire search space
-        pred_scores = get_all_scores(model, full_target_space)
+        pred_scores = get_all_scores(model, full_target_space, space=args.target_space)
         best_candidates = sorted(zip(list(range(embedding_gen.get_numitems(space=args.target_space))), pred_scores), key=lambda p: p[1], reverse=True)
             # iterate best_candidates, and if index, doesnt match, add it to sampled_indexes.
         # Sample best candidates
@@ -451,21 +459,11 @@ for tr_ in range(args.num_trials):
         start_time = time.time()
         if args.loss_type == "mse":
             raise NotImplementedError
-            # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
         elif args.loss_type == "pwl":
-            # if epoch > args.transfer_epochs - 5:
             model, num_test_items, mse_loss, _, _ = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, full_target_space, epoch)
-            # else:
-                # model, num_test_items, mse_loss, _, _ = pwl_train(args, model, train_dataloader, criterion, optimizer, scheduler, mini_target_space, epoch)
         else:
             raise NotImplementedError
         end_time = time.time()
-        # if epoch > args.transfer_epochs - 5:
-        #     kdt_l5.append(kdt)
-        #     spr_l5.append(spr)
-        #     print(f'Epoch {epoch + 1}/{args.transfer_epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
-        # else:
-        #     print(f'Epoch {epoch + 1}/{args.transfer_epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
         epoch += 1
 
 # Calculate average and standard deviation for each statistic across all trials for each num_samps
@@ -477,13 +475,6 @@ std_median_acc = {k: np.std(v) for k, v in median_accuracies.items()}
 
 av_mean_acc = {k: np.mean(v) for k, v in mean_accuracies.items()}
 std_mean_acc = {k: np.std(v) for k, v in mean_accuracies.items()}
-
-# # Write results to a file
-# with open('statistics.txt', 'w') as f:
-#     f.write("num_samps,av_best_acc,av_median_acc,av_mean_acc,best_acc_std,median_acc_std,mean_acc_std\n")
-#     for num_samps in list(range(0, args.samp_lim, args.periter_samps)):
-#         f.write(f"{num_samps},{av_best_acc},{av_median_acc},{av_mean_acc},{best_acc_std},{median_acc_std},{mean_acc_std}\n")
-
 
 if not os.path.exists(f'search_results/'):
     os.makedirs(f'search_results/')

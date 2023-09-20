@@ -28,7 +28,6 @@ while IFS= read -r line; do
 #SBATCH --mem=$mem
 #SBATCH -t 16:00:00
 #SBATCH --account=abdelfattah
-#SBATCH --partition=abdelfattah
 EOL
 
         # Conditionally add the GPU line

@@ -286,16 +286,17 @@ class AllSS:
     def _load_classes(self):
         for key, (path, cls) in FILE_MAPPINGS.items():
             start_read_time = time.time()
-            if os.path.exists(path):
-                print("Loading {} from cache".format(key))
-                try:
-                    self._load_class_from_cache(key, path)
-                except:
-                    print("Loading {} from source".format(key))
-                    self._load_class_from_source_and_save_to_cache(key, path, cls)
-            else:
-                print("Loading {} from source".format(key))
-                self._load_class_from_source_and_save_to_cache(key, path, cls)
+            self._load_class_from_source_and_save_to_cache(key, path, cls)
+            # if os.path.exists(path):
+            #     print("Loading {} from cache".format(key))
+            #     try:
+            #         self._load_class_from_cache(key, path)
+            #     except:
+            #         print("Loading {} from source".format(key))
+            #         self._load_class_from_source_and_save_to_cache(key, path, cls)
+            # else:
+            #     print("Loading {} from source".format(key))
+            #     self._load_class_from_source_and_save_to_cache(key, path, cls)
             print("Load Time: {}".format(time.time() - start_read_time))
 
     def _load_class_from_cache(self, key, path):

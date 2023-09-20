@@ -84,7 +84,7 @@ class TransNASBench101Micro:
         op_mat = op_mat/np.max(op_mat)
         return np.concatenate([adj_mat, op_mat, np.asarray(self.get_zcp(idx, task))]).tolist()
 
-    def get_adj_op(self, idx, task=None):
+    def get_adj_op(self, idx, task=None, space=None, bin_space=None):
         task = 'class_scene' if task==None else task
         hash = self.hash_iterator_list[idx]
         ops = self.opslist_onehot(eval(hash))

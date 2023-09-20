@@ -68,7 +68,7 @@ class NASBench301:
         op_mat = op_mat/np.max(op_mat)
         return np.concatenate([adj_mat, op_mat, np.asarray(self.get_zcp(idx))]).tolist()
 
-    def get_adj_op(self, idx):
+    def get_adj_op(self, idx, space=None, bin_space=None):
         cate_nb301_arch = self.cate_nb301['genotypes'][idx]
         arch_desc = {'arch': ([(int(x[0]), self.op_dict_rev[x[1]]) for x in cate_nb301_arch],[(int(x[0]), self.op_dict_rev[x[1]]) for x in cate_nb301_arch])}
         return convert_arch_tuple_to_idx([(str(x[0]), self.op_dict[x[1]]) for x in arch_desc['arch'][0]])

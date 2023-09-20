@@ -94,7 +94,7 @@ class NDS:
     def get_zcp(self, idx, space="Amoeba"):
         return list(self.zcp_nds_norm[space][idx].values())
     
-    def get_adj_op(self, idx, space="Amoeba"):
+    def get_adj_op(self, idx, space="Amoeba", bin_space=None):
         return self.space_adj_mats[space][str(idx)]
     
     def get_cate(self, idx, space="Amoeba"):

@@ -61,7 +61,7 @@ class NASBench101:
         op_mat = op_mat/np.max(op_mat)
         return np.concatenate((adj_mat, op_mat, np.asarray(self.get_zcp(idx)))).tolist()
 
-    def get_adj_op(self, idx):
+    def get_adj_op(self, idx, space=None, bin_space=None):
         hash = self.hash_iterator_list[idx]
         metrics_hashed = self.nb1_api.get_metrics_from_hash(hash)
         matrix = metrics_hashed[0]['module_adjacency']

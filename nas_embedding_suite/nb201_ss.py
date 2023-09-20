@@ -127,7 +127,7 @@ class NASBench201:
         return np.concatenate([adj_mat, op_mat, np.asarray(self.get_zcp(idx))]).tolist()
 
 
-    def get_adj_op(self, idx):
+    def get_adj_op(self, idx, space=None, bin_space=None):
         arch_str = self.nb2_api.query_by_index(idx).arch_str
         cellobj = Cell201(arch_str)
         gcn_encoding = cellobj.gcn_encoding(self.nb2_api, deterministic=True)

@@ -311,7 +311,10 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
                     norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
-                    accs.append(embedding_gen.get_valacc(i, space=space))
+                    if space == 'tb101':
+                        accs.append(embedding_gen.get_valacc(i, task=args.task))
+                    else:
+                        accs.append(embedding_gen.get_valacc(i))
                     representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat), torch.Tensor(norm_w_d)))
         else: # "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"
             for i in tqdm(sample_indexes):
@@ -334,7 +337,10 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
-                    accs.append(embedding_gen.get_valacc(i, space=space))
+                    if space == 'tb101':
+                        accs.append(embedding_gen.get_valacc(i, task=args.task))
+                    else:
+                        accs.append(embedding_gen.get_valacc(i))
                     representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zcp_), torch.Tensor(norm_w_d)))
 
     dataset = CustomDataset(representations, accs)

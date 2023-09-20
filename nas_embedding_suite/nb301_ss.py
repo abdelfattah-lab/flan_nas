@@ -73,10 +73,10 @@ class NASBench301:
         arch_desc = {'arch': ([(int(x[0]), self.op_dict_rev[x[1]]) for x in cate_nb301_arch],[(int(x[0]), self.op_dict_rev[x[1]]) for x in cate_nb301_arch])}
         return convert_arch_tuple_to_idx([(str(x[0]), self.op_dict[x[1]]) for x in arch_desc['arch'][0]])
     
-    def get_arch2vec(self, idx):
+    def get_arch2vec(self, idx, joint=None):
         return self.arch2vec_nb301[idx]['feature'].tolist()
     
-    def get_cate(self, idx):
+    def get_cate(self, idx, joint=None):
         return self.cate_nb301['embeddings'][idx].tolist()
     
     def get_valacc(self, idx, space=None, use_nb3_performance_model=False):

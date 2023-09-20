@@ -70,13 +70,13 @@ class NASBench101:
         module_operations = self.transform_nb101_operations(ops)
         return {'module_adjacency': matrix.tolist(), 'module_operations': module_operations.tolist()}
 
-    def get_arch2vec(self, idx):
+    def get_arch2vec(self, idx, joint=None, space=None):
         return self.arch2vec_nb101[idx]['feature'].tolist()
 
-    def get_cate(self, idx):
+    def get_cate(self, idx, joint=None, space=None):
         return self.cate_nb101['embeddings'][idx].tolist()
 
-    def get_zcp(self, idx):
+    def get_zcp(self, idx, joint=None, space=None):
         hash = self.hash_iterator_list[idx]
         metrics = self.nb1_api.get_metrics_from_hash(hash)
         mat_adj = np.asarray(metrics[0]['module_adjacency']).flatten().tolist()

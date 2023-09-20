@@ -90,7 +90,7 @@ class TransNASBench101Micro:
         ops = self.opslist_onehot(eval(hash))
         return {'module_adjacency': self.get_matrix_and_ops(eval(self.hash_iterator_list[idx]))[0], 'module_operations': ops.tolist()}
     
-    def get_zcp(self, idx, task=None):
+    def get_zcp(self, idx, task=None, joint=None, space=None):
         task = 'class_scene' if task==None else task
         hash = self.hash_iterator_list[idx]
         return list(self.zcp_tb101[task][hash].values())
@@ -101,11 +101,11 @@ class TransNASBench101Micro:
         # return self.valaccs[task][hash]
         return self.unnorm_valaccs[task][hash]
     
-    def get_arch2vec(self, idx, task=None):
+    def get_arch2vec(self, idx, task=None, joint=None, space=None):
         task = 'class_scene' if task==None else task
         return self.arch2vec_embeddings[task][idx]['feature'].tolist()
     
-    def get_cate(self, idx, task=None):
+    def get_cate(self, idx, task=None, joint=None, space=None):
         task = 'class_scene' if task==None else task
         return self.cate_embeddings[task]['embeddings'][idx].tolist()
     

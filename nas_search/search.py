@@ -345,7 +345,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     if space == 'tb101':
                         accs.append(embedding_gen.get_valacc(i, task=args.task))
                     else:
-                        accs.append(embedding_gen.get_valacc(i))
+                        accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zcp_), torch.Tensor(norm_w_d)))
 
     dataset = CustomDataset(representations, accs)
@@ -541,7 +541,7 @@ if args.modify_emb_pretransfer and args.source_space is not None:
 for tr_ in range(args.num_trials):
     print("Trial number: {}".format(tr_))
     model.load_state_dict(preserved_state)
-    if args.modify_emb_pretransfer:
+    if args.modify_emb_pretransfer and args.source_space is not None:
         modified_tensor = model.op_emb.weight.clone()
         modified_tensor[transfer_start_idx:transfer_end_idx] = torch.cat((preserved_state['op_emb.weight'][source_start_idx:source_end_idx].detach(),)*40, dim=0)[:(transfer_end_idx - transfer_start_idx)]
         model.op_emb.weight.data = modified_tensor
@@ -615,7 +615,7 @@ for tr_ in range(args.num_trials):
         elif args.loss_type == "pwl":
             # Reset to pre-trained state
             model.load_state_dict(preserved_state)
-            if args.modify_emb_pretransfer:
+            if args.modify_emb_pretransfer and args.source_space is not None:
                 modified_tensor = model.op_emb.weight.clone()
                 modified_tensor[transfer_start_idx:transfer_end_idx] = torch.cat((preserved_state['op_emb.weight'][source_start_idx:source_end_idx].detach(),)*40, dim=0)[:(transfer_end_idx - transfer_start_idx)]
                 model.op_emb.weight.data = modified_tensor

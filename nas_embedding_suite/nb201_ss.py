@@ -135,7 +135,7 @@ class NASBench201:
         return {'module_adjacency': self.get_matrix_and_ops(arch_vector)[0], 'module_operations': gcn_encoding['operations'].tolist()}
 
 
-    def get_zcp(self, idx):
+    def get_zcp(self, idx, joint=None):
         arch_str = self.nb2_api.query_by_index(idx).arch_str
         cellobj = Cell201(arch_str)
         zcp_key = str(tuple(cellobj.encode(predictor_encoding='adj')))
@@ -168,10 +168,10 @@ class NASBench201:
         # # return self.zcp_nb201_valacc[zcp_key]
         # return self.zcp_unnorm_nb201_valacc[zcp_key]
 
-    def get_arch2vec(self, idx):
+    def get_arch2vec(self, idx, joint=None, space=None):
         return self.arch2vec_nb201[idx]['feature'].tolist()
 
-    def get_cate(self, idx):
+    def get_cate(self, idx, joint=None, space=None):
         return self.cate_nb201['embeddings'][idx].tolist()
     ##################### Key Functions End #####################
     

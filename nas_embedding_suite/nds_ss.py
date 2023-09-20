@@ -91,16 +91,16 @@ class NDS:
         op_mat_red = op_mat_red/np.max(op_mat_red)
         return np.concatenate((adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red, np.asarray(self.get_zcp(idx, space)).flatten())).tolist()
 
-    def get_zcp(self, idx, space="Amoeba"):
+    def get_zcp(self, idx, space="Amoeba", joint=None):
         return list(self.zcp_nds_norm[space][idx].values())
     
     def get_adj_op(self, idx, space="Amoeba", bin_space=None):
         return self.space_adj_mats[space][str(idx)]
     
-    def get_cate(self, idx, space="Amoeba"):
+    def get_cate(self, idx, space="Amoeba", joint=None):
         return self.cate_embeddings[space]['embeddings'][idx].tolist()
     
-    def get_arch2vec(self, idx, space="Amoeba"):
+    def get_arch2vec(self, idx, space="Amoeba", joint=None):
         return self.arch2vec_embeddings[space][idx]['feature'].tolist()
     
     def get_valacc(self, idx, space="Amoeba"):

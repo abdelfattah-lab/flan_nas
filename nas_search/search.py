@@ -554,6 +554,7 @@ for tr_ in range(args.num_trials):
     if args.target_space in ["nb101", "nb201", "nb301", "tb101"]:
         model.dual_gcn = False
     sample_cts = [(2,2),(2,2),(2,2),(2,2),(4,4),(2,2),(2,2),(8,8),(8,8),(16,16),(16,16),(32,32)]
+    # sample_cts = [(2,2),(2,2)]
     # 
     # for halv_rate, num_samps in enumerate(list(range(args.periter_samps, args.samp_lim, args.periter_samps))):
     for halv_rate, samp_tuple in enumerate(sample_cts):

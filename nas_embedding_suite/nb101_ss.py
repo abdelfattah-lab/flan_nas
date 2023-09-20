@@ -85,7 +85,7 @@ class NASBench101:
         mat_repr = str(tuple(mat))
         return [self.zcp_nb101['cifar10'][mat_repr][nn] for nn in self.zcps]
 
-    def get_valacc(self, idx, normalized=True):
+    def get_valacc(self, idx, space=None, normalized=True):
         valacc = self.valacc_list[idx]
         if not normalized:
             valacc = self.unnorm_valacc_list[idx]

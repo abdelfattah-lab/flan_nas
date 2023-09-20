@@ -80,12 +80,12 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
             if inputs.shape[0] == 1 and args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 continue
-            elif inputs.shape[0] == 2 and args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+            elif inputs.shape[0] <= 2 and args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                 continue
         else:
             if inputs[0].shape[0] == 1 and args.space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 continue
-            elif inputs[0].shape[0] == 2 and args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+            elif inputs[0].shape[0] <= 2 and args.space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                 continue
         #### Params for PWL Loss
         accs = targets
@@ -270,11 +270,11 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
         else:                           # zcp, arch2vec, cate --> FullyConnectedNN
             for i in tqdm(sample_indexes):
                 if space in ['nb101', 'nb201', 'nb301']:
-                    exec('representations.append(np.concatenate((embedding_gen.get_{}(i), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, space))
+                    exec('representations.append(np.concatenate((embedding_gen.get_{}(i), np.asarray(embedding_gen.get_norm_w_d(i, space="{}")).flatten())))'.format(representation, space))
                 elif space=='tb101':
-                    exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}"), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, args.task, args.task))
+                    exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}"), np.asarray(embedding_gen.get_norm_w_d(i, space="{}")).flatten())))'.format(representation, args.task, args.task))
                 else:
-                    exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}"), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, space, space))
+                    exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}"), np.asarray(embedding_gen.get_norm_w_d(i, space="{}")).flatten())))'.format(representation, space, space))
                 if space=='tb101':
                     accs.append(embedding_gen.get_valacc(i, task=args.task))
                 elif space not in ['nb101', 'nb201', 'nb301']:

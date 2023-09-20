@@ -79,7 +79,7 @@ class NASBench301:
     def get_cate(self, idx):
         return self.cate_nb301['embeddings'][idx].tolist()
     
-    def get_valacc(self, idx, use_nb3_performance_model=False):
+    def get_valacc(self, idx, space=None, use_nb3_performance_model=False):
         if use_nb3_performance_model:
             cate_nb301_arch = self.cate_nb301['genotypes'][idx]
             arch_desc = {'arch': ([(int(x[0]), self.op_dict_rev[x[1]]) for x in cate_nb301_arch],[(int(x[0]), self.op_dict_rev[x[1]]) for x in cate_nb301_arch])}

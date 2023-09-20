@@ -95,7 +95,7 @@ class TransNASBench101Micro:
         hash = self.hash_iterator_list[idx]
         return list(self.zcp_tb101[task][hash].values())
     
-    def get_valacc(self, idx, task=None):
+    def get_valacc(self, idx, task=None, space=None):
         task = 'class_scene' if task==None else task
         hash = self.hash_iterator_list[idx]
         # return self.valaccs[task][hash]

@@ -147,7 +147,7 @@ class NASBench201:
     def get_norm_w_d(self, idx, space=None):
         return [0, 0]
     
-    def get_valacc(self, idx):
+    def get_valacc(self, idx, space=None):
         arch_str = self.nb2_api.query_by_index(idx).arch_str
         arch_index = self.nb2_api.query_index_by_arch(arch_str)
         # acc_results = self.nb2_api.query_by_index(arch_index, 'cifar10-valid', use_12epochs_result=False)

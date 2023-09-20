@@ -233,7 +233,12 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
     accs = []
     if args.source_space is not None:
         # here, we dont just need the numitems, we actually need the indexs mapped for each SS
-        idx_range = embedding_gen.get_ss_idxrange(space)
+        if args.source_space is None:
+            idx_range = list(range(embedding_gen.get_numitems(space=space)))
+        else:
+            jli = embedding_gen.get_ss_idxrange(space=space)
+            jli_min = min(jli)
+            idx_range = [zlm - jli_min for zlm in jli]
         min_idx_range = min(idx_range)
         idx_ranges = [zlm - min_idx_range for zlm in idx_range]
         if fetch_fixed_index is None:
@@ -314,7 +319,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     if space == 'tb101':
                         accs.append(embedding_gen.get_valacc(i, task=args.task))
                     else:
-                        accs.append(embedding_gen.get_valacc(i))
+                        accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat), torch.Tensor(norm_w_d)))
         else: # "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"
             for i in tqdm(sample_indexes):
@@ -460,7 +465,7 @@ else:
     if representation == "adj_gin":
         input_dim = next(iter(train_dataloader))[0][1].shape[1]
         none_op_ind = 130 # placeholder
-        if args.source_space in ["nb101", "nb201", "nb301", "tb101"]:
+        if args.target_space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
                             back_dense=args.back_dense,
@@ -483,7 +488,7 @@ else:
         input_dim = next(iter(train_dataloader))[0][1].shape[1]
         num_zcps = next(iter(train_dataloader))[0][-2].shape[1]
         none_op_ind = 130 # placeholder
-        if args.source_space in ["nb101", "nb201", "nb301", "tb101"]:
+        if args.target_space in ["nb101", "nb201", "nb301", "tb101"]:
             model = GIN_Model(device=args.device,
                             gtype = args.gnn_type,
                             back_dense=args.back_dense,
@@ -510,9 +515,12 @@ else:
     model.to(device)
     preserved_state = copy.deepcopy(model.state_dict())
 
-jli = embedding_gen.get_ss_idxrange(space=args.target_space)
-jli_min = min(jli)
-jli = [zlm - jli_min for zlm in jli]
+if args.source_space is None:
+    jli = list(range(embedding_gen.get_numitems(space=args.target_space)))
+else:
+    jli = embedding_gen.get_ss_idxrange(space=args.target_space)
+    jli_min = min(jli)
+    jli = [zlm - jli_min for zlm in jli]
 full_target_space, _ = get_dataloader(args, embedding_gen, args.target_space, sample_count=None, representation=representation, mode='test', train_indexes=None, fetch_fixed_index=jli)
 mini_target_space, _ = get_dataloader(args, embedding_gen, args.target_space, sample_count=None, representation=representation, mode='test', train_indexes=None, fetch_fixed_index=random.sample(jli, 40))
 
@@ -551,9 +559,12 @@ for tr_ in range(args.num_trials):
     for halv_rate, samp_tuple in enumerate(sample_cts):
         # predict score on entire search space
         pred_scores = get_all_scores(model, full_target_space, space=args.target_space)
-        jli = embedding_gen.get_ss_idxrange(space=args.target_space)
-        jli_min = min(jli)
-        jli = [zlm - jli_min for zlm in jli]
+        if args.source_space is None:
+            jli = list(range(embedding_gen.get_numitems(space=args.target_space)))
+        else:
+            jli = embedding_gen.get_ss_idxrange(space=args.target_space)
+            jli_min = min(jli)
+            jli = [zlm - jli_min for zlm in jli]
         best_candidates = sorted(zip(jli, pred_scores), key=lambda p: p[1], reverse=True)
             # iterate best_candidates, and if index, doesnt match, add it to sampled_indexes.
         # Sample best candidates
@@ -564,18 +575,31 @@ for tr_ in range(args.num_trials):
             if cand[0] not in sampled_indexes:
                 sampled_indexes.append(cand[0])
                 accuracy_predicted.append(cand[1])
-                accuracy_sampled.append(embedding_gen.get_valacc(cand[0], space=args.target_space))
+                if args.target_space in ["nb101", "nb201", "nb301", "tb101"]:
+                    if args.target_space == 'tb101':
+                        accuracy_sampled.append(embedding_gen.get_valacc(cand[0], task=args.task))
+                    else:
+                        accuracy_sampled.append(embedding_gen.get_valacc(cand[0], space=args.target_space))
+                else:
+                    accuracy_sampled.append(embedding_gen.get_valacc(cand[0], space=args.target_space))
             cand_tracker += 1
 
         # Sample random candidates
         # rand_indx = random.sample(set(jli) - set(sampled_indexes), args.periter_samps//2)
         halv_candlen = max(512, len(jli)//(2**halv_rate))
-        # take the top :halv_candlen candidates from best_candidates
+        # take random elements from the top :halv_candlen candidates of best_candidates
         rand_indx = random.sample(set([x[0] for x in best_candidates[:halv_candlen]]) - set(sampled_indexes), min(samp_tuple[1], len(set([x[0] for x in best_candidates[:halv_candlen]]) - set(sampled_indexes))))
         # insert all elements in rand_indx to sampled_indexes
         sampled_indexes.extend(rand_indx)
         for idx in rand_indx:
-            accuracy_sampled.append(embedding_gen.get_valacc(idx, space=args.target_space))
+            if args.target_space in ["nb101", "nb201", "nb301", "tb101"]:
+                if args.target_space == 'tb101':
+                    accuracy_sampled.append(embedding_gen.get_valacc(idx, task=args.task))
+                else:
+                    accuracy_sampled.append(embedding_gen.get_valacc(idx, space=args.target_space))
+            else:
+                accuracy_sampled.append(embedding_gen.get_valacc(idx, space=args.target_space))
+            # accuracy_sampled.append(embedding_gen.get_valacc(idx, space=args.target_space))
         # Calculate statistics for the current num_samps
         best_accuracies.setdefault(len(sampled_indexes), []).append(max(accuracy_sampled))
         median_accuracies.setdefault(len(sampled_indexes), []).append(np.median(accuracy_sampled))

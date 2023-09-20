@@ -2,11 +2,15 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import seaborn as sns
+
+# Set a consistent color palette
+sns.set_palette("tab10")
 
 # Enable LaTeX interpretation in matplotlib
 plt.rcParams['text.usetex'] = False
 plt.rcParams['mathtext.fontset'] = 'cm'
-
+plt.rcParams['font.size'] = 14  # Increase font size
 
 # Define the tagates_eff dictionary
 
@@ -56,9 +60,9 @@ exp5_representations = {"nb101": [],
                         }
 
 pltlims = {
-    "nb101": {'x': (4, 512), 'y': (0.4, 0.8)},
-    "nb201": {'x': (4, 256), 'y': (0.4, 1)},
-    "ENAS":  {'x': (4, 512), 'y': (0.4, 0.8)}
+    "nb101": {'x': (2, 2048), 'y': (0.4, 0.85)},
+    "nb201": {'x': (2, 1024), 'y': (0.3, 0.9)},
+    "ENAS":  {'x': (2, 1024), 'y': (0.2, 0.7)}
 }
 
 representation_map = {
@@ -79,6 +83,10 @@ if not os.path.exists("graphs"):
 # Loop through each space
 for idx, space in enumerate(spaces_to_analyze):
     ax = axes[idx]
+
+    # Set plot limits
+    ax.set_xlim(pltlims[space]['x'])
+    ax.set_ylim(pltlims[space]['y'])
 
     # Loop through each experiment folder
     for exp, suffix in experiments.items():
@@ -106,21 +114,23 @@ for idx, space in enumerate(spaces_to_analyze):
             for representation in representations:
                 mapped_representation = representation_map.get(representation, representation)
                 subset = df[df['representation'] == representation]
-                ax.plot(subset['key'], subset['kdt'], label=f"{mapped_representation}{suffix}", marker='x')
+                ax.plot(subset['key'], subset['kdt'], label=f"{mapped_representation}{suffix}", marker='o', linewidth=2)
 
-    # Plot tagates_eff data on the current subplot
-    ax.plot(list(tagates_eff[space].keys()), list(tagates_eff[space].values()), label="TA-GATES", marker='o')
-    # Plot tagates_eff data on the current subplot
-    ax.plot(list(gcn_eff[space].keys()), list(gcn_eff[space].values()), label="GCN", marker='o')
-    # Plot tagates_eff data on the current subplot
-    ax.plot(list(multipredict_eff[space].keys()), list(multipredict_eff[space].values()), label="MultiPredict", marker='o')
+    # Plot tagates_eff data on the current subplot with thicker line
+    ax.plot(list(tagates_eff[space].keys()), list(tagates_eff[space].values()), label="TA-GATES", marker='v', linestyle='dashed', linewidth=1)
+    # Plot gcn_eff data on the current subplot with thicker line
+    ax.plot(list(gcn_eff[space].keys()), list(gcn_eff[space].values()), label="GCN", marker='v', linestyle='dashed', linewidth=1)
+    # Plot multipredict_eff data on the current subplot with thicker line
+    ax.plot(list(multipredict_eff[space].keys()), list(multipredict_eff[space].values()), label="MultiPredict", marker='v', linestyle='dashed', linewidth=1)
+
 
     # Beautify the plot
-    ax.set_title(f"Results for {space_map[space]}")
+    ax.set_title(f"Predictor Sample Efficiency for {space_map[space]}")
     ax.set_xlabel("Number of Training Samples")
-    ax.set_xscale('log')
+    ax.set_xscale('log', basex=2)
     ax.set_ylabel("Kendall Tau")
-    ax.legend(loc='lower right')  # This ensures each subplot has its own legend
+    ax.legend(loc='lower right', fontsize=8)  # This ensures each subplot has its own legend
+    ax.grid(True, which="both", ls="--", c='0.7')  # Add a grid for better readability
 
 # Adjust the layout to make it tight
 plt.tight_layout()

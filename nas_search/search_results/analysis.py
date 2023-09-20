@@ -49,7 +49,7 @@ for csv_file in reference_csv_files:
     plt.xlim([4, 64])
     plt.ylim(bottom=0.9)
     # plt.yscale("log")
-    plt.xscale("log", base=2)
+    plt.xscale("log", basex=2)
     plt.ylabel("Average Best Accuracy")
     plt.legend()
     plt.tight_layout()

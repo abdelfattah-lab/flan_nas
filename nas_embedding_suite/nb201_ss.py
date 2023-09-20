@@ -8,6 +8,7 @@ import numpy as np
 import torch.nn.functional as F
 import pandas as pd
 from sklearn import preprocessing
+import pickle
 import random, time
 
 import sys, os
@@ -20,6 +21,7 @@ BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_data
 
 
 class NASBench201:
+    CACHE_FILE_PATH = BASE_PATH + "/nb201_cellobj_cache.pkl"  # Adjust this to your preferred path
     def __init__(self, path=None, zcp_dict=False, normalize_zcp=True, log_synflow=True, embedding_list = [ 'adj',
                                                                     'adj_op',
                                                                     'path',
@@ -76,7 +78,31 @@ class NASBench201:
         self.nb2_api  = NB2API(BASE_PATH + "NAS-Bench-201-v1_1-096897.pth")
         print("Loaded files in: ", time.time() - a, " seconds")
         self.zcps = ['epe_nas', 'fisher', 'flops', 'grad_norm', 'grasp', 'jacov', 'l2_norm', 'nwot', 'params', 'plain', 'snip', 'synflow', 'zen']    
-
+        self.cache = {}
+        self.cready = False
+        # Check if the cache file exists
+        if os.path.exists(NASBench201.CACHE_FILE_PATH):
+            print("Loading cache for NASBench-201 speedup!!...")
+            self.cready = True
+            with open(NASBench201.CACHE_FILE_PATH, 'rb') as cache_file:
+                self.cache = pickle.load(cache_file)
+        else:
+            # If the cache file doesn't exist, populate the cache for all idx values
+            self.cache = {}
+            print("Populating cache for NASBench-201 speedup!!...")
+            for idx in tqdm(range(15625)):  # Assuming your range is [0, 15625]
+                self.cache[idx] = {
+                    'adjmlp_zcp': self.get_adjmlp_zcp(idx),
+                    'adj_op': self.get_adj_op(idx),
+                    'zcp': self.get_zcp(idx),
+                    'acc': self.get_valacc(idx),
+                }
+            
+            # Now save the populated cache
+            with open(NASBench201.CACHE_FILE_PATH, 'wb') as cache_file:
+                pickle.dump(self.cache, cache_file)
+            self.cready = True
+                
     def min_max_scaling(self, data):
         return (data - np.min(data)) / (np.max(data) - np.min(data))
 
@@ -115,31 +141,42 @@ class NASBench201:
     #################### Key Functions Begin ###################
     
     def get_adjmlp_zcp(self, idx):
-        arch_str = self.nb2_api.query_by_index(idx).arch_str
-        cellobj = Cell201(arch_str)
-        gcn_encoding = cellobj.gcn_encoding(self.nb2_api, deterministic=True)
-        arch_vector = self.get_arch_vector_from_arch_str(arch_str)
-        matrix = self.get_matrix_and_ops(arch_vector)[0]
-        op_mat = gcn_encoding['operations'].tolist()
-        adj_mat = np.asarray(matrix).flatten()
-        op_mat = torch.Tensor(np.asarray(op_mat)).argmax(dim=1).numpy().flatten()
-        op_mat = op_mat/np.max(op_mat)
-        return np.concatenate([adj_mat, op_mat, np.asarray(self.get_zcp(idx))]).tolist()
+        # Check if result exists in cache
+        if self.cready:
+            return self.cache[idx]['adjmlp_zcp']
+        else:
+            arch_str = self.nb2_api.query_by_index(idx).arch_str
+            cellobj = Cell201(arch_str)
+            gcn_encoding = cellobj.gcn_encoding(self.nb2_api, deterministic=True)
+            arch_vector = self.get_arch_vector_from_arch_str(arch_str)
+            matrix = self.get_matrix_and_ops(arch_vector)[0]
+            op_mat = gcn_encoding['operations'].tolist()
+            adj_mat = np.asarray(matrix).flatten()
+            op_mat = torch.Tensor(np.asarray(op_mat)).argmax(dim=1).numpy().flatten()
+            op_mat = op_mat/np.max(op_mat)
+            return np.concatenate([adj_mat, op_mat, np.asarray(self.get_zcp(idx))]).tolist()
 
 
     def get_adj_op(self, idx, space=None, bin_space=None):
-        arch_str = self.nb2_api.query_by_index(idx).arch_str
-        cellobj = Cell201(arch_str)
-        gcn_encoding = cellobj.gcn_encoding(self.nb2_api, deterministic=True)
-        arch_vector = self.get_arch_vector_from_arch_str(arch_str)
-        return {'module_adjacency': self.get_matrix_and_ops(arch_vector)[0], 'module_operations': gcn_encoding['operations'].tolist()}
+        if self.cready:
+            return self.cache[idx]['adj_op']
+        else:
+            arch_str = self.nb2_api.query_by_index(idx).arch_str
+            cellobj = Cell201(arch_str)
+            gcn_encoding = cellobj.gcn_encoding(self.nb2_api, deterministic=True)
+            arch_vector = self.get_arch_vector_from_arch_str(arch_str)
+            return {'module_adjacency': self.get_matrix_and_ops(arch_vector)[0], 'module_operations': gcn_encoding['operations'].tolist()}
 
 
     def get_zcp(self, idx, joint=None):
-        arch_str = self.nb2_api.query_by_index(idx).arch_str
-        cellobj = Cell201(arch_str)
-        zcp_key = str(tuple(cellobj.encode(predictor_encoding='adj')))
-        return [self.zcp_nb201['cifar10'][zcp_key][nn] for nn in self.zcps]
+        # Check if result exists in cache
+        if self.cready:
+            return self.cache[idx]['zcp']
+        else:
+            arch_str = self.nb2_api.query_by_index(idx).arch_str
+            cellobj = Cell201(arch_str)
+            zcp_key = str(tuple(cellobj.encode(predictor_encoding='adj')))
+            return [self.zcp_nb201['cifar10'][zcp_key][nn] for nn in self.zcps]
 
     def get_numitems(self, space=None):
         return 15625
@@ -148,25 +185,24 @@ class NASBench201:
         return [0, 0]
     
     def get_valacc(self, idx, space=None):
-        arch_str = self.nb2_api.query_by_index(idx).arch_str
-        arch_index = self.nb2_api.query_index_by_arch(arch_str)
-        # acc_results = self.nb2_api.query_by_index(arch_index, 'cifar10-valid', use_12epochs_result=False)
-        try:
-            acc_results = sum([self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
-                                                    use_12epochs_result=False,
-                                                    is_random=seed)['valid-accuracy'] for seed in [777, 888, 999]])/3.
-            val_acc = acc_results['valid-accuracy'] / 100.
-        except:
-            # some architectures only contain 1 seed result
-            acc_results = self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
-                                                    use_12epochs_result=False,
-                                                    is_random=False)['valid-accuracy'] 
-            val_acc = acc_results / 100.
-        return val_acc
-        # cellobj = Cell201(arch_str)
-        # zcp_key = str(tuple(cellobj.encode(predictor_encoding='adj')))
-        # # return self.zcp_nb201_valacc[zcp_key]
-        # return self.zcp_unnorm_nb201_valacc[zcp_key]
+        if self.cready:
+            return self.cache[idx]['acc']
+        else:
+            arch_str = self.nb2_api.query_by_index(idx).arch_str
+            arch_index = self.nb2_api.query_index_by_arch(arch_str)
+            # acc_results = self.nb2_api.query_by_index(arch_index, 'cifar10-valid', use_12epochs_result=False)
+            try:
+                acc_results = sum([self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
+                                                        use_12epochs_result=False,
+                                                        is_random=seed)['valid-accuracy'] for seed in [777, 888, 999]])/3.
+                val_acc = acc_results['valid-accuracy'] / 100.
+            except:
+                # some architectures only contain 1 seed result
+                acc_results = self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
+                                                        use_12epochs_result=False,
+                                                        is_random=False)['valid-accuracy'] 
+                val_acc = acc_results / 100.
+            return val_acc
 
     def get_arch2vec(self, idx, joint=None, space=None):
         return self.arch2vec_nb201[idx]['feature'].tolist()

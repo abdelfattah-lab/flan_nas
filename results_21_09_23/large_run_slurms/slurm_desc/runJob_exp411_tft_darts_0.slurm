@@ -1,0 +1,19 @@
+#!/bin/bash
+#SBATCH -J exp411_tft_darts_0
+#SBATCH -o /home/ya255/projects/iclr_nas_embedding/correlation_trainer/large_scale_run_logs/%j.out
+#SBATCH -e /home/ya255/projects/iclr_nas_embedding/correlation_trainer/large_scale_run_logs/%j.err
+#SBATCH -N 1
+#SBATCH --mem=80000
+#SBATCH -t 16:00:00
+#SBATCH --account=abdelfattah
+#SBATCH --gres=gpu:1
+#SBATCH -n 2
+export PROJ_BPATH="/home/ya255/projects/iclr_nas_embedding"
+
+source /share/apps/anaconda3/2021.05/etc/profile.d/conda.sh 
+
+conda activate unr
+
+cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
+
+python universal_main.py --seed 42 --name_desc exp411 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space ENAS --transfer_space DARTS --representation adj_gin_cate --sample_size 128 --test_batch_size 128

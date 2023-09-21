@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 import seaborn as sns
+import matplotlib.ticker as ticker
 
 # Set a consistent color palette
 sns.set_palette("tab10")
@@ -13,6 +14,28 @@ plt.rcParams['mathtext.fontset'] = 'cm'
 plt.rcParams['font.size'] = 14  # Increase font size
 
 # Define the tagates_eff dictionary
+# Special representations for exp5
+# exp3_representations = {"nb101": ['adj_gin_zcp', 'adj_gin'],
+#                         "nb201": ['adj_gin_cate', 'adj_gin_zcp'],
+#                         "ENAS": ['adj_gin_zcp', 'adj_gin_arch2vec']
+#                         }
+# exp4_representations = {"nb101": ['adj_gin_zcp', 'adj_gin_cate'],
+#                         "nb201": ['adj_gin_zcp'],
+#                         "ENAS": ['adj_gin_zcp', 'adj_gin_cate']
+#                         }
+
+# exp3_representations = {"nb101": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec'],
+#                         "nb201": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec'],
+#                         "ENAS": ['adj_gin_zcp', 'adj_gin_arch2vec']
+#                         }
+# exp4_representations = {"nb101": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec'],
+#                         "nb201": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec'],
+#                         "ENAS": ['adj_gin_zcp', 'adj_gin_cate']
+#                         }
+# exp5_representations = {"nb101": [],
+#                         "nb201": ['adj_gin_arch2vec'],
+#                         "ENAS": []
+#                         }
 
 tagates_eff = {
     'nb101': dict(zip([72, 364, 729, 3645, 7290], [0.6686, 0.7744, 0.7839, 0.8133, 0.8217])),
@@ -38,31 +61,32 @@ spaces_to_analyze = ['nb101', 'nb201', 'ENAS']  # Add other spaces to this list 
 
 # Experiment folders and their corresponding suffixes
 experiments = {
-    "exp3": "",
-    "exp4": "$^{T}$",
+    "exp3_eg": "",
+    "exp4eg": "$^{T}$",
     "exp5": "$^{UT}$"
 }
 
 space_map = {'nb101': "NASBench-101", "nb201": "NASBench-201", "ENAS": "ENAS"}
 
-# Special representations for exp5
-exp3_representations = {"nb101": ['adj_gin_zcp', 'adj_gin'],
-                        "nb201": ['adj_gin_cate', 'adj_gin_arch2vec'],
-                        "ENAS": ['adj_gin_zcp', 'adj_gin_arch2vec']
+
+
+exp3_representations = {"nb101": [('adj_gin_zcp', (0, 1024))],
+                        "nb201": [('adj_gin', (0, 1024)), ('adj_gin_arch2vec', (20, 1024))],
+                        "ENAS": [('adj_gin_zcp', (0, 1024))]
                         }
-exp4_representations = {"nb101": ['adj_gin_zcp', 'adj_gin_cate'],
-                        "nb201": ['adj_gin_zcp'],
-                        "ENAS": ['adj_gin_zcp', 'adj_gin_cate']
+exp4_representations = {"nb101": [('adj_gin', (0, 64))],
+                        "nb201": [],
+                        "ENAS": [('adj_gin_zcp', (0, 1024))]
                         }
 exp5_representations = {"nb101": [],
-                        "nb201": ['adj_gin_arch2vec'],
+                        "nb201": [],
                         "ENAS": []
                         }
 
 pltlims = {
-    "nb101": {'x': (2, 2048), 'y': (0.4, 0.85)},
-    "nb201": {'x': (2, 1024), 'y': (0.3, 0.9)},
-    "ENAS":  {'x': (2, 1024), 'y': (0.2, 0.7)}
+    "nb101": {'x': (2, 1024), 'y': (0.45, 0.85)},
+    "nb201": {'x': (4, 512), 'y': (0.35, 0.95)},
+    "ENAS":  {'x': (2, 512), 'y': (0.2, 0.8)}
 }
 
 representation_map = {
@@ -83,6 +107,7 @@ if not os.path.exists("graphs"):
 # Loop through each space
 for idx, space in enumerate(spaces_to_analyze):
     ax = axes[idx]
+    print(space)
 
     # Set plot limits
     ax.set_xlim(pltlims[space]['x'])
@@ -99,38 +124,52 @@ for idx, space in enumerate(spaces_to_analyze):
         if file_name:
             file_path = os.path.join("correlation_results/" + exp, file_name)
             df = pd.read_csv(file_path)
+        representation_list = None
+        if exp == "exp3_eg":
+            representation_list = exp3_representations[space]
+        elif exp == "exp4eg":
+            representation_list = exp4_representations[space]
+        elif exp == "exp5":
+            representation_list = exp5_representations[space]
 
-            # Filter representations for all exps
-            if exp == "exp3":
-                df = df[df['representation'].isin(exp3_representations[space])]
-            elif exp == "exp4":
-                df = df[df['representation'].isin(exp4_representations[space])]
-            if exp == "exp5":
-                df = df[df['representation'].isin(exp5_representations[space])]
-            
+        if representation_list is not None:
+            for representation_info in representation_list:
+                if isinstance(representation_info, tuple):
+                    representation, key_range = representation_info
+                else:
+                    representation, key_range = representation_info, (None, None)
 
-            # Plot for each representation
-            representations = df['representation'].unique()
-            for representation in representations:
                 mapped_representation = representation_map.get(representation, representation)
                 subset = df[df['representation'] == representation]
+
+                # Filter the subset based on the key range
+                if key_range[0] is not None:
+                    subset = subset[subset['key'] >= key_range[0]]
+                if key_range[1] is not None:
+                    subset = subset[subset['key'] <= key_range[1]]
+
                 ax.plot(subset['key'], subset['kdt'], label=f"{mapped_representation}{suffix}", marker='o', linewidth=2)
 
     # Plot tagates_eff data on the current subplot with thicker line
-    ax.plot(list(tagates_eff[space].keys()), list(tagates_eff[space].values()), label="TA-GATES", marker='v', linestyle='dashed', linewidth=1)
+    ax.plot(list(tagates_eff[space].keys()), list(tagates_eff[space].values()), label="TA-GATES", marker='v', linestyle='dashed', linewidth=2)
     # Plot gcn_eff data on the current subplot with thicker line
-    ax.plot(list(gcn_eff[space].keys()), list(gcn_eff[space].values()), label="GCN", marker='v', linestyle='dashed', linewidth=1)
+    ax.plot(list(gcn_eff[space].keys()), list(gcn_eff[space].values()), label="GCN", marker='v', linestyle='dashed', linewidth=2)
     # Plot multipredict_eff data on the current subplot with thicker line
-    ax.plot(list(multipredict_eff[space].keys()), list(multipredict_eff[space].values()), label="MultiPredict", marker='v', linestyle='dashed', linewidth=1)
+    ax.plot(list(multipredict_eff[space].keys()), list(multipredict_eff[space].values()), label="MultiPredict", marker='v', linestyle='dashed', linewidth=2)
 
 
     # Beautify the plot
     ax.set_title(f"Predictor Sample Efficiency for {space_map[space]}")
     ax.set_xlabel("Number of Training Samples")
-    ax.set_xscale('log', basex=2)
+    ax.set_xscale('log', base=2)
+    # ax.set_yscale('log')
     ax.set_ylabel("Kendall Tau")
-    ax.legend(loc='lower right', fontsize=8)  # This ensures each subplot has its own legend
+    ax.legend(loc='upper left', fontsize=8)  # This ensures each subplot has its own legend
     ax.grid(True, which="both", ls="--", c='0.7')  # Add a grid for better readability
+    ax.get_xaxis().set_major_formatter(ticker.StrMethodFormatter("{x:.0f}"))
+    ax.get_xaxis().set_minor_formatter(ticker.StrMethodFormatter("{x:.0f}"))
+    
+    ax.tick_params(axis='x', which='both', bottom=True, top=False, labelbottom=True)
 
 # Adjust the layout to make it tight
 plt.tight_layout()

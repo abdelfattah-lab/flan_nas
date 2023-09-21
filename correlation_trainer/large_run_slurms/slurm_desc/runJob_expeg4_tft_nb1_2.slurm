@@ -1,9 +1,9 @@
 #!/bin/bash
-#SBATCH -J exp3_enct_nb201_0
+#SBATCH -J expeg4_tft_nb1_2
 #SBATCH -o /home/ya255/projects/iclr_nas_embedding/correlation_trainer/large_scale_run_logs/%j.out
 #SBATCH -e /home/ya255/projects/iclr_nas_embedding/correlation_trainer/large_scale_run_logs/%j.err
 #SBATCH -N 1
-#SBATCH --mem=30000
+#SBATCH --mem=80000
 #SBATCH -t 16:00:00
 #SBATCH --account=abdelfattah
 #SBATCH --partition=abdelfattah
@@ -17,4 +17,4 @@ conda activate unr
 
 cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
-python new_main.py --seed 42 --name_desc exp3_eg --gnn_type ensemble --back_dense --sample_sizes 7 39 78  --batch_size 8 --space nb201 --representation adj_gin --test_size 7813
+python universal_main.py --seed 42 --name_desc exp4eg --batch_size 8 --gnn_type ensemble --back_dense   --transfer_sample_sizes 4 8 16 32 128 256 512 --space nb201 --transfer_space nb101 --representation adj_gin_arch2vec --no_modify_emb_pretransfer --test_size 7290

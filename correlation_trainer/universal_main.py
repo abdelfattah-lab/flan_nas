@@ -42,6 +42,7 @@ parser.add_argument('--test_batch_size', type=int, default=128)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--timesteps', type=int, default=2)
 parser.add_argument('--test_size', type=int, default=None)
+parser.add_argument('--sourcetest_size', type=int, default=5000)
 parser.add_argument('--epochs', type=int, default=150)
 parser.add_argument('--transfer_epochs', type=int, default=20)
 parser.add_argument('--lr_step', type=int, default=10)
@@ -315,7 +316,7 @@ across_trials = {transfer_sample_count: [] for transfer_sample_count in transfer
 for tr_ in range(args.num_trials):
     train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.space, args.sample_size, representation, mode='train')
     test_dataloader_source_smallset, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=80)
-    test_dataloader_source_full, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.test_size)
+    test_dataloader_source_full, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.sourcetest_size)
     if representation == "adj_gin":
         # input_dim = max(next(iter(train_dataloader))[0][1].shape[1], next(iter(transfer_dataloader))[0][1].shape[1])
         input_dim = next(iter(train_dataloader))[0][1].shape[1]

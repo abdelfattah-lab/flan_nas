@@ -17,4 +17,4 @@ conda activate unr
 
 cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
-python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 16 32 128 256 512 --batch_size 8 --space nb101 --representation "adj_gin_arch2vec"
+python new_main.py --seed 42 --name_desc exp3 --gnn_type ensemble --back_dense --sample_sizes 4 8 --batch_size 8 --space nb101 --representation "adj_gin_arch2vec"

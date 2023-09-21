@@ -17,4 +17,4 @@ conda activate unr
 
 cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
-python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 --space nb101 --transfer_space nb201 --representation adj_gin --no_modify_emb_pretransfer
+python universal_main.py --seed 42 --name_desc exp4 --batch_size 8 --gnn_type ensemble --back_dense --transfer_sample_sizes 4 8 16 32 128 256 512 --space nb101 --transfer_space nb201 --representation adj_gin --no_modify_emb_pretransfer

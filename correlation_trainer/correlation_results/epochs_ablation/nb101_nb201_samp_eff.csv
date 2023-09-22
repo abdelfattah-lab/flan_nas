@@ -1,3 +1,7 @@
 name_desc,seed,batch_size,transfer_lr,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
 epochs_ablation,42,8,0.001,20,True,150,nb101,nb201,True,adj_gin,2,pwl,False,ensemble,False,4,0.5557102024498988,0.38976068535353453,0.008135702847026863,0.0042457648880338756
 epochs_ablation,42,8,0.001,20,True,150,nb101,nb201,True,adj_gin,2,pwl,False,ensemble,False,16,0.7747859969264536,0.5804933436643281,0.0011601408403347955,0.0009563089164428277
+epochs_ablation,42,8,0.001,50,True,150,nb101,nb201,True,adj_gin,2,pwl,False,ensemble,False,4,0.6259340230624117,0.4451414598253874,0.003763191405691835,0.0024002405620201987
+epochs_ablation,42,8,0.001,50,True,150,nb101,nb201,True,adj_gin,2,pwl,False,ensemble,False,16,0.7701847924531577,0.5893374956746497,0.0059126655046937565,0.004424702350812904
+epochs_ablation,42,8,0.001,100,True,150,nb101,nb201,True,adj_gin,2,pwl,False,ensemble,False,4,0.2803134478646821,0.1893834473014662,0.03038052090486157,0.015550074543014955
+epochs_ablation,42,8,0.001,100,True,150,nb101,nb201,True,adj_gin,2,pwl,False,ensemble,False,16,0.6629733778102523,0.4945363854519605,0.043716825876163955,0.028125086359176626

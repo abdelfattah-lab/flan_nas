@@ -49,21 +49,7 @@ class NASBench201:
         min_max_scaler = preprocessing.MinMaxScaler()
         self.zcp_nb201_valacc = pd.DataFrame(min_max_scaler.fit_transform(valacc_frame), columns=valacc_frame.columns, index=valacc_frame.index).to_dict()[0]
         self.normalize_zcp = normalize_zcp
-        # self.normalize_and_process_zcp(normalize_zcp, log_synflow)
-        if normalize_zcp:
-            print("Normalizing ZCP dict")
-            self.norm_zcp = pd.DataFrame({k0: {k1: v1["score"] for k1,v1 in v0.items() if v1.__class__()=={}} for k0, v0 in self.zcp_nb201['cifar10'].items()}).T
-            if log_synflow:
-                self.norm_zcp['synflow'] = np.log10(self.norm_zcp['synflow'])
-            else:
-                print("WARNING: Not taking log of synflow values for normalization results in very small synflow inputs")
-            minfinite = self.norm_zcp['synflow'].replace(-np.inf, 1000).min()
-            self.norm_zcp['synflow'] = self.norm_zcp['synflow'].replace(-np.inf, minfinite)
-            # Normalize each column of self.norm_zcp
-            min_max_scaler = preprocessing.MinMaxScaler()
-            self.norm_zcp = pd.DataFrame(min_max_scaler.fit_transform(self.norm_zcp), columns=self.norm_zcp.columns, index=self.norm_zcp.index)
-            self.zcp_nb201 = {}
-            self.zcp_nb201['cifar10'] = self.norm_zcp.T.to_dict()
+        self.normalize_and_process_zcp(normalize_zcp, log_synflow)
         self._opname_to_index = {
                     'none': 0,
                     'skip_connect': 1,
@@ -102,6 +88,21 @@ class NASBench201:
             with open(NASBench201.CACHE_FILE_PATH, 'wb') as cache_file:
                 pickle.dump(self.cache, cache_file)
             self.cready = True
+            
+        self.zready = False
+        self.zcp_cache = {}
+        
+        if os.path.exists(NASBench201.CACHE_FILE_PATH.replace("cellobj", "zcp")):
+            print("Loading cache for NASBench-201 speedup!!...")
+            self.zready = True
+            with open(NASBench201.CACHE_FILE_PATH.replace("cellobj", "zcp"), 'rb') as cache_file:
+                self.zcp_cache = pickle.load(cache_file)
+        if not self.zready:
+            for idx in range(15625):
+                self.zcp_cache[idx] = self.get_zcp(idx)
+            with open(NASBench201.CACHE_FILE_PATH.replace("cellobj", "zcp"), 'wb') as cache_file:
+                pickle.dump(self.zcp_cache, cache_file)
+            self.zready = True
                 
     def min_max_scaling(self, data):
         return (data - np.min(data)) / (np.max(data) - np.min(data))
@@ -170,8 +171,8 @@ class NASBench201:
 
     def get_zcp(self, idx, joint=None):
         # Check if result exists in cache
-        if self.cready:
-            return self.cache[idx]['zcp']
+        if self.zready:
+            return self.zcp_cache[idx]
         else:
             arch_str = self.nb2_api.query_by_index(idx).arch_str
             cellobj = Cell201(arch_str)

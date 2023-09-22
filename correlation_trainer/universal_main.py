@@ -42,12 +42,12 @@ parser.add_argument('--test_batch_size', type=int, default=128)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--timesteps', type=int, default=2)
 parser.add_argument('--test_size', type=int, default=None)
-parser.add_argument('--sourcetest_size', type=int, default=None)
+parser.add_argument('--sourcetest_size', type=int, default=250)
 parser.add_argument('--epochs', type=int, default=150)
 parser.add_argument('--transfer_epochs', type=int, default=20)
 parser.add_argument('--lr_step', type=int, default=10)
 parser.add_argument('--lr_gamma', type=float, default=0.6)
-parser.add_argument('--transfer_lr', type=float, default=1e-4)
+parser.add_argument('--transfer_lr', type=float, default=1e-3)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--eta_min', type=float, default=1e-6)
 parser.add_argument('--weight_decay', type=float, default=1e-5)
@@ -257,7 +257,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     representations.append(np.concatenate((adj_mat, op_mat, norm_w_d)).tolist())
         else:                           # zcp, arch2vec, cate --> FullyConnectedNN
             for i in tqdm(sample_indexes):
-                exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}", joint={}), np.asarray(embedding_gen.get_norm_w_d(i, space={})).flatten()))'.format(representation, space, args.joint_repr, space))
+                exec('representations.append(np.concatenate((embedding_gen.get_{}(i, "{}", joint={}), np.asarray(embedding_gen.get_norm_w_d(i, space="{}")).flatten()))'.format(representation, space, args.joint_repr, space))
                 accs.append(embedding_gen.get_valacc(i, space=space))
         representations = torch.stack([torch.FloatTensor(nxx) for nxx in representations])
     else: # adj_gin, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate --> GIN_Model
@@ -479,18 +479,21 @@ if not os.path.exists(f'correlation_results/{args.name_desc}'):
     os.makedirs(f'correlation_results/{args.name_desc}')
 
 filename = f'correlation_results/{args.name_desc}/{args.space}_{args.transfer_space}_samp_eff.csv'
-header = "name_desc,seed,batch_size,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
+header = "name_desc,seed,batch_size,transfer_lr,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
 if not os.path.isfile(filename):
     with open(filename, 'w') as f:
         f.write(header + "\n")
 
 with open(filename, 'a') as f:
     for key in samp_eff.keys():
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                 (
                     str(args.name_desc),
                     str(args.seed),
                     str(args.batch_size),
+                    str(args.transfer_lr),
+                    str(args.transfer_epochs),
+                    str(args.modify_emb_pretransfer),
                     str(args.epochs),
                     str(args.space),
                     str(args.transfer_space),

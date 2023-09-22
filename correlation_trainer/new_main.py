@@ -72,6 +72,15 @@ if args.seed is not None:
 nb101_train_tagates_sample_indices, \
     nb101_tagates_sample_indices = get_tagates_sample_indices(args)
 
+def flatten_mixed_list(pred_scores):
+    flattened = []
+    for sublist in pred_scores:
+        if isinstance(sublist, (list, tuple)):  # Check if the item is iterable
+            flattened.extend(sublist)  # If it's iterable, extend the flattened list
+        else:
+            flattened.append(sublist)  # If it's not iterable, append it directly
+    return flattened
+
 def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dataloader, epoch):
     model.training = True
     model.train()
@@ -204,8 +213,10 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         else:
             raise NotImplementedError
         true_scores.append(scores.cpu().tolist())
-    pred_scores = [t for sublist in pred_scores for t in sublist]
-    true_scores = [t for sublist in true_scores for t in sublist]
+    # pred_scores = [t for sublist in pred_scores for t in sublist]
+    # true_scores = [t for sublist in true_scores for t in sublist]
+    pred_scores = flatten_mixed_list(pred_scores)
+    true_scores = flatten_mixed_list(true_scores)
     num_test_items = len(pred_scores)
     return model, num_test_items, running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
 

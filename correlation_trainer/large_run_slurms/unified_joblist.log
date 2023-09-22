@@ -1,25 +1,25 @@
 #### 128 samples dgf gat test [FIX TO 128 SAMPLES] [TABLE 2]
-True,tagcomp_nb201_gin,True,30000,2,python new_main.py --seed 42 --name_desc table2 --gnn_type ensemble --sample_sizes 128 --batch_size 8 --space nb201 --representation adj_gin
-True,tagcomp_nb201_gin,True,30000,2,python new_main.py --seed 42 --name_desc table2 --gnn_type ensemble --back_dense --sample_sizes 7 39 78 --batch_size 8 --space nb201 --representation adj_gin
-True,tagcomp_nb201_gin,True,30000,2,python new_main.py --seed 42 --name_desc table2 --gnn_type gat --sample_sizes 128 --batch_size 8 --space nb201 --representation adj_gin
-True,tagcomp_nb201_gin,True,30000,2,python new_main.py --seed 42 --name_desc table2 --gnn_type dense --sample_sizes 128 --batch_size 8 --space nb201 --representation adj_gin
-True,tagcomp_nb101_gin,True,30000,2,python new_main.py --seed 42 --name_desc table2 --gnn_type ensemble --sample_sizes 128 --batch_size 8 --space nb101 --representation adj_gin
-True,tagcomp_nb101_gin,True,30000,2,python new_main.py --seed 42 --name_desc table2 --gnn_type ensemble --back_dense --sample_sizes 128 --batch_size 8 --space nb101 --representation adj_gin
-True,tagcomp_nb101_gin,True,30000,2,python new_main.py --seed 42 --name_desc table2 --gnn_type gat --sample_sizes 128 --batch_size 8 --space nb101 --representation adj_gin
-True,tagcomp_nb101_gin,True,30000,2,python new_main.py --seed 42 --name_desc table2 --gnn_type dense --sample_sizes 128 --batch_size 8 --space nb101 --representation adj_gin
+True,tagcomp_nb201_gin,True,30000,4,python new_main.py --seed 42 --name_desc table2 --gnn_type ensemble --sample_sizes 128 --batch_size 8 --space nb201 --representation adj_gin
+True,tagcomp_nb201_gin,True,30000,4,python new_main.py --seed 42 --name_desc table2 --gnn_type ensemble --back_dense --sample_sizes 7 39 78 --batch_size 8 --space nb201 --representation adj_gin
+True,tagcomp_nb201_gin,True,30000,4,python new_main.py --seed 42 --name_desc table2 --gnn_type gat --sample_sizes 128 --batch_size 8 --space nb201 --representation adj_gin
+True,tagcomp_nb201_gin,True,30000,4,python new_main.py --seed 42 --name_desc table2 --gnn_type dense --sample_sizes 128 --batch_size 8 --space nb201 --representation adj_gin
+True,tagcomp_nb101_gin,True,30000,4,python new_main.py --seed 42 --name_desc table2 --gnn_type ensemble --sample_sizes 128 --batch_size 8 --space nb101 --representation adj_gin
+True,tagcomp_nb101_gin,True,30000,4,python new_main.py --seed 42 --name_desc table2 --gnn_type ensemble --back_dense --sample_sizes 128 --batch_size 8 --space nb101 --representation adj_gin
+True,tagcomp_nb101_gin,True,30000,4,python new_main.py --seed 42 --name_desc table2 --gnn_type gat --sample_sizes 128 --batch_size 8 --space nb101 --representation adj_gin
+True,tagcomp_nb101_gin,True,30000,4,python new_main.py --seed 42 --name_desc table2 --gnn_type dense --sample_sizes 128 --batch_size 8 --space nb101 --representation adj_gin
 #### FLAN Compare With TAGATES [TABLE 1]
-True,tagcomp_nb201_gin,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 7 39 78 --batch_size 8 --space nb201 --representation adj_gin  --test_size 7813
-True,tagcomp_nb201_zcp,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 7 39 78 --batch_size 8 --space nb201 --representation adj_gin_zcp --test_size 7813
-True,tagcomp_nb201_cat,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 7 39 78 --batch_size 8 --space nb201 --representation adj_gin_cate --test_size 7813
-True,tagcomp_nb201_a2v,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 7 39 78 --batch_size 8 --space nb201 --representation adj_gin_arch2vec --test_size 7813
-True,tagcomp_nb101_gin,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 72 364 729 --batch_size 8 --space nb101 --representation adj_gin --test_size 7290
-True,tagcomp_nb101_zcp,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 72 364 729 --batch_size 8 --space nb101 --representation adj_gin_zcp --test_size 7290
-True,tagcomp_nb101_cat,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 72 364 729 --batch_size 8 --space nb101 --representation adj_gin_cate --test_size 7290
-True,tagcomp_nb101_a2v,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 72 364 729 --batch_size 8 --space nb101 --representation adj_gin_arch2vec --test_size 7290
-True,tagcomp_ENAS_gin,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 25 50 125 --batch_size 25 --space ENAS --representation adj_gin --test_size 500
-True,tagcomp_ENAS_zcp,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 25 50 125 --batch_size 25 --space ENAS --representation adj_gin_zcp --test_size 500
-True,tagcomp_ENAS_cat,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 25 50 125 --batch_size 25 --space ENAS --representation adj_gin_cate --test_size 500
-True,tagcomp_ENAS_a2v,True,30000,2,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 25 50 125 --batch_size 25 --space ENAS --representation adj_gin_arch2vec --test_size 500
+True,tagcomp_nb201_gin,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 7 39 78 --batch_size 8 --space nb201 --representation adj_gin  --test_size 7813
+True,tagcomp_nb201_zcp,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 7 39 78 --batch_size 8 --space nb201 --representation adj_gin_zcp --test_size 7813
+True,tagcomp_nb201_cat,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 7 39 78 --batch_size 8 --space nb201 --representation adj_gin_cate --test_size 7813
+True,tagcomp_nb201_a2v,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 7 39 78 --batch_size 8 --space nb201 --representation adj_gin_arch2vec --test_size 7813
+True,tagcomp_nb101_gin,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 72 364 729 --batch_size 8 --space nb101 --representation adj_gin --test_size 7290
+True,tagcomp_nb101_zcp,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 72 364 729 --batch_size 8 --space nb101 --representation adj_gin_zcp --test_size 7290
+True,tagcomp_nb101_cat,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 72 364 729 --batch_size 8 --space nb101 --representation adj_gin_cate --test_size 7290
+True,tagcomp_nb101_a2v,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 72 364 729 --batch_size 8 --space nb101 --representation adj_gin_arch2vec --test_size 7290
+True,tagcomp_ENAS_gin,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 25 50 125 --batch_size 25 --space ENAS --representation adj_gin --test_size 500
+True,tagcomp_ENAS_zcp,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 25 50 125 --batch_size 25 --space ENAS --representation adj_gin_zcp --test_size 500
+True,tagcomp_ENAS_cat,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 25 50 125 --batch_size 25 --space ENAS --representation adj_gin_cate --test_size 500
+True,tagcomp_ENAS_a2v,True,30000,4,python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 25 50 125 --batch_size 25 --space ENAS --representation adj_gin_arch2vec --test_size 500
 True,tagcomptf_nb201_gin,True,80000,4,python universal_main.py --seed 42 --name_desc table1_tf --gnn_type ensemble --sample_size 512 --sourcetest_size 128 --transfer_sample_sizes 7 39 78 --batch_size 8 --space nb101 --transfer_space nb201 --representation adj_gin --joint_repr --test_size 7813
 True,tagcomptf_nb201_zcp,True,80000,4,python universal_main.py --seed 42 --name_desc table1_tf --gnn_type ensemble --sample_size 512 --sourcetest_size 128 --transfer_sample_sizes 7 39 78 --batch_size 8 --space nb101 --transfer_space nb201 --representation adj_gin_zcp --joint_repr --test_size 7813
 True,tagcomptf_nb201_cat,True,80000,4,python universal_main.py --seed 42 --name_desc table1_tf --gnn_type ensemble --sample_size 512 --sourcetest_size 128 --transfer_sample_sizes 7 39 78 --batch_size 8 --space nb101 --transfer_space nb201 --representation adj_gin_cate --joint_repr --test_size 7813
@@ -33,30 +33,30 @@ True,tagcomptf_ENAS_zcp,True,80000,4,python universal_main.py --seed 42 --name_d
 True,tagcomptf_ENAS_cat,True,80000,4,python universal_main.py --seed 42 --name_desc table1_tf --gnn_type ensemble --sample_size 512 --sourcetest_size 128 --transfer_sample_sizes 25 50 125 --batch_size 8 --space DARTS --transfer_space ENAS --representation adj_gin_cate --joint_repr --test_size 500
 True,tagcomptf_ENAS_a2v,True,80000,4,python universal_main.py --seed 42 --name_desc table1_tf --gnn_type ensemble --sample_size 512 --sourcetest_size 128 --transfer_sample_sizes 25 50 125 --batch_size 8 --space DARTS --transfer_space ENAS --representation adj_gin_arch2vec --joint_repr --test_size 500
 #### FLAN Training From Scratch [TABLE 3]
-True,t4_nb201_gin,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin
-True,t4_nb201_zcp,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_zcp
-True,t4_nb201_vec,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_arch2vec
-True,t4_nb201_ate,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_cate
-True,t4_n101_gin,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin
-True,t4_n101_zcp,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_zcp
-True,t4_n101_vec,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_arch2vec
-True,t4_n101_ate,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_cate
-True,t4_DARTS_gin,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS --representation adj_gin
-True,t4_DARTS_zcp,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS --representation adj_gin_zcp
-True,t4_DARTS_vec,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS --representation adj_gin_arch2vec
-True,t4_DARTS_ate,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS --representation adj_gin_cate
-True,t4_ENAS_gin,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin
-True,t4_ENAS_zcp,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_zcp
-True,t4_ENAS_vec,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_arch2vec
-True,t4_ENAS_ate,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_cate
-True,t4_DARTSfwd_gin,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS_fix-w-d --representation adj_gin
-True,t4_DARTSfwd_zcp,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS_fix-w-d --representation adj_gin_zcp
-True,t4_DARTSfwd_vec,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS_fix-w-d --representation adj_gin_arch2vec
-True,t4_DARTSfwd_ate,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS_fix-w-d --representation adj_gin_cate
-True,t4_ENASfwd_gin,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS_fix-w-d --representation adj_gin
-True,t4_ENASfwd_zcp,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS_fix-w-d --representation adj_gin_zcp
-True,t4_ENASfwd_vec,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS_fix-w-d --representation adj_gin_arch2vec
-True,t4_ENASfwd_ate,True,30000,2,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS_fix-w-d --representation adj_gin_cate
+True,t4_nb201_gin,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin
+True,t4_nb201_zcp,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_zcp
+True,t4_nb201_vec,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_arch2vec
+True,t4_nb201_ate,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_cate
+True,t4_n101_gin,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin
+True,t4_n101_zcp,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_zcp
+True,t4_n101_vec,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_arch2vec
+True,t4_n101_ate,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_cate
+True,t4_DARTS_gin,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS --representation adj_gin
+True,t4_DARTS_zcp,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS --representation adj_gin_zcp
+True,t4_DARTS_vec,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS --representation adj_gin_arch2vec
+True,t4_DARTS_ate,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS --representation adj_gin_cate
+True,t4_ENAS_gin,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin
+True,t4_ENAS_zcp,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_zcp
+True,t4_ENAS_vec,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_arch2vec
+True,t4_ENAS_ate,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_cate
+True,t4_DARTSfwd_gin,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS_fix-w-d --representation adj_gin
+True,t4_DARTSfwd_zcp,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS_fix-w-d --representation adj_gin_zcp
+True,t4_DARTSfwd_vec,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS_fix-w-d --representation adj_gin_arch2vec
+True,t4_DARTSfwd_ate,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space DARTS_fix-w-d --representation adj_gin_cate
+True,t4_ENASfwd_gin,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS_fix-w-d --representation adj_gin
+True,t4_ENASfwd_zcp,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS_fix-w-d --representation adj_gin_zcp
+True,t4_ENASfwd_vec,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS_fix-w-d --representation adj_gin_arch2vec
+True,t4_ENASfwd_ate,True,30000,4,python new_main.py --seed 42 --name_desc table3 --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS_fix-w-d --representation adj_gin_cate
 #### FLAN Transfer [TABLE 4]
 True,t5_nb201_gin,True,80000,4,python universal_main.py --seed 42 --name_desc table4 --gnn_type ensemble --sample_size 512 --sourcetest_size 128 --transfer_sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --transfer_space nb201 --representation adj_gin --joint_repr
 True,t5_nb201_zcp,True,80000,4,python universal_main.py --seed 42 --name_desc table4 --gnn_type ensemble --sample_size 512 --sourcetest_size 128 --transfer_sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --transfer_space nb201 --representation adj_gin_zcp --joint_repr
@@ -84,26 +84,26 @@ True,t5_ENASfwd_vec,True,80000,4,python universal_main.py --seed 42 --name_desc 
 True,t5_ENASfwd_ate,True,80000,4,python universal_main.py --seed 42 --name_desc table4 --gnn_type ensemble --sample_size 512 --sourcetest_size 128 --transfer_sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space PNAS_fix-w-d --transfer_space ENAS_fix-w-d --representation adj_gin_cate --joint_repr
 ##### FLAN Predictor Sample Efficiency Graph [FIGURE 5]
 ## FROM SCRATCH
-True,t4_nb201_gin,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin --test_size 7813
-True,t4_nb201_zcp,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_zcp --test_size 7813
-True,t4_nb201_vec,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_arch2vec --test_size 7813
-True,t4_nb201_ate,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_cate --test_size 7813
-True,t4_n101_gin,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin --test_size  7290
-True,t4_n101_zcp,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_zcp --test_size  7290
-True,t4_n101_vec,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_arch2vec --test_size  7290
-True,t4_n101_ate,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_cate --test_size  7290
-True,t4_ENAS_gin,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin --test_size 500
-True,t4_ENAS_zcp,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_zcp --test_size 500
-True,t4_ENAS_vec,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_arch2vec --test_size 500
-True,t4_ENAS_ate,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_cate --test_size 500
-True,t4_n101_gin,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space Amoeba --representation adj_gin --test_size 500
-True,t4_n101_zcp,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space Amoeba --representation adj_gin_zcp --test_size 500
-True,t4_n101_vec,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space Amoeba --representation adj_gin_arch2vec --test_size 500
-True,t4_n101_ate,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space Amoeba --representation adj_gin_cate --test_size 500
-True,t4_ENAS_gin,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space PNAS --representation adj_gin --test_size 500
-True,t4_ENAS_zcp,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space PNAS --representation adj_gin_zcp --test_size 500
-True,t4_ENAS_vec,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space PNAS --representation adj_gin_arch2vec --test_size 500
-True,t4_ENAS_ate,True,30000,2,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space PNAS --representation adj_gin_cate --test_size 500
+True,t4_nb201_gin,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin --test_size 7813
+True,t4_nb201_zcp,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_zcp --test_size 7813
+True,t4_nb201_vec,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_arch2vec --test_size 7813
+True,t4_nb201_ate,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb201 --representation adj_gin_cate --test_size 7813
+True,t4_n101_gin,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin --test_size  7290
+True,t4_n101_zcp,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_zcp --test_size  7290
+True,t4_n101_vec,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_arch2vec --test_size  7290
+True,t4_n101_ate,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --representation adj_gin_cate --test_size  7290
+True,t4_ENAS_gin,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin --test_size 500
+True,t4_ENAS_zcp,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_zcp --test_size 500
+True,t4_ENAS_vec,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_arch2vec --test_size 500
+True,t4_ENAS_ate,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space ENAS --representation adj_gin_cate --test_size 500
+True,t4_n101_gin,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space Amoeba --representation adj_gin --test_size 500
+True,t4_n101_zcp,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space Amoeba --representation adj_gin_zcp --test_size 500
+True,t4_n101_vec,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space Amoeba --representation adj_gin_arch2vec --test_size 500
+True,t4_n101_ate,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space Amoeba --representation adj_gin_cate --test_size 500
+True,t4_ENAS_gin,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space PNAS --representation adj_gin --test_size 500
+True,t4_ENAS_zcp,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space PNAS --representation adj_gin_zcp --test_size 500
+True,t4_ENAS_vec,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space PNAS --representation adj_gin_arch2vec --test_size 500
+True,t4_ENAS_ate,True,30000,4,python new_main.py --seed 42 --name_desc fig5_tag_s --gnn_type ensemble --sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space PNAS --representation adj_gin_cate --test_size 500
 ## Transfer
 True,t5_nb201_gin,True,80000,4,python universal_main.py --seed 42 --name_desc fig5_tag_t --gnn_type ensemble --sample_size 512 --sourcetest_size 128 --transfer_sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --transfer_space nb201 --representation adj_gin --joint_repr --test_size 7813
 True,t5_nb201_zcp,True,80000,4,python universal_main.py --seed 42 --name_desc fig5_tag_t --gnn_type ensemble --sample_size 512 --sourcetest_size 128 --transfer_sample_sizes 4 8 16 32 64 128 256 --batch_size 8 --space nb101 --transfer_space nb201 --representation adj_gin_zcp --joint_repr --test_size 7813

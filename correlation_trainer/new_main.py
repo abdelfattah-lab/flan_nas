@@ -357,8 +357,8 @@ across_trials = {sample_count: [] for sample_count in sample_counts}
 
 for tr_ in range(args.num_trials):
     for sample_count in sample_counts:
-        if sample_count > 32:
-            args.batch_size = int(sample_count//4)
+        # if sample_count > 32:
+        #     args.batch_size = int(sample_count//4)
         train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.space, sample_count, representation, mode='train')
         test_dataloader, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.test_size)
         test_dataloader_lowbs, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=80)

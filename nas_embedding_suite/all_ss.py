@@ -57,7 +57,7 @@ class AllSS:
                     }
         start_ = time.time()
         print("[WARNING]: ALL SS has a cache store at {}, which needs to be changed if reproducing in all_ss.py!!!!".format(CACHE_DIR))
-        self._ensure_cache_exists()
+        # self._ensure_cache_exists()
         self.nb301 = NASBench301()
         self._load_classes()
         # check if os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv", exists
@@ -306,8 +306,8 @@ class AllSS:
     def _load_class_from_source_and_save_to_cache(self, key, path, cls):
         instance = cls()
         setattr(self, key, instance)
-        with open(path, 'wb') as outp:
-            pickle.dump(instance, outp, pickle.HIGHEST_PROTOCOL)
+        # with open(path, 'wb') as outp:
+        #     pickle.dump(instance, outp, pickle.HIGHEST_PROTOCOL)
 
     def ss_to_binary(self, space):
         return [int(x) for x in f"{self.ss_mapper[space]:04b}"]

@@ -453,6 +453,8 @@ class GIN_Model(nn.Module):
             zcp = self.zcp_embedder(zcp)
             if len(zcp.shape) == 1:
                 zcp = zcp.unsqueeze(0)
+            if len(y_1.shape) == 1:
+                y_1 = y_1.unsqueeze(0)
             y_1 = torch.cat((y_1, zcp), dim = -1)
         if self.dual_gcn:
             norm_w_d = norm_w_d.to(self.device)

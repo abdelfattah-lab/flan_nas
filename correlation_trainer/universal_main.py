@@ -95,10 +95,16 @@ def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, t
     model.train()
     running_loss = 0.0
     for inputs, targets in dataloader:
-        if inputs[0].shape[0] == 1 and space in ['nb101', 'nb201', 'nb301', 'tb101']:
-            continue
-        elif inputs[0].shape[0] == 2 and space not in ['nb101', 'nb201', 'nb301', 'tb101']:
-            continue
+        if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
+            if inputs.shape[0] == 1 and space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                continue
+            elif inputs.shape[0] <= 2 and space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+                continue
+        else:
+            if inputs[0].shape[0] == 1 and space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                continue
+            elif inputs[0].shape[0] <= 2 and space not in ['nb101', 'nb201', 'nb301', 'tb101']:
+                continue
         #### Params for PWL Loss
         accs = targets
         max_compare_ratio = 4
@@ -324,99 +330,99 @@ transfer_sample_counts = transfer_sample_tests[args.transfer_space]
 samp_eff = {}
 across_trials = {transfer_sample_count: [] for transfer_sample_count in transfer_sample_counts}
 
-for tr_ in range(args.num_trials):
-    train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.space, args.sample_size, representation, mode='train')
-    test_dataloader_source_smallset, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=80)
-    test_dataloader_source_full, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.sourcetest_size)
-    if representation == "adj_gin":
-        # input_dim = max(next(iter(train_dataloader))[0][1].shape[1], next(iter(transfer_dataloader))[0][1].shape[1])
-        input_dim = next(iter(train_dataloader))[0][1].shape[1]
-        none_op_ind = 130 # placeholder
-        if args.space in ["nb101", "nb201", "nb301", "tb101"]:
-            model = GIN_Model(device=args.device,
-                            gtype = args.gnn_type,
-                            back_dense=args.back_dense,
-                            dual_gcn = False,
-                            num_time_steps = args.timesteps,
-                            vertices = input_dim,
-                            none_op_ind = none_op_ind,
-                            input_zcp = False)
-        else:
-            model = GIN_Model(device=args.device,
-                            gtype = args.gnn_type,
-                            back_dense=args.back_dense,
-                            dual_input = True,
-                            dual_gcn = True,
-                            num_time_steps = args.timesteps,
-                            vertices = input_dim,
-                            none_op_ind = none_op_ind,
-                            input_zcp = False)
-    elif representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
-        # input_dim = max(next(iter(train_dataloader))[0][1].shape[1], next(iter(transfer_dataloader))[0][1].shape[1])
-        input_dim = next(iter(train_dataloader))[0][1].shape[1]
-        num_zcps = next(iter(train_dataloader))[0][-2].shape[1]
-        none_op_ind = 130
-        if args.space in ["nb101", "nb201", "nb301", "tb101"]:
-            model = GIN_Model(device=args.device,
-                            gtype = args.gnn_type,
-                            back_dense=args.back_dense,
-                            dual_gcn = False,
-                            num_time_steps = args.timesteps,
-                            num_zcps = num_zcps,
-                            vertices = input_dim,
-                            none_op_ind = none_op_ind,
-                            input_zcp = True)
-        else:
-            model = GIN_Model(device=args.device,
-                            gtype = args.gnn_type,
-                            back_dense=args.back_dense,
-                            dual_input = True,
-                            dual_gcn = True,
-                            num_time_steps = args.timesteps,
-                            num_zcps = num_zcps,
-                            vertices = input_dim,
-                            none_op_ind = none_op_ind,
-                            input_zcp = True)
-    elif representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
-        representation_size = next(iter(train_dataloader))[0].shape[1]
-        model = FullyConnectedNN(layer_sizes = [representation_size] + [128] * 3 + [1]).to(device)
-    
-    model.to(device)
-    criterion = torch.nn.MSELoss()
-    params_optimize = list(model.parameters())
-    optimizer = torch.optim.AdamW(params_optimize, lr = args.lr, weight_decay = args.weight_decay)
-    scheduler = CosineAnnealingLR(optimizer, T_max = args.epochs, eta_min = args.eta_min)
-    kdt_l5, spr_l5 = [], []
-    for epoch in range(args.epochs):
-        start_time = time.time()
-        if args.loss_type == "mse":
-            raise NotImplementedError
-            # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
-        elif args.loss_type == "pwl":
-            if epoch > args.epochs - 5:
-                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_full, epoch)
-            else:
-                model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_smallset, epoch)
-        else:
-            raise NotImplementedError
-        # test_loss, num_test_items, test_spearmanr, test_kendalltau = test(args, model, test_dataloader, criterion)
-        end_time = time.time()
+train_dataloader, train_indexes = get_dataloader(args, embedding_gen, args.space, args.sample_size, representation, mode='train')
+test_dataloader_source_smallset, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=80)
+test_dataloader_source_full, test_indexes = get_dataloader(args, embedding_gen, args.space, sample_count=None, representation=representation, mode='test', train_indexes=train_indexes, test_size=args.sourcetest_size)
+if representation == "adj_gin":
+    # input_dim = max(next(iter(train_dataloader))[0][1].shape[1], next(iter(transfer_dataloader))[0][1].shape[1])
+    input_dim = next(iter(train_dataloader))[0][1].shape[1]
+    none_op_ind = 130 # placeholder
+    if args.space in ["nb101", "nb201", "nb301", "tb101"]:
+        model = GIN_Model(device=args.device,
+                        gtype = args.gnn_type,
+                        back_dense=args.back_dense,
+                        dual_gcn = False,
+                        num_time_steps = args.timesteps,
+                        vertices = input_dim,
+                        none_op_ind = none_op_ind,
+                        input_zcp = False)
+    else:
+        model = GIN_Model(device=args.device,
+                        gtype = args.gnn_type,
+                        back_dense=args.back_dense,
+                        dual_input = True,
+                        dual_gcn = True,
+                        num_time_steps = args.timesteps,
+                        vertices = input_dim,
+                        none_op_ind = none_op_ind,
+                        input_zcp = False)
+elif representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
+    # input_dim = max(next(iter(train_dataloader))[0][1].shape[1], next(iter(transfer_dataloader))[0][1].shape[1])
+    input_dim = next(iter(train_dataloader))[0][1].shape[1]
+    num_zcps = next(iter(train_dataloader))[0][-2].shape[1]
+    none_op_ind = 130
+    if args.space in ["nb101", "nb201", "nb301", "tb101"]:
+        model = GIN_Model(device=args.device,
+                        gtype = args.gnn_type,
+                        back_dense=args.back_dense,
+                        dual_gcn = False,
+                        num_time_steps = args.timesteps,
+                        num_zcps = num_zcps,
+                        vertices = input_dim,
+                        none_op_ind = none_op_ind,
+                        input_zcp = True)
+    else:
+        model = GIN_Model(device=args.device,
+                        gtype = args.gnn_type,
+                        back_dense=args.back_dense,
+                        dual_input = True,
+                        dual_gcn = True,
+                        num_time_steps = args.timesteps,
+                        num_zcps = num_zcps,
+                        vertices = input_dim,
+                        none_op_ind = none_op_ind,
+                        input_zcp = True)
+elif representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
+    representation_size = next(iter(train_dataloader))[0].shape[1]
+    model = FullyConnectedNN(layer_sizes = [representation_size] + [128] * 3 + [1]).to(device)
+
+model.to(device)
+criterion = torch.nn.MSELoss()
+params_optimize = list(model.parameters())
+optimizer = torch.optim.AdamW(params_optimize, lr = args.lr, weight_decay = args.weight_decay)
+scheduler = CosineAnnealingLR(optimizer, T_max = args.epochs, eta_min = args.eta_min)
+kdt_l5, spr_l5 = [], []
+for epoch in range(args.epochs):
+    start_time = time.time()
+    if args.loss_type == "mse":
+        raise NotImplementedError
+        # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
+    elif args.loss_type == "pwl":
         if epoch > args.epochs - 5:
-            kdt_l5.append(kdt)
-            spr_l5.append(spr)
-            print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
+            model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_full, epoch)
         else:
-            print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
-    preserved_state = copy.deepcopy(model.state_dict())
+            model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_smallset, epoch)
+    else:
+        raise NotImplementedError
+    # test_loss, num_test_items, test_spearmanr, test_kendalltau = test(args, model, test_dataloader, criterion)
+    end_time = time.time()
+    if epoch > args.epochs - 5:
+        kdt_l5.append(kdt)
+        spr_l5.append(spr)
+        print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
+    else:
+        print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
+preserved_state = copy.deepcopy(model.state_dict())
 
+if args.modify_emb_pretransfer:
+    num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.space]
+    source_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
+    source_end_idx = source_start_idx + num_ops
+    num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.transfer_space]
+    transfer_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
+    transfer_end_idx = transfer_start_idx + num_ops
 
-    if args.modify_emb_pretransfer:
-        num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.space]
-        source_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
-        source_end_idx = source_start_idx + num_ops
-        num_ops, space_idx = embedding_gen.ss_mapper_oprange[args.transfer_space]
-        transfer_start_idx = sum([x[0] for _, x in sorted(embedding_gen.ss_mapper_oprange.items(), key=lambda y: y[1]) if x[1] < space_idx])
-        transfer_end_idx = transfer_start_idx + num_ops
+for tr_ in range(args.num_trials):
 
     for transfer_sample_count in transfer_sample_counts:
         model.load_state_dict(preserved_state)
@@ -424,8 +430,8 @@ for tr_ in range(args.num_trials):
             modified_tensor = model.op_emb.weight.clone()
             modified_tensor[transfer_start_idx:transfer_end_idx] = torch.cat((preserved_state['op_emb.weight'][source_start_idx:source_end_idx].detach(),)*40, dim=0)[:(transfer_end_idx - transfer_start_idx)]
             model.op_emb.weight.data = modified_tensor
-        if transfer_sample_count > 32:
-            args.batch_size = int(transfer_sample_count//4)
+        # if transfer_sample_count > 32:
+        #     args.batch_size = int(transfer_sample_count//4)
         transfer_dataloader, transfer_indexes = get_dataloader(args, embedding_gen, args.transfer_space, sample_count=transfer_sample_count, representation=representation, mode='transfer')
         test_dataloader_target_smallset, test_indexes = get_dataloader(args, embedding_gen, args.transfer_space, sample_count=None, representation=representation, mode='test', train_indexes=transfer_indexes, test_size=80)
         test_dataloader_target_full, test_indexes = get_dataloader(args, embedding_gen, args.transfer_space, sample_count=None, representation=representation, mode='test', train_indexes=transfer_indexes, test_size=args.test_size)

@@ -459,6 +459,10 @@ class GIN_Model(nn.Module):
         if self.dual_gcn:
             norm_w_d = norm_w_d.to(self.device)
             norm_w_d = self.norm_wd_embedder(norm_w_d)
+            if len(y_1.shape) == 1:
+                y_1 = y_1.unsqueeze(0)
+            if len(norm_w_d.shape) == 1:
+                norm_w_d = norm_w_d.unsqueeze(0)
             y_1 = torch.cat((y_1, norm_w_d), dim = -1)
         y_1 = self.mlp(y_1)
         return y_1

@@ -3,12 +3,13 @@ import os
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 
 # 1. Load the dictionary
 data_dict = torch.load(
     os.environ["PROJ_BPATH"]
     + "/"
-    + "/arch2vec/pretrained/dim-32/model-dim_32_search_space_all_ss-all_ss.pt"
+    + "/nas_embedding_suite/embedding_datasets/model-dim_32_search_space_all_ss-all_ss.pt"
 )
 # 2. Prepare your data and labels for the T-SNE
 ranges = {
@@ -30,7 +31,7 @@ ranges = {
 features = []
 labels = []
 
-for key, val in data_dict.items():
+for key, val in tqdm(data_dict.items()):
     feature_val = val["feature"]
     class_idx = None
     for r in sorted(ranges):

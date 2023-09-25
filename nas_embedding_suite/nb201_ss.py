@@ -158,6 +158,19 @@ class NASBench201:
             return np.concatenate([adj_mat, op_mat, np.asarray(self.get_zcp(idx))]).tolist()
 
 
+    def get_a2vcatezcp(self, idx, joint=None, space=None):
+        a2v = self.get_arch2vec(idx, joint=joint, space=space)
+        
+        if not isinstance(a2v, list):
+            a2v = a2v.tolist()
+        cate = self.get_cate(idx, joint=joint, space=space)
+        if not isinstance(cate, list):
+            cate = cate.tolist()
+        zcp = self.get_zcp(idx, joint=joint, space=space)
+        if not isinstance(zcp, list):
+            zcp = zcp.tolist()
+        return a2v + cate + zcp
+    
     def get_adj_op(self, idx, space=None, bin_space=None):
         if self.cready:
             return self.cache[idx]['adj_op']
@@ -169,7 +182,7 @@ class NASBench201:
             return {'module_adjacency': self.get_matrix_and_ops(arch_vector)[0], 'module_operations': gcn_encoding['operations'].tolist()}
 
 
-    def get_zcp(self, idx, joint=None):
+    def get_zcp(self, idx, joint=None, space=None):
         # Check if result exists in cache
         if self.zready:
             return self.zcp_cache[idx]

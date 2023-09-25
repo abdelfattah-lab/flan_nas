@@ -28,7 +28,6 @@ while IFS= read -r line; do
 #SBATCH --mem=$mem
 #SBATCH -t 16:00:00
 #SBATCH --account=abdelfattah
-#SBATCH --partition=abdelfattah
 EOL
 
         # Conditionally add the GPU line
@@ -46,7 +45,7 @@ source /share/apps/anaconda3/2021.05/etc/profile.d/conda.sh
 
 conda activate unr
 
-cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
+cd /home/ya255/projects/iclr_nas_embedding/nas_search
 
 $command
 EOL

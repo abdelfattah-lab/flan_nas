@@ -213,6 +213,18 @@ class AllSS:
                     new_adj_op_mat[matkey] = final_mat.tolist()
             return new_adj_op_mat
         
+    def get_a2vcatezcp(self, idx, space, task="class_scene", joint=None):
+        a2v = self.get_arch2vec(idx, space=space, joint=joint)
+        if not isinstance(a2v, list):
+            a2v = a2v.tolist()
+        cate = self.get_cate(idx, space=space, joint=joint)
+        if not isinstance(cate, list):
+            cate = cate.tolist()
+        zcp = self.get_zcp(idx, space=space, joint=joint, task=task)
+        if not isinstance(zcp, list):
+            zcp = zcp.tolist()
+        return a2v + cate + zcp
+
     def get_zcp(self, idx, space, task="class_scene", joint=None):
         if space in ["nb101", "nb201", "nb301", "tb101"]:
             if space == "tb101":

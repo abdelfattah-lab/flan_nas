@@ -156,7 +156,7 @@ def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, t
                 s_1 = model(x_ops_1=X_ops_a_1, x_adj_1=X_adj_a_1.to(torch.long), x_ops_2=X_ops_b_1, x_adj_2=X_adj_b_1.to(torch.long), zcp=None, norm_w_d=norm_w_d_1).squeeze()
                 X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, norm_w_d_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device)
                 s_2 = model(x_ops_1=X_ops_a_2, x_adj_1=X_adj_a_2.to(torch.long), x_ops_2=X_ops_b_2, x_adj_2=X_adj_b_2.to(torch.long), zcp=None, norm_w_d=norm_w_d_2).squeeze()
-        elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
+        elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate", "adj_gin_a2vcatezcp"]:
             if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 archs_1 = [torch.stack(list((inputs[0][indx] for indx in ex_thresh_inds[1]))),
                         torch.stack(list((inputs[1][indx] for indx in ex_thresh_inds[1]))),
@@ -214,7 +214,7 @@ def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, t
                     pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None, norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
                 else:
                     pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=None, norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
-            elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
+            elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate", "adj_gin_a2vcatezcp"]:
                 if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                     pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=reprs[2].to(device), norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
                 else:
@@ -300,7 +300,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                 accs.append(embedding_gen.get_valacc(i, space=space))
         representations = torch.stack([torch.FloatTensor(nxx) for nxx in representations])
     else: # adj_gin, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate --> GIN_Model
-        assert representation in ["adj_gin", "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"], "Representation Not Supported!"
+        assert representation in ["adj_gin", "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate", "adj_gin_a2vcatezcp"], "Representation Not Supported"
         if representation == "adj_gin":
             for i in tqdm(sample_indexes):
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
@@ -321,7 +321,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     else:
                         accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat), torch.Tensor(norm_w_d)))
-        else: # "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"
+        else: # "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cat, "adj_gin_a2vcatezcp"e"
             for i in tqdm(sample_indexes):
                 if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
                     adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red = embedding_gen.get_adj_op(i, space=space).values()
@@ -366,7 +366,7 @@ def get_all_scores(model, dataloader, space):
                 pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None, norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu()
             else:
                 pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=None, norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu()
-        elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
+        elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate", "adj_gin_a2vcatezcp"]:
             if space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 pred_ = model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=reprs[2].to(device), norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu()
             else:
@@ -406,7 +406,7 @@ if args.source_space is not None:
                             vertices = input_dim,
                             none_op_ind = none_op_ind,
                             input_zcp = False)
-    elif representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
+    elif representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate", "adj_gin_a2vcatezcp"]:
         input_dim = next(iter(train_dataloader))[0][1].shape[1]
         num_zcps = next(iter(train_dataloader))[0][-2].shape[1]
         none_op_ind = 130 # placeholder
@@ -484,7 +484,7 @@ else:
                             vertices = input_dim,
                             none_op_ind = none_op_ind,
                             input_zcp = False)
-    elif representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate"]:
+    elif representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate", "adj_gin_a2vcatezcp"]:
         input_dim = next(iter(train_dataloader))[0][1].shape[1]
         num_zcps = next(iter(train_dataloader))[0][-2].shape[1]
         none_op_ind = 130 # placeholder

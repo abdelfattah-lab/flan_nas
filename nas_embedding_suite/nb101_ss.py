@@ -70,6 +70,18 @@ class NASBench101:
         module_operations = self.transform_nb101_operations(ops)
         return {'module_adjacency': matrix.tolist(), 'module_operations': module_operations.tolist()}
 
+    def get_a2vcatezcp(self, idx, joint=None, space=None):
+        a2v = self.get_arch2vec(idx, joint=joint, space=space)
+        if not isinstance(a2v, list):
+            a2v = a2v.tolist()
+        cate = self.get_cate(idx, joint=joint, space=space)
+        if not isinstance(cate, list):
+            cate = cate.tolist()
+        zcp = self.get_zcp(idx, joint=joint, space=space)
+        if not isinstance(zcp, list):
+            zcp = zcp.tolist()
+        return a2v + cate + zcp
+    
     def get_arch2vec(self, idx, joint=None, space=None):
         return self.arch2vec_nb101[idx]['feature'].tolist()
 

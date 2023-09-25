@@ -90,6 +90,19 @@ class TransNASBench101Micro:
         ops = self.opslist_onehot(eval(hash))
         return {'module_adjacency': self.get_matrix_and_ops(eval(self.hash_iterator_list[idx]))[0], 'module_operations': ops.tolist()}
     
+
+    def get_a2vcatezcp(self, idx, task=None, joint=None, space=None):
+        a2v = self.get_arch2vec(idx, joint=joint, space=space)
+        if not isinstance(a2v, list):
+            a2v = a2v.tolist()
+        cate = self.get_cate(idx, joint=joint, space=space)
+        if not isinstance(cate, list):
+            cate = cate.tolist()
+        zcp = self.get_zcp(idx, joint=joint, space=space)
+        if not isinstance(zcp, list):
+            zcp = zcp.tolist()
+        return a2v + cate + zcp
+
     def get_zcp(self, idx, task=None, joint=None, space=None):
         task = 'class_scene' if task==None else task
         hash = self.hash_iterator_list[idx]

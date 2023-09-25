@@ -16,4 +16,4 @@ conda activate unr
 
 cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
-python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 72 364 729 --batch_size 8 --space nb101 --representation adj_gin_arch2vec --test_size 7290
+python new_main.py --seed 42 --name_desc table1_s --gnn_type ensemble --sample_sizes 72 364 729 --batch_size 8 --space nb101 --representation adj_gin_a2vcatezcp --test_size 7290

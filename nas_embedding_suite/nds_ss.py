@@ -91,6 +91,18 @@ class NDS:
         op_mat_red = op_mat_red/np.max(op_mat_red)
         return np.concatenate((adj_mat_norm, op_mat_norm, adj_mat_red, op_mat_red, np.asarray(self.get_zcp(idx, space)).flatten())).tolist()
 
+    def get_a2vcatezcp(self, idx, space="Amoeba", joint=None):
+        a2v = self.get_arch2vec(idx, joint=joint, space=space)
+        if not isinstance(a2v, list):
+            a2v = a2v.tolist()
+        cate = self.get_cate(idx, joint=joint, space=space)
+        if not isinstance(cate, list):
+            cate = cate.tolist()
+        zcp = self.get_zcp(idx, joint=joint, space=space)
+        if not isinstance(zcp, list):
+            zcp = zcp.tolist()
+        return a2v + cate + zcp
+    
     def get_zcp(self, idx, space="Amoeba", joint=None):
         return list(self.zcp_nds_norm[space][idx].values())
     

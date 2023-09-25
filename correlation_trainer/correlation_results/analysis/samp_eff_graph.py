@@ -97,10 +97,11 @@ pltlims = {
 }
 
 representation_map = {
-    'adj_gin': 'FLAN',
-    'adj_gin_zcp': 'FLAN$_{ZCP}$',
-    'adj_gin_cate': 'FLAN$_{CATE}$',
-    'adj_gin_arch2vec': 'FLAN$_{Arch2Vec}$',
+    'adj_gin': '',
+    'adj_gin_zcp': '$_{ZCP}$',
+    'adj_gin_cate': '$_{CATE}$',
+    'adj_gin_arch2vec': '$_{Arch2Vec}$',
+    'adj_gin_a2vcatezcp': '$_{CAZ}$'  # No change specified for this one
 }
 
 
@@ -153,7 +154,7 @@ for idx, space in enumerate(spaces_to_analyze):
                 if key_range[1] is not None:
                     subset = subset[subset['key'] <= key_range[1]]
 
-                ax.plot(subset['key'], subset['kdt'], label=f"{mapped_representation}{suffix}", marker='o', linewidth=2)
+                ax.plot(subset['key'], subset['kdt'], label=f"FLAN{suffix}{mapped_representation}", marker='o', linewidth=2)
 
     # Plot tagates_eff data on the current subplot with thicker line
     # ax.plot(list(tagates_eff[space].keys()), list(tagates_eff[space].values()), label="TA-GATES", marker='v', linestyle='dashed', linewidth=2)

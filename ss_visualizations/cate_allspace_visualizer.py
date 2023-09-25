@@ -4,6 +4,13 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
+if True:
+    import seaborn as sns
+    import matplotlib.ticker as ticker
+    sns.set_palette("tab10")
+    plt.rcParams['text.usetex'] = False
+    plt.rcParams['mathtext.fontset'] = 'cm'
+    plt.rcParams['font.size'] = 14  # Increase font size
 
 # 1. Load the dictionary
 data_dict = torch.load(

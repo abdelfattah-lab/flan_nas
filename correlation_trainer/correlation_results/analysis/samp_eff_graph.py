@@ -82,13 +82,13 @@ space_map = {'nb101': "NASBench-101", "nb201": "NASBench-201", "ENAS": "ENAS"}
 #                         "nb201":  ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec'],
 #                         "ENAS": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec']
 #                         }
-exp3_representations = {"nb101": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec'],
-                        "nb201": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec'],
-                        "ENAS": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec']
+exp3_representations = {"nb101": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec', 'adj_gin_a2vcatezcp'],
+                        "nb201": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec', 'adj_gin_a2vcatezcp'],
+                        "ENAS": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec', 'adj_gin_a2vcatezcp']
                         }
-exp4_representations = {"nb101":  ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec'],
-                        "nb201":  ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec'],
-                        "ENAS": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec']
+exp4_representations = {"nb101":  ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec', 'adj_gin_a2vcatezcp'],
+                        "nb201":  ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec', 'adj_gin_a2vcatezcp'],
+                        "ENAS": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec', 'adj_gin_a2vcatezcp']
                         }
 pltlims = {
     "nb101": {'x': (1, 128), 'y': (0.1, 0.85)},

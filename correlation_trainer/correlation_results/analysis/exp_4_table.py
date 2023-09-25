@@ -18,7 +18,7 @@ rep_mapping = {
         'adj_gin': 'UGN',
         'adj_gin_cate': 'UGN$_{UTAE}$',
         'adj_gin_arch2vec': 'UGN$_{UGAE}$',
-        'adj_gin_zcp': 'UGN$_{ZCP}$'  # No change specified for this one
+        'adj_gin_zcp': 'UGN$_{ZCP}$',  # No change specified for this one
         'adj_gin_a2vcatezcp': 'UGN$_{CAZ}$'  # No change specified for this one
     }
 

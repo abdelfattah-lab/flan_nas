@@ -14,7 +14,7 @@ from new_models import GIN_Model, FullyConnectedNN
 from torch.optim.lr_scheduler import StepLR
 from pprint import pprint
 from torch.optim.lr_scheduler import CosineAnnealingLR
-import copy
+import copy, csv
 
 sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 
@@ -33,6 +33,7 @@ parser.add_argument('--samp_lim', type=int, default=2000)          # Number of s
 parser.add_argument('--source_samps', type=int, default=512)
 parser.add_argument('--num_trials', type=int, default=3)
 parser.add_argument('--no_modify_emb_pretransfer', action='store_true')
+parser.add_argument('--analysis_mode', action='store_true')
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
 parser.add_argument('--device', type=str, default='cuda:0')
@@ -79,6 +80,59 @@ else:
     print("Pre-training predictor with {} samples of source space: {}".format(args.source_samps, args.source_space))
     from nas_embedding_suite.all_ss import AllSS as EmbGenClass
     embedding_gen = EmbGenClass()
+
+# exit()
+
+if args.analysis_mode:
+    for repr_ in ["adj_gin", "adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate", "adj_gin_a2vcatezcp"]:
+        for tf_ in [True, False]:
+            dataset = args.target_space
+            assert args.target_space == 'nb101', "Only nb101 is supported for analysis mode."
+            ftype = repr_
+            expname = 'exp7' if tf_ else 'exp6'
+            fpath = f'./search_results/{expname}/sample_idxs/{dataset}_{ftype}_samples.csv'
+            slist = {}
+            with open(fpath, mode='r') as file:
+                reader = csv.reader(file)
+                for row in reader:
+                    index = int(row[0])  # Assumes that index is the first column and is an integer.
+                    if index not in slist:
+                        slist[index] = []
+                    slist[index].append([float(value) for value in row[1:]])  # Assumes that values are floats.
+            for index, values in slist.items():
+                slist[index] = values[0]  # Keep the last row only
+            accuracy_list = {}
+            for trial, indices in slist.items():
+                accuracies = []
+                for idx in indices:
+                    acc = embedding_gen.nb101.get_valacc(int(idx), normalized=False)
+                    accuracies.append(acc)
+                accuracy_list[trial] = accuracies
+            first_exceed_idx = {}
+            for trial, accuracies in accuracy_list.items():
+                for idx, acc in enumerate(accuracies):
+                    if acc > 0.9422:
+                        first_exceed_idx[trial] = idx
+                        break
+            print(args.target_space, repr_, "\tTransfer" if tf_ is not None else "\tScratch")
+            print(first_exceed_idx)
+            print(sum(first_exceed_idx.values())/3)
+            odx_ = [34, 50, 140]
+            for odx in odx_:
+                macc = max(accuracy_list[0][:odx]) + max(accuracy_list[1][:odx]) + max(accuracy_list[2][:odx])
+                print(odx, " :", macc/3)
+            output_file = 'experiment_results.csv'
+            with open(output_file, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                transfer = tf_
+                if file.tell() == 0:
+                    writer.writerow(['Target Space', 'Representation', 'Transfer', 'First Exceed Idx', 'Average Exceed Idx', 'Odx', 'Macc/3'])
+                average_exceed_idx = sum(first_exceed_idx.values()) / 3
+                for odx in [34, 50, 140]:
+                    macc = (max(accuracy_list[0][:odx]) + max(accuracy_list[1][:odx]) + max(accuracy_list[2][:odx])) / 3
+                    writer.writerow([args.target_space, repr_, tf_, first_exceed_idx, average_exceed_idx, odx, macc])
+
+    exit()
 
 # Set random seeds
 def seed_everything(seed: int):

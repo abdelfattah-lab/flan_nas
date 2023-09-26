@@ -95,6 +95,11 @@ def visualize_tsne(X_2d, sampled_labels, ranges, ax, title, name_map, pl):
     if pl:
         ax.legend(loc='upper right', framealpha=1)
 
+# import sys
+# sys.path.append("..")
+# from nas_embedding_suite.all_ss import AllSS as EmbGenClass
+# embedding_gen = EmbGenClass()
+
 
 # Load the first dictionary and prepare data
 data_dict1 = torch.load(os.environ["PROJ_BPATH"] + "/" + "/nas_embedding_suite/embedding_datasets/model-dim_32_search_space_all_ss-all_ss.pt")
@@ -104,6 +109,8 @@ sampled_features1, sampled_labels1 = load_and_prepare_data(data_dict1, ranges)
 data_dict2 = torch.load(os.environ["PROJ_BPATH"] + "/" + "/nas_embedding_suite/embedding_datasets/cate_all_ss.pt")
 sampled_features2, sampled_labels2 = load_and_prepare_data(data_dict2, ranges)
 
+
+print("Start TSNE")
 # Apply the T-SNE transformation
 tsne = TSNE(n_components=2, random_state=0, init='pca', learning_rate='auto')
 X_2d1 = tsne.fit_transform(sampled_features1)

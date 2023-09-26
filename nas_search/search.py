@@ -131,7 +131,6 @@ if args.analysis_mode:
                 for odx in [34, 50, 140]:
                     macc = (max(accuracy_list[0][:odx]) + max(accuracy_list[1][:odx]) + max(accuracy_list[2][:odx])) / 3
                     writer.writerow([args.target_space, repr_, tf_, first_exceed_idx, average_exceed_idx, odx, macc])
-
     exit()
 
 # Set random seeds

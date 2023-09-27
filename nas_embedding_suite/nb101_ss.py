@@ -44,8 +44,8 @@ class NASBench101:
             valacc_list = torch.load(BASE_PATH + 'saved_valacc.pkl')
         self.unnorm_valacc_list = valacc_list
         # MinMax normalize valacc_list
-        min_max_scaler = preprocessing.QuantileTransformer()
-        self.valacc_list = min_max_scaler.fit_transform(np.array(valacc_list).reshape(-1, 1)).reshape(-1)
+        self.min_max_scaler = preprocessing.QuantileTransformer()
+        self.valacc_list = self.min_max_scaler.fit_transform(np.array(valacc_list).reshape(-1, 1)).reshape(-1)
         
     #################### Key Functions Begin ###################
 

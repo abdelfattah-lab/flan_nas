@@ -117,18 +117,18 @@ if args.analysis_mode:
             print(args.target_space, repr_, "\tTransfer" if tf_ is not None else "\tScratch")
             print(first_exceed_idx)
             print(sum(first_exceed_idx.values())/3)
-            odx_ = [34, 50, 140]
+            odx_ = [2, 4, 5, 6, 7, 8, 10, 34, 50, 140]
             for odx in odx_:
                 macc = max(accuracy_list[0][:odx]) + max(accuracy_list[1][:odx]) + max(accuracy_list[2][:odx])
                 print(odx, " :", macc/3)
-            output_file = 'experiment_results.csv'
+            output_file = 'experiment_results_all.csv'
             with open(output_file, mode='a', newline='') as file:
                 writer = csv.writer(file)
                 transfer = tf_
                 if file.tell() == 0:
                     writer.writerow(['Target Space', 'Representation', 'Transfer', 'First Exceed Idx', 'Average Exceed Idx', 'Odx', 'Macc/3'])
                 average_exceed_idx = sum(first_exceed_idx.values()) / 3
-                for odx in [34, 50, 140]:
+                for odx in odx_:
                     macc = (max(accuracy_list[0][:odx]) + max(accuracy_list[1][:odx]) + max(accuracy_list[2][:odx])) / 3
                     writer.writerow([args.target_space, repr_, tf_, first_exceed_idx, average_exceed_idx, odx, macc])
     exit()

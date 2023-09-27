@@ -1,0 +1,13 @@
+name_desc,seed,batch_size,transfer_lr,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,1,0.11468099282751652,0.07903353580455083,0.0,0.0
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,2,0.11468099282751652,0.07903353580455083,0.0,0.0
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,3,-0.00469829716442044,-0.0018471846744384697,0.025743948195238436,0.01131418119875411
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,4,0.1421546242872688,0.09538846427429536,0.05245415180713709,0.023941625166185008
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,5,0.13062661615679352,0.08493529816559064,0.01437070316218473,0.006385995478709737
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,6,0.2798664220719267,0.19156282391316246,0.00583837047304299,0.0026824031579952188
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,7,0.1824736101350125,0.1316609110503789,0.0469540743791238,0.024075907573366015
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,8,0.3547758640050576,0.2432449202596121,0.0042983860561462165,0.002315860107603009
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,16,0.1687875427434861,0.11366294616205085,0.007789309516064411,0.0035584223450238974
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,32,0.3477885165351761,0.23648412117492745,0.011974137924824525,0.005648087699651658
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,64,0.44635900222996194,0.31053784522705336,0.002442205333443716,0.0011867674624744245
+cate_allsst,42,8,0.001,30,True,150,DARTS_lr-wd,PNAS,True,adj_gin_cate,2,pwl,False,ensemble,False,128,0.5046329302165229,0.34823137183816866,0.004730006603956065,0.0022167996143804217

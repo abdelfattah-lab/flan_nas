@@ -1,0 +1,14 @@
+name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,1,-0.08132139941749637,-0.05453866588495045,0.0008036722267116049,0.0003626596316014218
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,2,0.08575984402168045,0.05737601942192786,0.019314277797115323,0.008602168911881635
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,3,-0.013807270027343404,-0.00917580541417829,0.0027045558625387388,0.0012037484165752243
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,4,0.08754231941901237,0.058181277100819585,0.0024969054346874846,0.0011293986112088312
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,5,0.1136599849163145,0.07573356967732142,0.005631575052527946,0.0025331789441782595
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,6,0.12029266084771802,0.08127924831039175,0.047897849343861924,0.021677618336863328
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,7,0.07113073105034706,0.047670097554068286,0.0015579477483795713,0.0006827569557329498
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,8,0.17288726097501664,0.11555324478190017,0.007571048051560313,0.0034675281355927338
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,16,0.11320140610526559,0.07564852512616323,0.00539781148179421,0.0024110568072189175
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,32,0.5464968413749353,0.381601085194208,5.207667421861214e-05,3.84930362365084e-05
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,64,0.6195140775741441,0.4432359574985987,0.008064335737061055,0.005707097627976709
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,128,0.7496521424163936,0.5576392291537108,0.00016369552799840126,0.00013214377558329356
+cate_allss,42,8,150,DARTS_fix-w-d,class_scene,adj_gin_cate,2,pwl,False,ensemble,False,256,0.8152574681157558,0.6243976539295886,5.793860970302369e-05,6.817151294173437e-05

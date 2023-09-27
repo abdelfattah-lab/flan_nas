@@ -1,0 +1,13 @@
+name_desc,seed,batch_size,transfer_lr,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,1,0.5948030806161476,0.4282285738358713,0.0,0.0
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,2,0.5948030806161476,0.4282285738358713,0.0,0.0
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,3,0.6049128912843202,0.4337297366097192,0.00020441654349259253,6.0525583728738564e-05
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,4,0.5630620901409792,0.3996348434479235,6.219538562310293e-05,0.00011942729800095347
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,5,0.6407309972342126,0.46206525139231425,0.0008914104109137099,0.001082370406579726
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,6,0.6224264691944131,0.4499047973029732,0.00010511286452256789,6.912526603481667e-05
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,7,0.5836856270261895,0.4130182693007174,0.0005565740636988113,0.00025773007703805206
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,8,0.6122589563049741,0.4388614183017414,0.0020245018577601625,0.0012976537174546573
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,16,0.5405013123087984,0.380370075999893,0.007250654152409307,0.004954736469906683
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,32,0.5627080381505637,0.39467548603470376,1.6309858835330963e-05,1.6179837612846323e-05
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,64,0.603124443738936,0.43150969211214535,0.0005675899290682433,0.00017443641892386192
+allsst,42,8,0.001,30,True,150,NASNet,ENAS_fix-w-d,True,adj_gin_zcp,2,pwl,False,ensemble,False,128,0.6859998716529635,0.49152315807573865,0.00011205667223720382,0.00015128079652724496

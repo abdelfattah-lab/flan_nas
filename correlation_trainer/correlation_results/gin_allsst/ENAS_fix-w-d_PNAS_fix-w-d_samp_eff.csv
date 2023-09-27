@@ -1,0 +1,13 @@
+name_desc,seed,batch_size,transfer_lr,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,1,0.33596907523265856,0.23361287240835885,0.0,0.0
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,2,0.33596907523265856,0.23361287240835885,0.0,0.0
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,3,0.27038074016460584,0.18619619498299836,0.003399565349175529,0.002044994623427809
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,4,0.23888656028023605,0.16338115443749146,0.026364712521570303,0.012569892435898932
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,5,0.18255121874346933,0.12339836061021697,0.0008148712288725203,0.0003811360086266979
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,6,0.3766966963762543,0.2582966516484122,0.0023079543119791327,0.0011054448069669981
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,7,0.2905118158534421,0.201244753791855,0.009906661462921523,0.004564420298731137
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,8,0.2207415749237497,0.1509776580473149,0.022154716230859836,0.010750996188061327
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,16,0.270235478384526,0.18662586003332163,0.014337822051373551,0.006329663592986785
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,32,0.3268175088350597,0.2235459611759815,0.00020074410180412005,0.00018177113122084653
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,64,0.4125651635322382,0.2867537206135005,0.0074236109722712945,0.003936535565977437
+gin_allsst,42,8,0.001,30,True,150,ENAS_fix-w-d,PNAS_fix-w-d,True,adj_gin,2,pwl,False,ensemble,False,128,0.4413233492323529,0.3076623372925677,0.00599049824489604,0.0030276119759664734

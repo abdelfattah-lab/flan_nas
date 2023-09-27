@@ -1,0 +1,13 @@
+name_desc,seed,batch_size,transfer_lr,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,1,0.18880892832729437,0.12533971650043613,7.703719777548943e-34,0.0
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,2,0.18880892832729437,0.12533971650043613,7.703719777548943e-34,0.0
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,3,0.15807163180064496,0.10574510530868486,0.0004714983217982709,0.0002707289841723151
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,4,0.13015046423902918,0.08575983555172557,0.003245831996557206,0.0015340187396401658
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,5,0.12611417169109315,0.0840943964053123,0.004242357084667479,0.0019149892270161558
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,6,0.10684648145145086,0.07242665475558652,0.00966213295444538,0.004554181399293977
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,7,0.14000143119952616,0.09270944581700565,0.004258805605578862,0.0017579801641491373
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,8,0.186554832890676,0.12552476529448206,0.0015754706749707555,0.0008009298648638118
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,16,0.16939584036732316,0.10963331243728881,0.0004819357899435365,0.0003377020442695172
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,32,0.14351528475675146,0.09721249815512197,0.01147405506132163,0.005212604949286378
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,64,0.2068674924963618,0.13976353629323832,0.0017966153378218364,0.0007238608942451182
+cate_allsst,42,8,0.001,30,True,150,PNAS_fix-w-d,Amoeba,True,adj_gin_cate,2,pwl,False,ensemble,False,128,0.2897891673551993,0.1973276286309031,0.003489714806916438,0.0018431452562796332

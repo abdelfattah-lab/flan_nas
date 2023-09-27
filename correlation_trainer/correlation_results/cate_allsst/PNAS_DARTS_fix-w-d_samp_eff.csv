@@ -1,0 +1,13 @@
+name_desc,seed,batch_size,transfer_lr,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,1,0.46111917076974657,0.32493415415268373,3.0814879110195774e-33,0.0
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,2,0.46111917076974657,0.32493415415268373,3.0814879110195774e-33,0.0
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,3,0.4609434390149684,0.31990262414589526,0.0018758739452869643,0.0010053603382262656
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,4,0.44417929724674,0.3063688352704927,0.0029969425980312827,0.0015218000872191369
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,5,0.48507520017381917,0.3361883518821534,0.0016452534101611832,0.0011051130747293527
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,6,0.4634764083921839,0.3212785935763231,0.000465775962743633,0.00040005691701841046
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,7,0.3933079347634914,0.2673077329320776,0.008371348860573348,0.0043947290038933344
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,8,0.40688159172816357,0.2820357670783008,0.01669298472900939,0.008673618474081981
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,16,0.3241530780812872,0.21964168743919554,0.005234783685450623,0.0028685662053489144
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,32,0.543353287108639,0.3802951786054945,0.0038108156736341527,0.002521625746514586
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,64,0.488681202817366,0.33798299336684257,0.001731890230873271,0.0012105788842611904
+cate_allsst,42,8,0.001,30,True,150,PNAS,DARTS_fix-w-d,True,adj_gin_cate,2,pwl,False,ensemble,False,128,0.5738198456547869,0.40484660701433967,0.0026390711243011247,0.001424587922212249

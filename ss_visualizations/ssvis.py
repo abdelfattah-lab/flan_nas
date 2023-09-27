@@ -10,7 +10,7 @@ if True:
     sns.set_palette("tab10")
     plt.rcParams['text.usetex'] = False
     plt.rcParams['mathtext.fontset'] = 'cm'
-    plt.rcParams['font.size'] = 14  # Increase font size
+    plt.rcParams['font.size'] = 16  # Increase font size
     # legend size
     plt.rcParams["legend.fontsize"] = 8
 
@@ -95,12 +95,6 @@ def visualize_tsne(X_2d, sampled_labels, ranges, ax, title, name_map, pl):
     if pl:
         ax.legend(loc='upper right', framealpha=1)
 
-# import sys
-# sys.path.append("..")
-# from nas_embedding_suite.all_ss import AllSS as EmbGenClass
-# embedding_gen = EmbGenClass()
-
-
 # Load the first dictionary and prepare data
 data_dict1 = torch.load(os.environ["PROJ_BPATH"] + "/" + "/nas_embedding_suite/embedding_datasets/model-dim_32_search_space_all_ss-all_ss.pt")
 sampled_features1, sampled_labels1 = load_and_prepare_data(data_dict1, ranges)
@@ -119,12 +113,36 @@ X_2d2 = tsne.fit_transform(sampled_features2)
 if True:
     plt.cla()
     plt.clf()
-    fig, axs = plt.subplots(1, 2, figsize=(21, 7))  # Adjust as needed
+    fig, axs = plt.subplots(1, 2, figsize=(20, 5))  # Adjust as needed
     name_map = {"nb": "NASBench-", "_fix-w-d": "$_{FixWD}$", "_lr-wd": "$_{LRWD}$", "tb": "TransNASBench-"}  # Example name_map, replace with your actual mapping
+    handles, labels = [], []
     visualize_tsne(X_2d1, sampled_labels1, ranges, axs[0], 'Unified Arch2Vec Encodings', name_map, pl=False)
-    visualize_tsne(X_2d2, sampled_labels2, ranges, axs[1], 'Unified CATE Encodings', name_map, pl=True)
-    plt.tight_layout()
+    visualize_tsne(X_2d2, sampled_labels2, ranges, axs[1], 'Unified CATE Encodings', name_map, pl=False)
+    for ax in axs:
+        h, l = ax.get_legend_handles_labels()
+        handles.extend(h)
+        labels.extend(l)
+    handles = list(set(handles))
+    labels = list(set(labels))
+    plt.tight_layout(rect=[0, 0, 1, 0.88])
+    lgnd = fig.legend(handles, labels, loc='upper center', ncol=7, bbox_to_anchor=(0.5, 1.01), fontsize=16)
+    for handle in lgnd.legendHandles:
+        handle.set_sizes([35.0])
     plt.savefig("tsne_combined_5000_nums.png", dpi=500)
     plt.savefig("tsne_combined_5000_nums.pdf")
-    # plt.legend(alpha=0.8)
-plt.show()
+
+# Visualize the plots without individual legends
+
+# Adjust layout to leave space at the top for the unified legend
+
+# Create a unified legend at the top of the figure
+
+# Save and show the plots
+# plt.show()
+#     visualize_tsne(X_2d1, sampled_labels1, ranges, axs[0], 'Unified Arch2Vec Encodings', name_map, pl=False)
+#     visualize_tsne(X_2d2, sampled_labels2, ranges, axs[1], 'Unified CATE Encodings', name_map, pl=True)
+#     plt.tight_layout()
+#     plt.savefig("tsne_combined_5000_nums.png", dpi=500)
+#     plt.savefig("tsne_combined_5000_nums.pdf")
+#     # plt.legend(alpha=0.8)
+# plt.show()

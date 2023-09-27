@@ -81,7 +81,7 @@ if unif_color:
                             "ENAS": ['adj_gin', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_arch2vec', 'adj_gin_a2vcatezcp']
                             }
     pltlims = {
-        "nb101": {'x': (1, 128), 'y': (0.1, 0.8)},
+        "nb101": {'x': (1, 256), 'y': (0.1, 0.8)},
         "nb201": {'x': (1, 128), 'y': (0.1, 0.9)},
         "ENAS":  {'x': (1, 128), 'y': (0.1, 0.6)}
     }
@@ -146,7 +146,7 @@ if unif_color:
 
                     marker = representation_markers.get(representation, 'o')  # 'o' is a default marker
                     ax.plot(subset['key'], subset['kdt'], label=f"FLAN{suffix}{mapped_representation}", 
-                        marker=marker, color=color, linewidth=1, markersize=3)
+                        marker=marker, color=color, linewidth=1, markersize=5)
                     # ax.plot(subset['key'], subset['kdt'], label=f"FLAN{suffix}{mapped_representation}", marker='o', linewidth=2)
         
         if tagates_eff.get(space):
@@ -169,7 +169,11 @@ if unif_color:
 
 
         # Beautify the plot
-        ax.set_title(f"Predictor Sample Efficiency for {space_map[space]}")
+        # ax.set_title(f"{space_map[space]}")
+        
+        ax.text(.5,.9,f"{space_map[space]}", fontsize=16,
+            horizontalalignment='center', bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.3'),
+            transform=ax.transAxes)
         ax.set_xlabel("Number of Training Samples")
         ax.set_xscale('log', basex=2)
         # ax.set_yscale('log')
@@ -185,11 +189,11 @@ if unif_color:
 
     # Adjust the layout to make it tight
     # plt.tight_layout()
-    plt.tight_layout(rect=[0, 0, 1, 0.9])  # Leave space at the bottom for the unified legend
+    plt.tight_layout(rect=[0, 0, 1, 0.82])  # Leave space at the bottom for the unified legend
     
     handles, labels = ax.get_legend_handles_labels()
 
-    fig.legend(handles, labels, loc='upper center', ncol=13, bbox_to_anchor=(0.5, 0.97), fontsize=12)
+    fig.legend(handles, labels, loc='upper center', ncol=7, bbox_to_anchor=(0.5, 0.97), fontsize=16)
 
     # Save the entire figure containing all three subplots
     plt.savefig("graphs/combined_spaces_subset_unifc.png")

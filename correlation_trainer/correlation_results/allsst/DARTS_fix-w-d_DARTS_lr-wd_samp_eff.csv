@@ -1,0 +1,13 @@
+name_desc,seed,batch_size,transfer_lr,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,1,0.1750067339078877,0.12086130480860736,0.0,0.0
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,2,0.17566795554625803,0.1211521768686198,8.74428110098232e-07,1.6921311059176294e-07
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,3,0.1345621673954531,0.08685618990761712,0.001192637970335307,0.0004931882389763347
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,4,0.15078607408218694,0.10199614666375241,0.007398903424189719,0.0035056201229535446
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,5,0.14802317809511575,0.09717512544086733,0.0039139107278818525,0.001628778416298074
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,6,0.0945564509634129,0.06485893811218552,0.003016592105891386,0.001650230531674169
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,7,0.06115399720843751,0.03715640659078522,0.0025320811727963864,0.0012636317485823212
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,8,0.14935618521431374,0.1000792569981294,0.0006726976013415026,0.0004163520967292818
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,16,0.12205637113708367,0.08652664306423986,0.0010789866724067512,0.000464089925855842
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,32,0.13833790714601776,0.09267020482705794,0.004511205814728455,0.001982694265366116
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,64,0.13007466281547853,0.08773397831051138,0.002916165434824641,0.0009441867428333781
+allsst,42,8,0.001,30,True,150,DARTS_fix-w-d,DARTS_lr-wd,True,adj_gin_zcp,2,pwl,False,ensemble,False,128,0.030462275736640065,0.024404656837005916,0.005745611503821653,0.002585728984159851

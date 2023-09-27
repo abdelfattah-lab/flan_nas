@@ -198,7 +198,7 @@ elif unif_color=='dash':
 
     lim_map = {
         "nb201": {"y": (0.875, 0.925), "x": (4, 64)},
-        "ENAS_fix-w-d": {"y": (0.875, 1.01), "x": (4, 64)},
+        "ENAS_fix-w-d": {"y": (0.875, 1.05), "x": (4, 64)},
         "nb101": {"y": (0.925, 0.950), "x": (4, 32)},
     }
 
@@ -261,7 +261,7 @@ elif unif_color=='dash':
                             inverse_transformed_std_devs.append(inverse_transformed_std_dev)
                         subset['best_acc_std'] = inverse_transformed_std_devs
                     ls = '--' if exp=='exp6' else '-'
-                    ax.plot(subset['num_samps'], subset['av_best_acc'], label=f"FLAN{suffix}{mapped_representation}", marker='o', markersize=3, linewidth=1, linestyle=ls)
+                    ax.plot(subset['num_samps'], subset['av_best_acc'], label=f"FLAN{suffix}{mapped_representation}", marker='o', markersize=5, linewidth=1, linestyle=ls)
 
                     # Add shaded error regions
                     stmax = 0.945 if space=='nb101' else 1
@@ -272,7 +272,10 @@ elif unif_color=='dash':
 
 
         # Beautify the plot
-        ax.set_title(f"NAS Search on {space_map[space]}")
+        # ax.set_title(f"NAS Search on {space_map[space]}")
+        ax.text(.5,.9,f"{space_map[space]}", fontsize=16,
+            horizontalalignment='center', bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.3'),
+            transform=ax.transAxes)
         ax.set_xlabel("Number of Samples")
         ax.set_xscale('log', basex=2)
         ax.get_xaxis().set_major_formatter(ticker.StrMethodFormatter("{x:.0f}"))
@@ -285,11 +288,11 @@ elif unif_color=='dash':
     # Adjust the layout to make it tight
     # plt.tight_layout()
 
-    plt.tight_layout(rect=[0, 0, 1, 0.9])  # Leave space at the bottom for the unified legend
+    plt.tight_layout(rect=[0, 0, 1, 0.88])  # Leave space at the bottom for the unified legend
     
     handles, labels = ax.get_legend_handles_labels()
 
-    fig.legend(handles, labels, loc='upper center', ncol=10, bbox_to_anchor=(0.5, 0.97), fontsize=12)
+    fig.legend(handles, labels, loc='upper center', ncol=10, bbox_to_anchor=(0.5, 0.97), fontsize=16)
 
     # Save the entire figure containing all three subplots
     plt.savefig("search_graphs/combined_spaces_dash.png")

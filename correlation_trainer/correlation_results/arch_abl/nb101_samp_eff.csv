@@ -1,4 +1,4 @@
-name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
+name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,residual,leakyrelu,unique_attention_projection,opattention,attention_rescale,spr,kdt,spr_std,kdt_std
 arch_abl,42,8,150,nb101,class_scene,adj_gin,1,pwl,False,ensemble,False,8,True,False,True,True,True,0.5502429287491777,0.39447957229582026,0.016937276622508615,0.010793042570873358
 arch_abl,42,8,150,nb101,class_scene,adj_gin,1,pwl,False,ensemble,False,16,True,False,True,True,True,0.6800084074713674,0.4938552586101055,0.0004832757896458489,0.000413046868487613
 arch_abl,42,8,150,nb101,class_scene,adj_gin,1,pwl,False,ensemble,False,32,True,False,True,True,True,0.7231953740270313,0.5339826759858031,0.001000532736369773,0.0008920335024614562
@@ -38,3 +38,21 @@ arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,32,True,T
 arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,8,True,True,True,True,True,0.654927811489192,0.4755620429096034,0.0033867780038404887,0.0025541074862968677
 arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,16,True,True,True,True,True,0.709545206643999,0.5340441346623067,0.005069596394593595,0.003798862461625288
 arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,32,True,True,True,True,True,0.7320421532267428,0.5483998800659693,0.0064492872986749335,0.004660694372943745
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,8,True,False,False,True,True,0.42921374412074936,0.3020420551563761,0.037055281512085286,0.02060167724462469
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,16,True,False,False,True,True,0.6862336028318902,0.5025212978600259,0.005487734682380802,0.003933594028433127
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,32,True,False,False,True,True,0.7531884429976606,0.5616495400101978,0.0003468584614180375,0.00029592019202926415
+arch_abl,42,8,150,nb101,class_scene,adj_gin,1,pwl,False,ensemble,False,8,False,True,False,True,True,0.6354775225130372,0.45954611539457546,0.013625914347137905,0.009100619944085397
+arch_abl,42,8,150,nb101,class_scene,adj_gin,1,pwl,False,ensemble,False,16,False,True,False,True,True,0.6990325934780391,0.5097848482925595,0.002205306779301606,0.0015719585172622268
+arch_abl,42,8,150,nb101,class_scene,adj_gin,1,pwl,False,ensemble,False,32,False,True,False,True,True,0.7836330922487781,0.5903853408774468,0.0006820891937207812,0.0005182558436687305
+arch_abl,42,8,150,nb101,class_scene,adj_gin,2,pwl,False,ensemble,False,8,True,True,True,True,True,0.549613268916937,0.3939469275880833,0.023907499695286202,0.014090884815901275
+arch_abl,42,8,150,nb101,class_scene,adj_gin,2,pwl,False,ensemble,False,16,True,True,True,True,True,0.6904821742899182,0.5081161956501938,0.0032171228804756835,0.002219201494997788
+arch_abl,42,8,150,nb101,class_scene,adj_gin,2,pwl,False,ensemble,False,32,True,True,True,True,True,0.7592751172114744,0.5683933316727487,0.00035452404962669565,0.00030781765156870524
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,8,False,True,False,True,True,0.4288238664267103,0.2957021130631725,0.04314049241920997,0.026184544099512857
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,16,False,True,False,True,True,0.5256369156747436,0.37645131655508557,0.01943382477087668,0.012736046961627445
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,32,False,True,False,True,True,0.7522144466486868,0.5606674819321052,0.0006090356980970573,0.0005654795756389548
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,8,False,True,True,True,True,0.4674885177949652,0.3279981824186929,0.014682600894423234,0.007738918790044819
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,16,False,True,True,True,True,0.6451174779495968,0.46473165333197625,0.01036887199074242,0.0058834000395431435
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,32,False,True,True,True,True,0.7461906059741419,0.5552143693801,0.0015812081201667944,0.0013474198184877104
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,8,False,False,True,True,True,0.5255176698353625,0.36737243230430056,0.005741354605463707,0.0034149314324458994
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,16,False,False,True,True,True,0.7108594400764373,0.5241185029291829,0.00046197863383265714,0.00041043934611023283
+arch_abl,42,8,150,nb101,class_scene,adj_gin,3,pwl,False,ensemble,False,32,False,False,True,True,True,0.720078825118445,0.5291301481131382,0.0012863419206094737,0.001223283173472058

@@ -16,4 +16,4 @@ conda activate unr
 
 cd /home/ya255/projects/iclr_nas_embedding/nas_search
 
-python search.py --seed 42 --name_desc allnas --target_space DARTS_lr-wd --gnn_type ensemble --periter_samps 8 --samp_lim 512 --representation adj_gin
+python search.py --seed 42 --name_desc allnas --target_space DARTS_lr-wd --gnn_type ensemble --periter_samps 8 --samp_lim 512 --representation adj_gin_cate

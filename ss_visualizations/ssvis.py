@@ -91,7 +91,13 @@ def visualize_tsne(X_2d, sampled_labels, ranges, ax, title, name_map, pl):
         ax.scatter(X_2d[idx, 0], X_2d[idx, 1], color=c, label=replace_name(label, name_map), s=4)  # s is the marker size
     ax.set_xlim(X_2d[:, 0].min(), X_2d[:, 0].max())
     ax.set_ylim(X_2d[:, 1].min(), X_2d[:, 1].max())
-    ax.set_title(title)
+    
+    # Replacing ax.set_title with ax.text
+    ax.text(0.98, .05, f"{title}", fontsize=16, 
+            horizontalalignment='right', 
+            bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.3'), 
+            transform=ax.transAxes)
+    
     if pl:
         ax.legend(loc='upper right', framealpha=1)
 
@@ -116,8 +122,8 @@ if True:
     fig, axs = plt.subplots(1, 2, figsize=(20, 5))  # Adjust as needed
     name_map = {"nb": "NASBench-", "_fix-w-d": "$_{FixWD}$", "_lr-wd": "$_{LRWD}$", "tb": "TransNASBench-"}  # Example name_map, replace with your actual mapping
     handles, labels = [], []
-    visualize_tsne(X_2d1, sampled_labels1, ranges, axs[0], 'Unified Arch2Vec Encodings', name_map, pl=False)
-    visualize_tsne(X_2d2, sampled_labels2, ranges, axs[1], 'Unified CATE Encodings', name_map, pl=False)
+    visualize_tsne(X_2d1, sampled_labels1, ranges, axs[0], 'Arch2Vec', name_map, pl=False)
+    visualize_tsne(X_2d2, sampled_labels2, ranges, axs[1], 'CATE', name_map, pl=False)
     for ax in axs:
         h, l = ax.get_legend_handles_labels()
         handles.extend(h)
@@ -130,7 +136,30 @@ if True:
         handle.set_sizes([35.0])
     plt.savefig("tsne_combined_5000_nums.png", dpi=500)
     plt.savefig("tsne_combined_5000_nums.pdf")
-
+if True:
+    plt.cla()
+    plt.clf()
+    fig, axs = plt.subplots(1, 2, figsize=(20, 5))  # Adjust as needed
+    handles, labels = [], []
+    visualize_tsne(X_2d1, sampled_labels1, ranges, axs[0], 'Arch2Vec', name_map, pl=False)
+    visualize_tsne(X_2d2, sampled_labels2, ranges, axs[1], 'CATE', name_map, pl=False)
+    for ax in axs:
+        h, l = ax.get_legend_handles_labels()
+        handles.extend(h)
+        labels.extend(l)
+    handles = list(set(handles))
+    labels = list(set(labels))
+    plt.tight_layout(rect=[0, 0, 0.8, 1])  # Make space for the legend
+    
+    # Adding an axes at the right for the legend.
+    legend_ax = fig.add_axes([0.82, 0.1, 0.1, 0.8])
+    legend_ax.axis('off')
+    
+    lgnd = legend_ax.legend(handles, labels, loc='center left', ncol=2, fontsize=16)
+    for handle in lgnd.legendHandles:
+        handle.set_sizes([35.0])
+    plt.savefig("tsne_combined_5000_nums_legside.png", dpi=500)
+    plt.savefig("tsne_combined_5000_nums_legside.pdf")
 # Visualize the plots without individual legends
 
 # Adjust layout to leave space at the top for the unified legend

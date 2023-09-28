@@ -158,7 +158,9 @@ elif unif_color=='dash':
     import numpy as np
     sys.path.append("./../..")
     from nas_embedding_suite.nb101_ss import NASBench101
+    from nas_embedding_suite.nds_ss import NDS
     nb101_embgen = NASBench101(normalize_zcp=True, log_synflow=True)
+    nds_embgen = NDS()
 
     # Set a consistent color palette
     sns.set_palette("tab10")
@@ -166,7 +168,7 @@ elif unif_color=='dash':
     # Enable LaTeX interpretation in matplotlib
     plt.rcParams['text.usetex'] = False
     plt.rcParams['mathtext.fontset'] = 'cm'
-    plt.rcParams['font.size'] = 14  # Increase font size
+    plt.rcParams['font.size'] = 18  # Increase font size
 
     space_map = {'nb101': "NASBench-101", "nb201": "NASBench-201", "ENAS_fix-w-d": "ENAS$_{FixWD}$"}
 
@@ -197,9 +199,9 @@ elif unif_color=='dash':
     }
 
     lim_map = {
-        "nb201": {"y": (0.875, 0.925), "x": (4, 64)},
-        "ENAS_fix-w-d": {"y": (0.875, 1.05), "x": (4, 64)},
-        "nb101": {"y": (0.925, 0.950), "x": (4, 32)},
+        "nb201": {"y": (0.875, 0.92), "x": (4, 64)},
+        "ENAS_fix-w-d": {"y": (0.925, 0.945), "x": (4, 64)},
+        "nb101": {"y": (0.925, 0.946), "x": (4, 32)},
     }
 
     # Create the search_graphs directory if it doesn't exist
@@ -214,29 +216,24 @@ elif unif_color=='dash':
     spaces_to_analyze = ['nb101', 'nb201', 'ENAS_fix-w-d']  # Modify this list as needed
 
     # Create a single figure with three subplots
-    fig, axes = plt.subplots(1, 3, figsize=(21, 5))
 
     inv_tf = nb101_embgen.min_max_scaler.inverse_transform
+    ndsinv_tf = nds_embgen.minmax_sc['ENAS_fix-w-d'].inverse_transform
     # Loop through each space
+# if True:
+    plt.cla()
+    plt.clf()
+    fig, axes = plt.subplots(1, 3, figsize=(21, 5))
     for idx, space in enumerate(spaces_to_analyze):
         ax = axes[idx]
-
-        # Set plot limits
         ax.set_xlim(lim_map[space]['x'])
         ax.set_ylim(lim_map[space]['y'])
-
-        # Loop through each experiment folder
         for exp, suffix in experiments.items():
             file_name = f"{space}_search_eff.csv"
             file_path = os.path.join(exp, file_name)
-
-            # Check if the file exists
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path)
-                    # Stripping spaces from string columns
                 df = df.apply(lambda col: col.str.strip() if col.dtype == 'object' else col)
-                
-                # Get the representations to be plotted for the current experiment and space
                 if exp == "exp6":
                     reps_to_plot = exp6_representations.get(space, [])
                 if exp == "exp7":
@@ -244,60 +241,53 @@ elif unif_color=='dash':
                 if exp == "exp8":
                     reps_to_plot = exp8_representations.get(space, [])
                 reps_to_plot = [r for r in reps_to_plot if r in df['representation'].unique()]
-
-                # Plot for each specified representation
                 for representation in reps_to_plot:
-
                     mapped_representation = representation_map.get(representation, representation)
                     subset = df[df['representation'] == representation]
-                    # Apply the inverse transform if space is 'nb101'
-                    if space == 'nb101':
-                        subset['av_best_acc'] = inv_tf(subset[['av_best_acc']]).reshape(-1)
+                    if space in ['nb101', 'ENAS_fix-w-d']:
+                        old_subs = subset.copy()
+                        if space == 'nb101':
+                            subset['av_best_acc'] = inv_tf(subset[['av_best_acc']]).reshape(-1)
+                        else:
+                            subset['av_best_acc'] = ndsinv_tf(subset[['av_best_acc']]).reshape(-1)
                         inverse_transformed_std_devs = []
                         for index, row in subset.iterrows():
-                            synthetic_points = np.random.normal(loc=row['av_best_acc'], scale=row['best_acc_std'], size=10000)
-                            inverse_transformed_points = inv_tf(synthetic_points.reshape(-1, 1)).reshape(-1)
+                            synthetic_points = np.random.normal(loc=old_subs[old_subs.index==index]['av_best_acc'], scale=row['best_acc_std'], size=10000)
+                            if space == 'nb101':
+                                inverse_transformed_points = inv_tf(synthetic_points.reshape(-1, 1)).reshape(-1)
+                            else:
+                                inverse_transformed_points = ndsinv_tf(synthetic_points.reshape(-1, 1)).reshape(-1)
                             inverse_transformed_std_dev = np.std(inverse_transformed_points)
                             inverse_transformed_std_devs.append(inverse_transformed_std_dev)
                         subset['best_acc_std'] = inverse_transformed_std_devs
                     ls = '--' if exp=='exp6' else '-'
+                    if space == 'ENAS_fix-w-d':
+                        subset['best_acc_std'] = subset['best_acc_std']/100.
+                        subset['av_best_acc'] = subset['av_best_acc']/100.
                     ax.plot(subset['num_samps'], subset['av_best_acc'], label=f"FLAN{suffix}{mapped_representation}", marker='o', markersize=5, linewidth=1, linestyle=ls)
-
-                    # Add shaded error regions
                     stmax = 0.945 if space=='nb101' else 1
+                    stmax = 94 if space=='ENAS_fix-w-d' else stmax
                     ax.fill_between(subset['num_samps'],
-                                    subset['av_best_acc'] - subset['best_acc_std'],
+                                    subset['av_best_acc'] - subset['best_acc_std'], 
                                     [min(stmax, x) for x in subset['av_best_acc'] + subset['best_acc_std']],
                                     alpha=0.05)
-
-
-        # Beautify the plot
-        # ax.set_title(f"NAS Search on {space_map[space]}")
-        ax.text(.5,.9,f"{space_map[space]}", fontsize=16,
-            horizontalalignment='center', bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.3'),
+        ax.text(0.98,.05,f"{space_map[space]}", fontsize=16,
+            horizontalalignment='right', bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.3'),
             transform=ax.transAxes)
-        ax.set_xlabel("Number of Samples")
+        ax.set_xlabel("Number of Trained Networks")
         ax.set_xscale('log', basex=2)
         ax.get_xaxis().set_major_formatter(ticker.StrMethodFormatter("{x:.0f}"))
         ax.get_xaxis().set_minor_formatter(ticker.StrMethodFormatter("{x:.0f}"))
         ax.tick_params(axis='x', which='both', bottom=True, top=False, labelbottom=True)
         ax.set_ylabel("Average Best Accuracy")
-        # ax.legend(loc='lower right', fontsize=8)  # This ensures each subplot has its own legend
         ax.grid(True, which="both", ls="--", c='0.7')  # Add a grid for better readability
-
-    # Adjust the layout to make it tight
-    # plt.tight_layout()
-
     plt.tight_layout(rect=[0, 0, 1, 0.88])  # Leave space at the bottom for the unified legend
-    
     handles, labels = ax.get_legend_handles_labels()
-
+    handles = list(set(handles))
+    labels = list(set(labels))
     fig.legend(handles, labels, loc='upper center', ncol=10, bbox_to_anchor=(0.5, 0.97), fontsize=16)
-
-    # Save the entire figure containing all three subplots
     plt.savefig("search_graphs/combined_spaces_dash.png")
     plt.savefig("search_graphs/combined_spaces_dash.pdf")
-
     print("Graphs saved in 'search_graphs' folder.")
 
 else:
@@ -310,7 +300,9 @@ else:
     import numpy as np
     sys.path.append("./../..")
     from nas_embedding_suite.nb101_ss import NASBench101
+    from nas_embedding_suite.nds_ss import NDS
     nb101_embgen = NASBench101(normalize_zcp=True, log_synflow=True)
+    nds_embgen = NDS()
 
     # Set a consistent color palette
     sns.set_palette("tab10")
@@ -369,6 +361,7 @@ else:
     fig, axes = plt.subplots(1, 3, figsize=(21, 5))
 
     inv_tf = nb101_embgen.min_max_scaler.inverse_transform
+    ndsinv_tf = nds_embgen.minmax_sc['ENAS'].inverse_transform
     # Loop through each space
     for idx, space in enumerate(spaces_to_analyze):
         ax = axes[idx]
@@ -399,16 +392,16 @@ else:
 
                 # Plot for each specified representation
                 for representation in reps_to_plot:
-
                     mapped_representation = representation_map.get(representation, representation)
                     subset = df[df['representation'] == representation]
                     # Apply the inverse transform if space is 'nb101'
-                    if space == 'nb101':
-                        subset['av_best_acc'] = inv_tf(subset[['av_best_acc']]).reshape(-1)
+                    invt_f = inv_tf if space=='nb101' else ndsinv_tf
+                    if space in ['nb101', 'ENAS_fix-w-d']:
+                        subset['av_best_acc'] = invt_f(subset[['av_best_acc']]).reshape(-1)
                         inverse_transformed_std_devs = []
                         for index, row in subset.iterrows():
                             synthetic_points = np.random.normal(loc=row['av_best_acc'], scale=row['best_acc_std'], size=10000)
-                            inverse_transformed_points = inv_tf(synthetic_points.reshape(-1, 1)).reshape(-1)
+                            inverse_transformed_points = invt_f(synthetic_points.reshape(-1, 1)).reshape(-1)
                             inverse_transformed_std_dev = np.std(inverse_transformed_points)
                             inverse_transformed_std_devs.append(inverse_transformed_std_dev)
                         subset['best_acc_std'] = inverse_transformed_std_devs

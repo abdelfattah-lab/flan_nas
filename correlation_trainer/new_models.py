@@ -84,7 +84,7 @@ class GraphAttentionLayer(nn.Module):
         self.layernorm = nn.LayerNorm(out_features)
 
     def forward(self, h, adj, op_emb):
-        Wh = self.W(h)
+        Wh = self.W(h) # model actual attention -> 3 different Ws, remove leakyrelu
         a_input = torch.einsum('balm,beam->belm', Wh.unsqueeze(-3).expand(-1, -1, Wh.size(1), -1), 
             Wh.unsqueeze(-2).expand(-1, Wh.size(1), -1, -1))
         alpha = F.leaky_relu(self.a(a_input))

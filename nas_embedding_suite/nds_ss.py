@@ -67,6 +67,7 @@ class NDS:
             self.cate_embeddings[task_.replace(".json", "")]['embeddings'] = min_max_scaler.fit_transform(self.cate_embeddings[task_.replace(".json", "")]['embeddings'])
         self.all_accs = {}
         self.unnorm_all_accs = {}
+        self.minmax_sc = {}
         for space in self.spaces:
             space = space.replace(".json", "")
             self.all_accs[space] = []
@@ -77,7 +78,8 @@ class NDS:
             self.all_accs[space] = min_max_scaler.fit_transform(np.array(self.all_accs[space]).reshape(-1, 1)).flatten()
             self.unnorm_all_accs[space] = np.array(self.all_accs[space]).reshape(-1, 1).flatten().tolist()
             self.all_accs[space] = self.all_accs[space].tolist()
-        self.unnorm_accs = self.all_accs
+            self.minmax_sc[space] = min_max_scaler
+        self.unnorm_accs = self.all_accs # need to comment out this line.
         self.all_accs = self.all_accs
 
     #################### Key Functions Begin ###################

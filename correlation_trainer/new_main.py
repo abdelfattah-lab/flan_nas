@@ -20,7 +20,7 @@ sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 
 parser = argparse.ArgumentParser()
 ####################################################### Search Space Choices #######################################################
-parser.add_argument('--space', type=str, default='Amoeba')         # nb101, nb201, nb301, tb101, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d supported
+parser.add_argument('--space', type=str, default='Amoeba')         # nb101, nb201, nb301, tb101, nds_nb301, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d, amoeba_in, darts_in, darts_lr_wd_in, enas_in, nasnet_in, pnas_in supported (pls capitalize appropriately, documentation not updated)
 parser.add_argument('--task', type=str, default='class_scene')     # all tb101 tasks supported
 parser.add_argument('--representation', type=str, default='cate')  # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate supported.
 parser.add_argument('--test_tagates', action='store_true')         # Currently only supports testing on NB101 networks. Easy to extend.
@@ -221,7 +221,7 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
     return model, num_test_items, running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
 
 sys.path.append("..")
-if args.space in ['Amoeba', 'DARTS', 'DARTS_fix-w-d', 'DARTS_lr-wd', 'ENAS', 'ENAS_fix-w-d', 'NASNet', 'PNAS', 'PNAS_fix-w-d']:
+if args.space in ['Amoeba', 'DARTS', 'DARTS_fix-w-d', 'DARTS_lr-wd', 'ENAS', 'ENAS_fix-w-d', 'NASNet', 'PNAS', 'PNAS_fix-w-d', 'nds_nb301']:
     from nas_embedding_suite.nds_ss import NDS as EmbGenClass
 elif args.space in ['nb101', 'nb201', 'nb301']:
     exec("from nas_embedding_suite.nb{}_ss import NASBench{} as EmbGenClass".format(args.space[-3:], args.space[-3:]))
@@ -239,6 +239,18 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
             sample_indexes = nb101_train_tagates_sample_indices[:sample_count]
         else:
             sample_indexes = nb101_tagates_sample_indices
+    elif space == "nb201" and args.test_tagates:
+        print("Sampling ONLY TAGATES NB201 network SAMPLE sizes (exact samples not guaranteed)")
+        if mode == "train":
+            sample_indexes = random.sample(range(embedding_gen.get_numitems()-1), sample_count)
+        else:
+            sample_indexes = random.sample(range(embedding_gen.get_numitems()-1), 7813)
+    elif space == "nds_nb301" and args.test_tagates:
+        print("Sampling ONLY 5896 networks for replication with TAGATES (note that due to lack of network info, we randomly sample 5896 networks)")
+        if mode == "train":
+            sample_indexes = random.sample(range(embedding_gen.get_numitems(space)-1), sample_count)
+        else:
+            sample_indexes = random.sample(range(embedding_gen.get_numitems(space)-1), 5896)
     else:
         if mode == "train":
             if space not in ['nb101', 'nb201', 'nb301', 'tb101']:

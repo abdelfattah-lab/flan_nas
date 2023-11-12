@@ -214,7 +214,7 @@ class TransNASBench101Micro:
         return matrix, labels
     
     
-    def get_params(self, idx, task=None):
+    def get_params(self, idx, space=None, task=None):
         if task == None:
             task = 'class_scene'
         return self.unnorm_zcp_tb101[task][self.hash_iterator_list[idx]]['params']['score']*1e5

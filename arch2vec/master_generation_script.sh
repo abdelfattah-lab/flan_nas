@@ -92,6 +92,8 @@ bash run_scripts/extract_arch2vec.sh
 bash run_scripts/extract_arch2vec_nasbench201.sh
 # NASBench301
 bash run_scripts/extract_arch2vec_nasbench301.sh
+# NASBench301 NR
+bash run_scripts/extract_arch2vec_nb301_a_b.sh
 # NDS
 bash run_scripts/extract_arch2vec_nds.sh
 # TransNASBench-101 Micro

@@ -21,6 +21,7 @@ sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 from nb101_ss import NASBench101
 from nb201_ss import NASBench201
 from nb301_ss import NASBench301
+from ndsin_ss import NDSin
 from nds_ss import NDS
 from tb101_micro_ss import TransNASBench101Micro
 import os
@@ -59,6 +60,7 @@ class AllSS:
         print("[WARNING]: ALL SS has a cache store at {}, which needs to be changed if reproducing in all_ss.py!!!!".format(CACHE_DIR))
         # self._ensure_cache_exists()
         self.nb301 = NASBench301()
+        self.nds_in = NDSin()
         self._load_classes()
         # check if os.environ["PROJ_BPATH"] + "/embedding_dataset/arch2vec_f_ss.csv", exists
         # if it does not exist, create it
@@ -324,4 +326,5 @@ class AllSS:
     def ss_to_binary(self, space):
         return [int(x) for x in f"{self.ss_mapper[space]:04b}"]
 
-# all_ss = AllSS()
+if __name__ == "__main__":
+    all_ss = AllSS()

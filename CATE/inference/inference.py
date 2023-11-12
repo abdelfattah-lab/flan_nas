@@ -16,6 +16,10 @@ def prepare_graph(graph, config):
         Xs, Rs, valid_accs, test_accs, times = zip(*graph)
     elif config.dataset.split('_')[0] == 'nasbench301':
         Xs, Rs, genos, predicted_accs, predicted_runtimes = zip(*graph)
+    elif config.dataset.split('_')[0] == 'nb301a':
+        Xs, Rs, valid_accs, test_accs, times = zip(*graph)
+    elif config.dataset.split('_')[0] == 'nb301b':
+        Xs, Rs, valid_accs, test_accs, times = zip(*graph)
     elif config.dataset.split('_')[0] == 'nds':
         Xs, Rs, valid_accs, test_accs, times = zip(*graph)
     elif config.dataset.split('_')[0] == 'transnasbench101':
@@ -49,6 +53,10 @@ def prepare_graph(graph, config):
         return torch.stack(inputs), torch.stack(masks), valid_accs, test_accs, times
     elif config.dataset.split('_')[0] == 'nasbench301':
         return torch.stack(inputs), torch.stack(masks), genos, predicted_accs, predicted_runtimes
+    elif config.dataset.split('_')[0] == 'nb301a':
+        return torch.stack(inputs), torch.stack(masks), valid_accs, test_accs, times
+    elif config.dataset.split('_')[0] == 'nb301b':
+        return torch.stack(inputs), torch.stack(masks), valid_accs, test_accs, times
     elif config.dataset.split('_')[0] == 'nds':
         return torch.stack(inputs), torch.stack(masks), valid_accs, test_accs, times
     elif config.dataset.split('_')[0] == 'transnasbench101':
@@ -77,6 +85,7 @@ def inference(config):
     data = []
     trainSet = torch.load(config.train_data)
     validSet = torch.load(config.valid_data)
+    # import pdb; pdb.set_trace()
     for dataset in [trainSet, validSet]:
         for i in range(len(dataset)):
             R = dataset[i]['adj']
@@ -87,6 +96,16 @@ def inference(config):
                 time = dataset[i]['training_time']
                 data.append([X, R, valid_acc, test_acc, time])
             elif config.dataset.split('_')[0] == 'nasbench201':
+                valid_acc = dataset[i]['validation_accuracy']
+                test_acc = dataset[i]['test_accuracy']
+                time = dataset[i]['training_time']
+                data.append([X, R, valid_acc, test_acc, time])
+            elif config.dataset.split('_')[0] == 'nb301a':
+                valid_acc = dataset[i]['validation_accuracy']
+                test_acc = dataset[i]['test_accuracy']
+                time = dataset[i]['training_time']
+                data.append([X, R, valid_acc, test_acc, time])
+            elif config.dataset.split('_')[0] == 'nb301b':
                 valid_acc = dataset[i]['validation_accuracy']
                 test_acc = dataset[i]['test_accuracy']
                 time = dataset[i]['training_time']
@@ -128,6 +147,10 @@ def inference(config):
         X, maskX, valid_accs, test_accs, times = prepare_graph(data, config)
     elif config.dataset.split('_')[0] == 'nasbench301':
         X, maskX, genotypes, predicted_accs, predicted_runtimes = prepare_graph(data, config)
+    elif config.dataset.split("_")[0] =='nb301a':
+        X, maskX, valid_accs, test_accs, times = prepare_graph(data, config)
+    elif config.dataset.split("_")[0] =='nb301b':
+        X, maskX, valid_accs, test_accs, times = prepare_graph(data, config)
     elif config.dataset.split("_")[0] =='nds':
         X, maskX, valid_accs, test_accs, times = prepare_graph(data, config)
     elif config.dataset.split("_")[0] =='transnasbench101':
@@ -168,6 +191,10 @@ def inference(config):
         pretrained_embeddings = {'embeddings': embeddings, 'genotypes': genotypes, 'predicted_accs': predicted_accs, 'predicted_runtimes': predicted_runtimes}
     elif config.dataset.split('_')[0] == 'transnasbench101':
         pretrained_embeddings = {'embeddings': embeddings, 'valid_accs': valid_accs, 'test_accs': test_accs, 'times': times}
+    elif config.dataset.split('_')[0] == 'nb301a':
+        pretrained_embeddings = {'embeddings': embeddings, 'valid_accs': valid_accs, 'test_accs': test_accs, 'times': times}
+    elif config.dataset.split('_')[0] == 'nb301b':
+        pretrained_embeddings = {'embeddings': embeddings, 'valid_accs': valid_accs, 'test_accs': test_accs, 'times': times}
     elif config.dataset.split('_')[0] == 'nds':
         pretrained_embeddings = {'embeddings': embeddings, 'valid_accs': valid_accs, 'test_accs': test_accs, 'times': times}
     elif config.dataset.split('_')[0] == 'all':
@@ -179,7 +206,6 @@ def inference(config):
     else:
         raise NotImplementedError()
     
-    import pdb; pdb.set_trace()
     if config.dataset.split("_")[0]=='nds':
         torch.save(pretrained_embeddings, 'cate_' + config.dataset + "_" + config.search_space + "_" + config.type + "_" + '.pt')
     elif config.dataset.split("_")[0]=='transnasbench101':

@@ -21,14 +21,14 @@ sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 
 parser = argparse.ArgumentParser()
 ####################################################### Search Space Choices #######################################################
-parser.add_argument('--space', type=str, default='nb101')            # nb101, nb201, nb301, tb101, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d supported
-parser.add_argument('--transfer_space', type=str, default='nb201')   # nb101, nb201, nb301, tb101, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d supported
+parser.add_argument('--space', type=str, default='nb101')            # nb101, nb201, nb301, tb101, nds_nb301, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d, amoeba_in, darts_in, darts_lr_wd_in, enas_in, nasnet_in, pnas_in supported (pls capitalize appropriately, documentation not updated)
+parser.add_argument('--transfer_space', type=str, default='nb201')   # nb101, nb201, nb301, tb101, nds_nb301, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d, amoeba_in, darts_in, darts_lr_wd_in, enas_in, nasnet_in, pnas_in supported (pls capitalize appropriately, documentation not updated)
 parser.add_argument('--task', type=str, default='class_scene')       # all tb101 tasks supported
 parser.add_argument('--representation', type=str, default='cate')    # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate supported.
 parser.add_argument('--joint_repr', action='store_true')             # If True, uses the joint representation of the search space for CATE and Arch2Vec
 parser.add_argument('--test_tagates', action='store_true')           # Currently only supports testing on NB101 networks. Easy to extend.
 parser.add_argument('--loss_type', type=str, default='pwl')          # mse, pwl supported
-parser.add_argument('--back_dense', action="store_true")           # If True, backward flow will be DenseFlow
+parser.add_argument('--back_dense', action="store_true")             # If True, backward flow will be DenseFlow
 parser.add_argument('--gnn_type', type=str, default='dense')         # dense, gat, gat_mh, ensemble supported
 parser.add_argument('--num_trials', type=int, default=3)
 parser.add_argument('--no_modify_emb_pretransfer', action='store_true')

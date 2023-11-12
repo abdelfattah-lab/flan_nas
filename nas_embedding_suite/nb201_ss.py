@@ -326,5 +326,5 @@ class NASBench201:
         arch_vector = [_opname_to_index[op] for node in nodes for op in node]
         return arch_vector
     
-    def get_params(self, idx):
+    def get_params(self, idx, space=None):
         return self.nb2_api.get_cost_info(idx, dataset='cifar10-valid')['params']*10000000

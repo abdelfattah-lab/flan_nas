@@ -98,7 +98,7 @@ class NASBench301:
     def get_genotype(self, idx):
         return self.index_to_embedding(idx)['genotypes']
     
-    def get_params(self, idx):
+    def get_params(self, idx, space=None):
         if self.nb301_proxy_cate is None:
             with open(BASE_PATH + '/nasbench301_proxy.json', 'r') as f: # load 
                 self.nb301_proxy_cate = json.load(f)

@@ -1,5 +1,0 @@
-name_desc,seed,batch_size,transfer_lr,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
-embinit_ablation,42,8,0.001,30,False,150,nb101,nb201,True,adj_gin,2,pwl,False,ensemble,False,16,0.7108417590375162,0.5271294162735084,0.02031885750776093,0.015102511754973626
-embinit_ablation,42,8,0.001,30,False,150,nb101,nb201,True,adj_gin,2,pwl,False,ensemble,False,32,0.8716974174515055,0.6930457842188459,0.0003756651851070442,0.0006283450408026635
-embinit_ablation,42,8,0.001,30,True,150,nb101,nb201,True,adj_gin,2,pwl,False,ensemble,False,16,0.7365942145596667,0.5456291818418887,0.008952144790655746,0.010106689391136939
-embinit_ablation,42,8,0.001,30,True,150,nb101,nb201,True,adj_gin,2,pwl,False,ensemble,False,32,0.8571195668320151,0.6845231658837255,0.000711055071801056,0.0009058460472516904

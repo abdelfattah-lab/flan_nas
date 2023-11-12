@@ -56,6 +56,10 @@ python preprocessing/data_generate.py --dataset nasbench201 --flag build_pair --
 python preprocessing/data_generate.py --dataset nasbench301 --flag extract_seq
 python preprocessing/data_generate.py --dataset nasbench301 --flag build_pair --k 2 --d 2000000 --metric flops
 
+# NASBench301 NR
+python preprocessing/data_generate.py --dataset nb301a --flag extract_seq
+python preprocessing/data_generate.py --dataset nb301b --flag extract_seq
+
 # NDS
 python preprocessing/data_generate.py --dataset nds --search_space Amoeba --type normal --flag extract_seq
 python preprocessing/data_generate.py --dataset nds --search_space Amoeba  --type normal --flag build_pair --k 2 --d 200000 --metric params
@@ -146,6 +150,9 @@ python inference/inference.py --pretrained_path model/nasbench101_model_best.pth
 python inference/inference.py --pretrained_path model/nasbench201_model_best.pth.tar --train_data data/nasbench201/train_data.pt --valid_data data/nasbench201/test_data.pt --dataset nasbench201 --search_space nasbench201 --n_vocab 7 --graph_d_model 32 --pair_d_model 32
 # NASBench301
 python inference/inference.py --pretrained_path model/nasbench301_model_best.pth.tar --train_data data/nasbench301/train_data.pt --valid_data data/nasbench301/test_data.pt --dataset nasbench301 --search_space nasbench301 --n_vocab 11 --graph_d_model 32 --pair_d_model 32
+# NASBench301 NR
+python inference/inference.py --pretrained_path model/nasbench301_model_best.pth.tar --train_data data/nb301a/train_data.pt --valid_data data/nb301a/test_data.pt --dataset nb301a --search_space nb301a --n_vocab 11 --graph_d_model 32 --pair_d_model 32
+python inference/inference.py --pretrained_path model/nasbench301_model_best.pth.tar --train_data data/nb301b/train_data.pt --valid_data data/nb301b/test_data.pt --dataset nb301b --search_space nb301b --n_vocab 11 --graph_d_model 32 --pair_d_model 32
 # NDS
 python inference/inference.py --pretrained_path model/nds_Amoeba_normal_checkpoint_Epoch_10.pth.tar --train_data data/nds/nds_Amoeba_normal_train_data.pt --valid_data data/nds/nds_Amoeba_normal_test_data.pt --dataset nds --search_space Amoeba --type normal --n_vocab 11 --graph_d_model 16 --pair_d_model 16
 python inference/inference.py --pretrained_path model/nds_Amoeba_reduce_checkpoint_Epoch_10.pth.tar --train_data data/nds/nds_Amoeba_reduce_train_data.pt --valid_data data/nds/nds_Amoeba_reduce_test_data.pt --dataset nds --search_space Amoeba --type reduce --n_vocab 11 --graph_d_model 16 --pair_d_model 16

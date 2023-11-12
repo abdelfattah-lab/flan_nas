@@ -1,6 +1,6 @@
 import gc
 import time
-import torch
+import torch, os
 import numpy as np
 from parallel import DataParallelModel, DataParallelCriterion
 from mylog import mylog
@@ -15,6 +15,11 @@ from transformers import get_linear_schedule_with_warmup
 LOG = mylog(reset=False)
 
 def train(config):
+    # add a subdirectory to config.save_path with the name of the dataset_search_space_type
+    config.save_path = config.save_path + config.dataset + "_" + config.search_space + "_" + config.type + "/"
+    # Create directory if it doenst exist
+    if not os.path.exists(config.save_path):
+        os.makedirs(config.save_path)
     # Model
     net = PairWiseLearning(config)
     lossFunc = KLDivLoss(config)

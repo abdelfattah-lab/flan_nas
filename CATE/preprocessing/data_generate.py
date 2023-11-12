@@ -142,6 +142,52 @@ if __name__ == '__main__':
                     'predicted_acc': archs[str(i)]['predicted_acc'],
                     'predicted_runtime': archs[str(i)]['predicted_runtime']
                 }
+        elif args.dataset=='nb301a':
+            with open("/home/ya255/projects/iclr_nas_embedding/nas_embedding_suite/embedding_datasets/nds_adj_encoding/nb301.json") as f:
+                archs = json.load(f)
+            for i in tqdm(range(int(len(archs) * args.n_percent))):
+                train_data[i] = {
+                    'index': i,
+                    'adj': archs[str(i)]['normal_adj'],
+                    'ops': archs[str(i)]['normal_ops'],
+                    'params': 0,
+                    'validation_accuracy': 0,
+                    'test_accuracy': 0,
+                    'training_time': 0
+                }
+            for i in range(int(len(archs) * args.n_percent), len(archs)):
+                test_data[i - int(len(archs) * args.n_percent)] = {
+                    'index': i - int(len(archs) * args.n_percent),
+                    'adj': archs[str(i)]['normal_adj'],
+                    'ops': archs[str(i)]['normal_ops'],
+                    'params': 0,
+                    'validation_accuracy': 0,
+                    'test_accuracy': 0,
+                    'training_time': 0
+                }
+        elif args.dataset=='nb301b':
+            with open("/home/ya255/projects/iclr_nas_embedding/nas_embedding_suite/embedding_datasets/nds_adj_encoding/nb301.json") as f:
+                archs = json.load(f)
+            for i in tqdm(range(int(len(archs) * args.n_percent))):
+                train_data[i] = {
+                    'index': i,
+                    'adj': archs[str(i)]['reduce_adj'],
+                    'ops': archs[str(i)]['reduce_ops'],
+                    'params': 0,
+                    'validation_accuracy': 0,
+                    'test_accuracy': 0,
+                    'training_time': 0
+                }
+            for i in range(int(len(archs) * args.n_percent), len(archs)):
+                test_data[i - int(len(archs) * args.n_percent)] = {
+                    'index': i - int(len(archs) * args.n_percent),
+                    'adj': archs[str(i)]['reduce_adj'],
+                    'ops': archs[str(i)]['reduce_ops'],
+                    'params': 0,
+                    'validation_accuracy': 0,
+                    'test_accuracy': 0,
+                    'training_time': 0
+                }
         elif args.dataset=='nds':
             with open("data/nds_%s_%s.json" % (str(args.search_space), str(args.type))) as f:
                 archs = json.load(f)
@@ -221,6 +267,12 @@ if __name__ == '__main__':
         elif args.dataset=='transnasbench101':
             torch.save(train_data, os.path.join(save_dir, '%s_train_data.pt') % (str(args.task)))
             torch.save(test_data, os.path.join(save_dir, '%s_test_data.pt') % (str(args.task)))
+        elif args.dataset=='nb301a': # normal cell
+            torch.save(train_data, os.path.join(save_dir, 'nb301a_train_data.pt'))
+            torch.save(test_data, os.path.join(save_dir, 'nb301a_test_data.pt'))
+        elif args.dataset=='nb301b': # reduce cell
+            torch.save(train_data, os.path.join(save_dir, 'nb301b_train_data.pt'))
+            torch.save(test_data, os.path.join(save_dir, 'nb301b_test_data.pt'))
         else:
             torch.save(train_data, os.path.join(save_dir, 'train_data.pt'))
             torch.save(test_data, os.path.join(save_dir, 'test_data.pt'))

@@ -49,6 +49,11 @@ class Env(object):
             with torch.no_grad():
                 print("length of the dataset: {}".format(len(dataset)))
                 self.f_path = os.path.join(self.dir_name, 'arch2vec-{}'.format(self.model_path))
+                # if data_path contains 'nb301a' or 'nb301b', then replace nasbench301 with it in f_path
+                if 'nb301a' in data_path:
+                    self.f_path = self.f_path.replace('nasbench301', 'nb301a')
+                elif 'nb301b' in data_path:
+                    self.f_path = self.f_path.replace('nasbench301', 'nb301b')
                 if os.path.exists(self.f_path):
                     print('{} is already saved'.format(self.f_path))
                     exit()
@@ -79,7 +84,7 @@ class Env(object):
                     x,_ = self.model._encoder(ops, adj)
                     # print(test_acc, valid_acc, time)
                     self.embedding[ind] = {'feature': x.squeeze(0).mean(dim=0).cpu(), 'valid_accuracy': float(valid_acc), 'test_accuracy': float(test_acc), 'time': float(time)}
-                import pdb; pdb.set_trace()
+                # import pdb; pdb.set_trace()
                 torch.save(self.embedding, self.f_path)
                 print("finish arch2vec extraction")
                 exit()

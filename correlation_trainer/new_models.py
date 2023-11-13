@@ -192,8 +192,8 @@ class GIN_Model(nn.Module):
         reg_inp_dims = self.nn_emb_dims
         if self.input_zcp:
             reg_inp_dims += self.zcp_embedding_dim
-        if self.dual_gcn:
-            reg_inp_dims += self.wd_repr_dims
+        # if self.dual_gcn:
+        reg_inp_dims += self.wd_repr_dims
         dim = reg_inp_dims
         for hidden_size in self.mlp_dims:
             self.mlp.append(nn.Sequential(
@@ -213,7 +213,7 @@ class GIN_Model(nn.Module):
             torch.zeros(1, self.op_embedding_dim),
             requires_grad = False
         )
-        self.op_emb = nn.Embedding(128, self.op_embedding_dim)
+        self.op_emb = nn.Embedding(256, self.op_embedding_dim)
         self.output_op_emb = nn.Embedding(1, self.op_embedding_dim)
         self.x_hidden = nn.Linear(self.node_embedding_dim, self.hid_dim)
 
@@ -282,27 +282,26 @@ class GIN_Model(nn.Module):
         self.updateop_embedder = nn.Sequential(*self.updateop_embedder)
 
         # combine y_1 and y_2
-        if self.dual_gcn:
-            self.y_combiner = nn.Linear(self.gcn_out_dims[-1] * 2, self.gcn_out_dims[-1])
-            # add 1 relu and layer
-            self.y_combiner = nn.Sequential(
-                self.y_combiner,
-                nn.ReLU(inplace = False),
-                nn.Linear(self.gcn_out_dims[-1], self.gcn_out_dims[-1])
-            )
+        self.y_combiner = nn.Linear(self.gcn_out_dims[-1] * 2, self.gcn_out_dims[-1])
+        # add 1 relu and layer
+        self.y_combiner = nn.Sequential(
+            self.y_combiner,
+            nn.ReLU(inplace = False),
+            nn.Linear(self.gcn_out_dims[-1], self.gcn_out_dims[-1])
+        )
 
-        if self.dual_gcn:
+        # if self.dual_gcn:
             # wd embedder
-            self.norm_wd_embedder = []
-            in_dim = 2
-            for embedder_dim in [self.wd_repr_dims]:
-                self.norm_wd_embedder.append(nn.Linear(in_dim, embedder_dim))
-                self.norm_wd_embedder.append(nn.ReLU(inplace = False))
-                in_dim = embedder_dim
-            self.norm_wd_embedder.append(nn.Linear(in_dim, self.wd_repr_dims))
-            self.norm_wd_embedder = nn.Sequential(*self.norm_wd_embedder)
+        self.norm_wd_embedder = []
+        in_dim = 2
+        for embedder_dim in [self.wd_repr_dims]:
+            self.norm_wd_embedder.append(nn.Linear(in_dim, embedder_dim))
+            self.norm_wd_embedder.append(nn.ReLU(inplace = False))
+            in_dim = embedder_dim
+        self.norm_wd_embedder.append(nn.Linear(in_dim, self.wd_repr_dims))
+        self.norm_wd_embedder = nn.Sequential(*self.norm_wd_embedder)
 
-        
+    
     def embed_and_transform_arch(self, archs):
         # If self.dual input, remove first 2 and use input_op_emb.
         adjs = self.input_op_emb.new([arch.T for arch in archs[0]])
@@ -463,6 +462,11 @@ class GIN_Model(nn.Module):
                 y_1 = y_1.unsqueeze(0)
             if len(norm_w_d.shape) == 1:
                 norm_w_d = norm_w_d.unsqueeze(0)
+            y_1 = torch.cat((y_1, norm_w_d), dim = -1)
+        else:
+            if len(y_1.shape) == 1:
+                y_1 = y_1.unsqueeze(0)
+            norm_w_d = torch.zeros(y_1.shape[0], self.wd_repr_dims).to(self.device)
             y_1 = torch.cat((y_1, norm_w_d), dim = -1)
         y_1 = self.mlp(y_1)
         return y_1

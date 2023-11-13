@@ -55,8 +55,6 @@ class NDSin:
         return self.space_adj_mats[space][str(idx)]
         
     def get_valacc(self, idx, space="Amoeba_in"):
-        if space=='nds_nb301':
-            space = 'nb301'
         return self.unnorm_all_accs[space][idx]
     
     def get_numitems(self, space="Amoeba_in"):

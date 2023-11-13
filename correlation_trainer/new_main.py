@@ -251,6 +251,12 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
             sample_indexes = random.sample(range(embedding_gen.get_numitems(space)-1), sample_count)
         else:
             sample_indexes = random.sample(range(embedding_gen.get_numitems(space)-1), 5896)
+    elif space == 'ENAS' and args.test_tagates:
+        print("Sampling ONLY 500 networks for replication with TAGATES (note that due to lack of network info, we randomly sample 5896 networks)")
+        if mode == "train":
+            sample_indexes = random.sample(range(embedding_gen.get_numitems(space)-1), sample_count)
+        else:
+            sample_indexes = random.sample(range(embedding_gen.get_numitems(space)-1), 500)
     else:
         if mode == "train":
             if space not in ['nb101', 'nb201', 'nb301', 'tb101']:
@@ -506,3 +512,16 @@ with open(filename, 'a') as f:
                     str(record_[key][1])
                 )
         )
+
+import os
+
+# Fetch the SLURM Job ID
+slurm_job_id = os.environ.get('SLURM_JOB_ID')
+
+# Make completion_logs if it doesnt exist at os.en
+if not os.path.exists(os.environ['PROJ_BPATH'] + "/" + 'correlation_trainer/large_run_slurms/completion_logs'):
+    os.makedirs(os.environ['PROJ_BPATH'] + "/" + 'correlation_trainer/large_run_slurms/completion_logs')
+
+with open(os.environ['PROJ_BPATH'] + "/" + 'correlation_trainer/large_run_slurms/completion_logs/' + f'{slurm_job_id}_success.log', 'w') as f:
+    f.write("Completed Successfully")
+

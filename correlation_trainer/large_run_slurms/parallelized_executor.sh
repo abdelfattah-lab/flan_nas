@@ -3,6 +3,7 @@
 # Create the slurm_desc directory if it doesn't exist
 mkdir -p slurm_desc
 
+log_file="job_command_mapping.log"
 # Read each line from jobs.log
 while IFS= read -r line; do
     # Skip lines that begin with #
@@ -26,7 +27,7 @@ while IFS= read -r line; do
 #SBATCH -e /home/ya255/projects/iclr_nas_embedding/correlation_trainer/large_scale_run_logs/%j.err
 #SBATCH -N 1
 #SBATCH --mem=$mem
-#SBATCH -t 16:00:00
+#SBATCH -t 32:00:00
 #SBATCH --account=abdelfattah
 EOL
 
@@ -47,9 +48,11 @@ conda activate unr
 
 cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
+echo "\${SLURM_JOB_ID},$command" >> job_command_mapping.log
+
 $command
 EOL
-
+    
         # Submit the slurm job
         sbatch --requeue "$slurm_file"
     fi

@@ -24,6 +24,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--space', type=str, default='nb101')            # nb101, nb201, nb301, tb101, nds_nb301, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d, amoeba_in, darts_in, darts_lr_wd_in, enas_in, nasnet_in, pnas_in supported (pls capitalize appropriately, documentation not updated)
 parser.add_argument('--transfer_space', type=str, default='nb201')   # nb101, nb201, nb301, tb101, nds_nb301, amoeba, darts, darts_fix-w-d, darts_lr-wd, enas, enas_fix-w-d, nasnet, pnas, pnas_fix-w-d, amoeba_in, darts_in, darts_lr_wd_in, enas_in, nasnet_in, pnas_in supported (pls capitalize appropriately, documentation not updated)
 parser.add_argument('--task', type=str, default='class_scene')       # all tb101 tasks supported
+parser.add_argument('--transfer_task', type=str, default='autoencoder')       # all tb101 tasks supported
 parser.add_argument('--representation', type=str, default='cate')    # adj_mlp, adj_gin, zcp (except nb301), cate, arch2vec, adj_gin_zcp, adj_gin_arch2vec, adj_gin_cate supported.
 parser.add_argument('--joint_repr', action='store_true')             # If True, uses the joint representation of the search space for CATE and Arch2Vec
 parser.add_argument('--test_tagates', action='store_true')           # Currently only supports testing on NB101 networks. Easy to extend.
@@ -230,10 +231,12 @@ def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, t
     return model, num_test_items, running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
 
 sys.path.append("..")
+embgti = time.time()
 from nas_embedding_suite.all_ss import AllSS as EmbGenClass
 embedding_gen = EmbGenClass()
+print("Time to load embedding_gen: ", time.time() - embgti)
 
-def get_dataloader(args, embedding_gen, space, sample_count, representation, mode, train_indexes=None, test_size=None):
+def get_dataloader(args, embedding_gen, space, sample_count, representation, mode, train_indexes=None, test_size=None, task="class_scene"):
     representations = []
     accs = []
     # here, we dont just need the numitems, we actually need the indexs mapped for each SS
@@ -245,7 +248,11 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
     else: # if mode is train, and we want to test on the same space as train, we pass train_index. else, pass transfer_index to get_dataloader
         remaining_indexes = list(set(idx_ranges) - set(train_indexes))
         if test_size is not None:
-            sample_indexes = random.sample(remaining_indexes, test_size)
+            try:
+                sample_indexes = random.sample(remaining_indexes, test_size)
+            except:
+                # if test_size > len(remaining_indexes), sample all
+                sample_indexes = remaining_indexes
         else:
             sample_indexes = remaining_indexes
     if representation.__contains__("gin") == False: # adj_mlp, zcp, arch2vec, cate --> FullyConnectedNN
@@ -264,7 +271,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                 else:
                     adj_mat, op_mat = embedding_gen.get_adj_op(i, bin_space=True).values()
                     if space == 'tb101':
-                        accs.append(embedding_gen.get_valacc(i, task=args.task))
+                        accs.append(embedding_gen.get_valacc(i, task=task))
                     else:
                         accs.append(embedding_gen.get_valacc(i))
                     norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
@@ -496,19 +503,21 @@ if not os.path.exists(f'correlation_results/{args.name_desc}'):
     os.makedirs(f'correlation_results/{args.name_desc}')
 
 filename = f'correlation_results/{args.name_desc}/{args.space}_{args.transfer_space}_samp_eff.csv'
-header = "name_desc,seed,batch_size,transfer_lr,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
+header = "name_desc,seed,batch_size,transfer_lr,task,transfer_task,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
 if not os.path.isfile(filename):
     with open(filename, 'w') as f:
         f.write(header + "\n")
 
 with open(filename, 'a') as f:
     for key in samp_eff.keys():
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                 (
                     str(args.name_desc),
                     str(args.seed),
                     str(args.batch_size),
                     str(args.transfer_lr),
+                    str(args.task),
+                    str(args.transfer_task),
                     str(args.transfer_epochs),
                     str(args.modify_emb_pretransfer),
                     str(args.epochs),
@@ -528,3 +537,16 @@ with open(filename, 'a') as f:
                     str(record_[key][1])
                 )
         )
+        
+import os
+
+# Fetch the SLURM Job ID
+slurm_job_id = os.environ.get('SLURM_JOB_ID')
+
+# Make completion_logs if it doesnt exist at os.en
+if not os.path.exists(os.environ['PROJ_BPATH'] + "/" + 'correlation_trainer/large_run_slurms/completion_logs'):
+    os.makedirs(os.environ['PROJ_BPATH'] + "/" + 'correlation_trainer/large_run_slurms/completion_logs')
+
+with open(os.environ['PROJ_BPATH'] + "/" + 'correlation_trainer/large_run_slurms/completion_logs/' + f'{slurm_job_id}_success.log', 'w') as f:
+    f.write("Completed Successfully")
+

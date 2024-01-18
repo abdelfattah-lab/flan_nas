@@ -58,7 +58,7 @@ class AllSS:
                         1483635: "tb101",
                     }
         start_ = time.time()
-        print("[WARNING]: ALL SS has a cache store at {}, which needs to be changed if reproducing in all_ss.py!!!!".format(CACHE_DIR))
+        # print("[WARNING]: ALL SS has a cache store at {}, which needs to be changed if reproducing in all_ss.py!!!!".format(CACHE_DIR))
         # self._ensure_cache_exists()
         self.nb301 = NASBench301()
         self.nds_in = NDSin()

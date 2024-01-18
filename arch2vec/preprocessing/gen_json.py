@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 from nasbench import api
+import os
 from random import randint
 import json
 import numpy as np

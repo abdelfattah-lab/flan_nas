@@ -3,6 +3,7 @@ from api import NASBench201API as API
 import numpy as np
 import json
 from collections import OrderedDict
+import os
 
 nas_bench = API('data/NAS-Bench-201-v1_0-e61699.pth')
 

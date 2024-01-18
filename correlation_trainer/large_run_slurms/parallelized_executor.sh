@@ -29,6 +29,8 @@ while IFS= read -r line; do
 #SBATCH --mem=$mem
 #SBATCH -t 32:00:00
 #SBATCH --account=abdelfattah
+#SBATCH --partition=abdelfattah
+#SBATCH --nodelist=abdelfattah-compute-02
 EOL
 
         # Conditionally add the GPU line
@@ -48,9 +50,9 @@ conda activate unr
 
 cd /home/ya255/projects/iclr_nas_embedding/correlation_trainer
 
-echo "\${SLURM_JOB_ID},$command" >> job_command_mapping.log
-
 $command
+
+echo "\${SLURM_JOB_ID},$command" >> job_command_mapping.log
 EOL
     
         # Submit the slurm job

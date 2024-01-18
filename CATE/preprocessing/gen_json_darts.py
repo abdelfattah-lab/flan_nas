@@ -130,12 +130,12 @@ if __name__ == '__main__':
     from os.path import expanduser
     print("==> Loading performance surrogate model...")
     home = expanduser("~")
-    ensemble_dir_performance = os.path.join(home, "nas_benchmark_datasets/nb_models/xgb_v1.0")
+    ensemble_dir_performance = os.path.join(home, "nas_benchmark_datasets/nb_models/xgb_v0.9")
     performance_model = nb.load_ensemble(ensemble_dir_performance)
 
     # Load the runtime surrogate model
     print("==> Loading runtime surrogate model...")
-    ensemble_dir_runtime = os.path.join(home, "nas_benchmark_datasets/nb_models/lgb_runtime_v1.0")
+    ensemble_dir_runtime = os.path.join(home, "nas_benchmark_datasets/nb_models/lgb_runtime_v0.9")
     runtime_model = nb.load_ensemble(ensemble_dir_runtime)
     OPS = [
            'max_pool_3x3',

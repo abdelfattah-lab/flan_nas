@@ -9,6 +9,11 @@ from collections import deque
 def sample_from_data(data, K=2, maxDist=2e6, metric=None):
 
     sorted_data = sorted(data.values(), key=lambda x: x[metric])
+    if maxDist != 50000:
+        maxDist = 0.02*max([x[metric] for x in sorted_data])
+        print("Modifying maxDist as 2 percent of max:")
+        print(max([x[metric] for x in sorted_data]), maxDist)
+    # import pdb; pdb.set_trace()
 
     cnt = 0
     data_pair = {}
@@ -102,7 +107,7 @@ if __name__ == '__main__':
                     'index': i - int(len(archs) * args.n_percent),
                     'adj': archs[str(i)]['module_adjacency'],
                     'ops': archs[str(i)]['module_operations'],
-                    'params': archs[str(i)]['parameters']["score"],
+                    'params': archs[str(i)]['parameters'],
                     'validation_accuracy': archs[str(i)]['validation_accuracy'],
                     'test_accuracy': archs[str(i)]['test_accuracy'],
                     'training_time': archs[str(i)]['training_time']
@@ -112,7 +117,7 @@ if __name__ == '__main__':
                     'index': i - int(len(archs) * args.n_percent),
                     'adj': archs[str(i)]['module_adjacency'],
                     'ops': archs[str(i)]['module_operations'],
-                    'params': archs[str(i)]['parameters']["score"],
+                    'params': archs[str(i)]['parameters'],
                     'validation_accuracy': archs[str(i)]['validation_accuracy'],
                     'test_accuracy': archs[str(i)]['test_accuracy'],
                     'training_time': archs[str(i)]['training_time']
@@ -219,7 +224,7 @@ if __name__ == '__main__':
                     'index': i,
                     'adj': archs[str(i)]['module_adjacency'],
                     'ops': archs[str(i)]['module_operations'],
-                    'params': archs[str(i)]['parameters'],
+                    'params': 100000*archs[str(i)]['parameters'],
                     'validation_accuracy': archs[str(i)]['validation_accuracy'],
                     'test_accuracy': archs[str(i)]['test_accuracy'],
                     'training_time': archs[str(i)]['training_time']
@@ -229,7 +234,7 @@ if __name__ == '__main__':
                     'index': i - int(len(archs) * args.n_percent),
                     'adj': archs[str(i)]['module_adjacency'],
                     'ops': archs[str(i)]['module_operations'],
-                    'params': archs[str(i)]['parameters'],
+                    'params': 100000*archs[str(i)]['parameters'],
                     'validation_accuracy': archs[str(i)]['validation_accuracy'],
                     'test_accuracy': archs[str(i)]['test_accuracy'],
                     'training_time': archs[str(i)]['training_time']
@@ -286,7 +291,7 @@ if __name__ == '__main__':
             test_data = torch.load(os.path.join(save_dir, '%s_test_data.pt') % (str(args.task)))
         elif args.dataset == "all_ss":
             train_data = torch.load(os.path.join(save_dir, 'train_data.pt'))
-            old_rsamp = 1250000
+            old_rsamp = 0
             num_rsamp = len(train_data)
             # keys = random.sample(train_data.keys(), num_rsamp)
             keys = list(range(old_rsamp, num_rsamp))

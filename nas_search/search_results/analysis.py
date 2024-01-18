@@ -109,7 +109,7 @@ if True:
                     if space in ['ENAS_fix-w-d', 'DARTS']:
                         subset['best_acc_std'] = subset['best_acc_std']/100.
                         subset['av_best_acc'] = subset['av_best_acc']/100.
-                    handle, = ax.plot(subset['num_samps'], subset['av_best_acc'], label=f"FLAN{suffix}{mapped_representation}", marker='o', markersize=10, linewidth=3, linestyle=ls)
+                    handle, = ax.plot(subset['num_samps'], subset['av_best_acc'], label=f"FLAN{suffix}{mapped_representation}", marker='P', markersize=10, linewidth=3, linestyle=ls)
                     stmax = 0.945 if space=='nb101' else 1
                     stmax = 0.94 if space=='ENAS_fix-w-d' else stmax
                     if idx==1:
@@ -117,7 +117,7 @@ if True:
                     ax.fill_between(subset['num_samps'],
                                     subset['av_best_acc'] - subset['best_acc_std'], 
                                     [min(stmax, x) for x in subset['av_best_acc'] + subset['best_acc_std']],
-                                    alpha=0.05)
+                                    alpha=0.1)
                     ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
         ax.set_title(f"{space_map[space]}", fontsize=fsize)
         ax.set_xscale('log', basex=2)

@@ -33,6 +33,8 @@ parser.add_argument('--no_leakyrelu', action="store_true")
 parser.add_argument('--no_unique_attention_projection', action="store_true")
 parser.add_argument('--no_opattention', action="store_true")
 parser.add_argument('--no_attention_rescale', action="store_true")
+parser.add_argument('--weighted_exthresh', action="store_true")
+parser.add_argument('--dynamic_margin', action="store_true")
 parser.add_argument('--timesteps', type=int, default=2)
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
@@ -119,6 +121,10 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         acc_diff = np.array(accs)[:, None] - np.array(accs)
         acc_abs_difF_matrix = np.triu(np.abs(acc_diff), 1)
         ex_thresh_inds = np.where(acc_abs_difF_matrix > compare_threshold)
+        if args.weighted_exthresh:
+            weights = np.abs(acc_diff[ex_thresh_inds])
+            weighted_inds = np.random.choice(np.arange(len(weights)), size=n_max_pairs, replace=False, p=weights/weights.sum())
+            ex_thresh_inds = (ex_thresh_inds[0][weighted_inds], ex_thresh_inds[1][weighted_inds])
         ex_thresh_nums = len(ex_thresh_inds[0])
         if ex_thresh_nums > n_max_pairs:
             keep_inds = np.random.choice(np.arange(ex_thresh_nums), n_max_pairs, replace=False)
@@ -193,7 +199,11 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         better_lst = (acc_diff>0)[ex_thresh_inds]
         better_pm = 2 * s_1.new(np.array(better_lst, dtype=np.float32)) - 1
         zero_ = s_1.new([0.])
-        margin = s_1.new(margin)
+        if args.dynamic_margin:
+            dynamic_margin = torch.std(s_2 - s_1) * 0.5 # can change 0.5 scaling factor.
+            margin = s_1.new(dynamic_margin)
+        else:
+            margin = s_1.new(margin)
         pair_loss = torch.mean(torch.max(zero_, margin - better_pm * (s_2 - s_1)))
         optimizer.zero_grad()
         pair_loss.backward()
@@ -496,14 +506,14 @@ if not os.path.exists('correlation_results/{}'.format(args.name_desc)):
     os.makedirs('correlation_results/{}'.format(args.name_desc))
 
 filename = f'correlation_results/{args.name_desc}/{args.space}_samp_eff.csv'
-header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
+header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,wtexthresh,dynmargin,key,spr,kdt,spr_std,kdt_std"
 if not os.path.isfile(filename):
     with open(filename, 'w') as f:
         f.write(header + "\n")
 
 with open(filename, 'a') as f:
     for key in samp_eff.keys():
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                 (
                     str(args.name_desc),
                     str(args.seed),
@@ -517,6 +527,8 @@ with open(filename, 'a') as f:
                     str(args.test_tagates),
                     str(args.gnn_type),
                     str(args.back_dense),
+                    str(args.weighted_exthresh),
+                    str(args.dynamic_margin),
                     str(key),
                     str(args.residual),
                     str(args.leakyrelu),

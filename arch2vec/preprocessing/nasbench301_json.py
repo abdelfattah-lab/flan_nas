@@ -7,6 +7,7 @@ import json
 import numpy as np
 from collections import OrderedDict
 from tqdm import tqdm
+import os
 import sys
 sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
 from nb301_ss import NASBench301
@@ -14,7 +15,6 @@ from nb301_ss import NASBench301
 # Create a argparser for 2 integers
 import argparse
 # If data/nb3_sets doesnt exist, make it
-import os
 
 # if not os.path.exists('data/nb3_sets'):
 #     os.makedirs('data/nb3_sets')

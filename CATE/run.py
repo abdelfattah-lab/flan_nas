@@ -96,6 +96,7 @@ def train(config):
             loss = None
 
             if (ticks >= config.check_point_min) and (ticks % config.check_point_freq == 0):
+                bcsc = time.time()
                 gc.collect()
                 vloss = 0
                 total_tokens = 0
@@ -133,6 +134,7 @@ def train(config):
                         fileName=fname_,
                         dataset=config.dataset
                     )
+                print("Time for best checkpoint calculation: ", time.time() - bcsc)
 
         if config.save_each_epoch:
             LOG.log('Saving Model after %d-th Epoch.' % (epoch_idx + 1))

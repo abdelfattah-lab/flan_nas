@@ -80,7 +80,7 @@ def pretraining_gae(dataset, cfg, text_signature):
         sorted_combined = sorted(combined, key=lambda x: x[0].shape)
         X_adj_sorted, X_ops_sorted = zip(*sorted_combined)
         X_adj_grouped, X_ops_grouped = group_by_shape(X_adj_sorted, X_ops_sorted)
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         
         for adj_group, ops_group in zip(X_adj_grouped, X_ops_grouped):
             combined_group = list(zip(adj_group, ops_group))

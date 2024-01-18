@@ -21,7 +21,7 @@ BASE_PATH = os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite/embedding_data
 
 
 class NASBench201:
-    CACHE_FILE_PATH = BASE_PATH + "/nb201_cellobj_cache.pkl"  # Adjust this to your preferred path
+    CACHE_FILE_PATH = BASE_PATH + "/nb201_cf10_cellobj_cache_N.pkl"  # Adjust this to your preferred path
     def __init__(self, path=None, zcp_dict=False, normalize_zcp=True, log_synflow=True, embedding_list = [ 'adj',
                                                                     'adj_op',
                                                                     'path',
@@ -35,6 +35,8 @@ class NASBench201:
         if path==None:
             path = ''
         print("Loading files for NASBench201...")
+        self.zready = False
+        self.zcp_cache = {}
         a = time.time()
         self.zcp_dict = zcp_dict
         self.arch2vec_nb201 = torch.load(BASE_PATH + "arch2vec_embeddings/arch2vec-model-dim_32_search_space_nasbench201-nasbench201.pt")
@@ -62,6 +64,7 @@ class NASBench201:
                 }
         self._index_to_opname = {v: k for k, v in self._opname_to_index.items()}
         self.nb2_api  = NB2API(BASE_PATH + "NAS-Bench-201-v1_1-096897.pth")
+
         print("Loaded files in: ", time.time() - a, " seconds")
         self.zcps = ['epe_nas', 'fisher', 'flops', 'grad_norm', 'grasp', 'jacov', 'l2_norm', 'nwot', 'params', 'plain', 'snip', 'synflow', 'zen']    
         self.cache = {}
@@ -89,8 +92,6 @@ class NASBench201:
                 pickle.dump(self.cache, cache_file)
             self.cready = True
             
-        self.zready = False
-        self.zcp_cache = {}
         
         if os.path.exists(NASBench201.CACHE_FILE_PATH.replace("cellobj", "zcp")):
             print("Loading cache for NASBench-201 speedup!!...")

@@ -11,6 +11,7 @@ from tqdm import tqdm
 from utils import CustomDataset, get_tagates_sample_indices
 from torch.optim.lr_scheduler import StepLR
 from pprint import pprint
+import datetime
 from torch.optim.lr_scheduler import CosineAnnealingLR
 
 sys.path.append(os.environ['PROJ_BPATH'] + "/" + 'nas_embedding_suite')
@@ -27,6 +28,9 @@ parser.add_argument('--test_tagates', action='store_true')         # Currently o
 parser.add_argument('--loss_type', type=str, default='pwl')        # mse, pwl supported
 parser.add_argument('--gnn_type', type=str, default='dense')       # dense, gat, gat_mh supported
 parser.add_argument('--back_dense', action="store_true")           # If True, backward flow will be DenseFlow
+parser.add_argument('--no_attention_rescale', action="store_true")
+parser.add_argument('--weighted_exthresh', action="store_true")
+parser.add_argument('--dynamic_margin', action="store_true")
 parser.add_argument('--num_trials', type=int, default=3)
 ###################################################### Other Hyper-Parameters ######################################################
 parser.add_argument('--name_desc', type=str, default=None)
@@ -50,6 +54,8 @@ args = parser.parse_args()
 device = args.device
 sample_tests = {}
 sample_tests[args.space] = args.sample_sizes
+
+start_prg_time = time.time()
 
 assert args.name_desc is not None, "Please provide a name description for the experiment."
 
@@ -109,6 +115,12 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         acc_diff = np.array(accs)[:, None] - np.array(accs)
         acc_abs_difF_matrix = np.triu(np.abs(acc_diff), 1)
         ex_thresh_inds = np.where(acc_abs_difF_matrix > compare_threshold)
+        # if args.weighted_exthresh:
+        #     # weights = np.abs(acc_diff[ex_thresh_inds])
+        #     weights = 1 / (np.abs(acc_diff[ex_thresh_inds]) + 1)
+        #     replace = len(weights) < n_max_pairs
+        #     weighted_inds = np.random.choice(np.arange(len(weights)), size=n_max_pairs, replace=replace, p=weights/weights.sum())
+        #     ex_thresh_inds = (ex_thresh_inds[0][weighted_inds], ex_thresh_inds[1][weighted_inds])
         ex_thresh_nums = len(ex_thresh_inds[0])
         if ex_thresh_nums > n_max_pairs:
             keep_inds = np.random.choice(np.arange(ex_thresh_nums), n_max_pairs, replace=False)
@@ -183,6 +195,10 @@ def pwl_train(args, model, dataloader, criterion, optimizer, scheduler, test_dat
         better_lst = (acc_diff>0)[ex_thresh_inds]
         better_pm = 2 * s_1.new(np.array(better_lst, dtype=np.float32)) - 1
         zero_ = s_1.new([0.])
+        # if args.dynamic_margin:
+        #     dynamic_margin = torch.std(s_2 - s_1) * 1 # can change 0.5 scaling factor.
+        #     margin = s_1.new(dynamic_margin)
+        # else:
         margin = s_1.new(margin)
         pair_loss = torch.mean(torch.max(zero_, margin - better_pm * (s_2 - s_1)))
         optimizer.zero_grad()
@@ -329,7 +345,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     if space == 'tb101':
-                        accs.append(embedding_gen.get_valacc(i, task=task))
+                        accs.append(embedding_gen.get_valacc(i, task=args.task))
                     else:
                         accs.append(embedding_gen.get_valacc(i))
                     representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat), torch.Tensor(norm_w_d)))
@@ -484,14 +500,18 @@ if not os.path.exists('correlation_results/{}'.format(args.name_desc)):
     os.makedirs('correlation_results/{}'.format(args.name_desc))
 
 filename = f'correlation_results/{args.name_desc}/{args.space}_samp_eff.csv'
-header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
+header = "name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,wtexthresh,dynmargin,key,spr,kdt,spr_std,kdt_std,total_time"
 if not os.path.isfile(filename):
     with open(filename, 'w') as f:
         f.write(header + "\n")
 
+total_time = start_prg_time - time.time()
+# convert to hours.minutes
+total_time = str(datetime.timedelta(seconds=total_time))
+
 with open(filename, 'a') as f:
     for key in samp_eff.keys():
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                 (
                     str(args.name_desc),
                     str(args.seed),
@@ -505,11 +525,14 @@ with open(filename, 'a') as f:
                     str(args.test_tagates),
                     str(args.gnn_type),
                     str(args.back_dense),
+                    str(args.weighted_exthresh),
+                    str(args.dynamic_margin),
                     str(key),
                     str(record_[key][2]),
                     str(record_[key][0]),
                     str(record_[key][3]),
-                    str(record_[key][1])
+                    str(record_[key][1]),
+                    str(total_time)
                 )
         )
 

@@ -1,4 +1,0 @@
-name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
-exp3_bestss,42,32,150,Amoeba,class_scene,adj_gin,2,pwl,False,ensemble,True,16,0.004924329306847987,0.003205588019167096,0.001989926381059041,0.000878716979370721
-exp3_bestss,42,32,150,Amoeba,class_scene,adj_gin,2,pwl,False,ensemble,True,32,0.11730703105851208,0.07869090608350511,0.005276576955989331,0.002389066396792722
-exp3_bestss,42,32,150,Amoeba,class_scene,adj_gin,2,pwl,False,ensemble,True,128,0.25779818013744904,0.17360397216489865,7.982503641235666e-06,4.047345767788833e-06

@@ -1,0 +1,9 @@
+NodeName,CPUs,AllocCPUs,Memory,GPUs
+badfellow,40,11,515600,None
+badjak,20,5,192050,None
+goodfellow,32,4,257570,None
+harpo,20,4,257605,None
+hinton,20,4,128600,None
+klara,56,43,1031720,None
+lecun,32,10,385600,None
+lisbeth,192,76,1483250,None

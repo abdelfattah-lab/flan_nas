@@ -17,7 +17,7 @@ Ensure that the `env_setup.py` script is executed correctly to set up the enviro
 ### Dataset Preparation
 
 - Download the NDS dataset from [this link](https://dl.fbaipublicfiles.com/nds/data.zip) and place it in the `nas_embedding_suite` folder. The expected structure is `NDS/nds_data/*.json`.
-- Download and unzip `flan_embeddings_04_03_24.zip` to `./nas_embedding_suite/` from [Google Drive](https://drive.google.com/file/d/1oJyH0zox_cbRUX-hgzkliOLAUaz3gIxw/view?usp=sharing).
+- Download and unzip `flan_embeddings_03_04_24.zip` to `./nas_embedding_suite/` from [Google Drive](https://drive.google.com/file/d/1Og2x7hAvOLkYSNgBfOL382IOVrlx8gsb/view?usp=sharing).
 
 ### Execution Instructions
 

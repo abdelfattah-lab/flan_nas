@@ -1,5 +1,0 @@
-name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
-expnetexp,42,32,150,nb301,class_scene,adj_gin,2,pwl,False,ensemble,False,128,0.9558004309971323,0.8201648883844506,3.768550554687765e-06,6.293062852224371e-06
-expnetexp,42,32,150,nb301,class_scene,adj_gin,2,pwl,False,gat,False,128,0.9416362320802506,0.7938405521233799,2.8773379063476348e-05,0.00011374751927774363
-expnetexp,42,32,150,nb301,class_scene,adj_gin,2,pwl,False,ensemble,True,128,0.9508501329031223,0.8110344283466672,1.881288574607377e-05,5.435732718081658e-05
-expnetexp,42,32,150,nb301,class_scene,adj_gin,2,pwl,False,ensemble,False,128,0.9558004309971323,0.8201648883844506,3.768550554687765e-06,6.293062852224371e-06

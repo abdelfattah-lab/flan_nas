@@ -1,3 +1,0 @@
-seed,batch_size,hidden_size,num_layers,epochs,space,representation,pwl_mse,test_tagates,key,spr,kdt
-42,16,512,3,150,nb201,adjgin_zcp,pwl,True,781,0.9132065576819475,0.7471583509071676
-42,16,512,3,150,nb201,adjgin_zcp,pwl,True,7812,0.9460454373465609,0.8018802106732624

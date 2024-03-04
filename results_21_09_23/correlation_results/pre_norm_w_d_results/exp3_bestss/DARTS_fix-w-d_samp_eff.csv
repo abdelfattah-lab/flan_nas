@@ -1,4 +1,0 @@
-name_desc,seed,batch_size,epochs,space,task,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std
-exp3_bestss,42,32,150,DARTS_fix-w-d,class_scene,adj_gin,2,pwl,False,ensemble,True,16,0.2625721920975527,0.17924765437503973,0.024974874943568984,0.011892967763889801
-exp3_bestss,42,32,150,DARTS_fix-w-d,class_scene,adj_gin,2,pwl,False,ensemble,True,32,0.4455428761156887,0.3075444593150023,0.013193010134219878,0.006749564850402242
-exp3_bestss,42,32,150,DARTS_fix-w-d,class_scene,adj_gin,2,pwl,False,ensemble,True,128,0.7738685313916841,0.5804067169592593,0.00029401642962161647,0.0002498241815274721

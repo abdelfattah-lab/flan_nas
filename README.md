@@ -29,6 +29,8 @@ Ensure that the `env_setup.py` script is executed correctly to set up the enviro
 
 Below are specific example commands that demonstrate how to execute various processes within the framework. These examples cover training from scratch, utilizing supplementary encodings, transferring predictors between spaces, and running NAS on a given search space.
 
+The files referenced below are located at correlation_trainer and nas_search.
+
 ### Run Training from Scratch
 
 To train a model from scratch using a specific seed, network representation, and a set of sample sizes:

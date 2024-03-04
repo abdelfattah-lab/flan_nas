@@ -74,11 +74,11 @@ class NDS:
                 else:
                     self.all_accs[space].append(float(100.-self.space_dicts[space][idx]['test_ep_top1'][-1])/100.)
             # RobustScaler normalize this space
-            # min_max_scaler = preprocessing.QuantileTransformer()
-            # self.all_accs[space] = min_max_scaler.fit_transform(np.array(self.all_accs[space]).reshape(-1, 1)).flatten()
+            min_max_scaler = preprocessing.QuantileTransformer()
+            _ = min_max_scaler.fit_transform(np.array(self.all_accs[space]).reshape(-1, 1)).flatten()
             # self.unnorm_all_accs[space] = np.array(self.all_accs[space]).reshape(-1, 1).flatten().tolist()
             # self.all_accs[space] = self.all_accs[space].tolist()
-            # self.minmax_sc[space] = min_max_scaler
+            self.minmax_sc[space] = min_max_scaler
         self.unnorm_all_accs = self.all_accs # need to comment out this line.
         self.all_accs = self.all_accs
 

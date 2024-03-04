@@ -30,7 +30,7 @@ parser.add_argument('--gnn_type', type=str, default='dense')       # dense, gat,
 parser.add_argument('--back_dense', action="store_true")           # If True, backward flow will be DenseFlow
 parser.add_argument('--periter_samps', type=int, default=10)       # Number of samples per search iteration
 parser.add_argument('--samp_lim', type=int, default=2000)          # Number of samples per search iteration
-parser.add_argument('--source_samps', type=int, default=512)
+parser.add_argument('--source_samps', type=int, default=256)
 parser.add_argument('--num_trials', type=int, default=3)
 parser.add_argument('--no_modify_emb_pretransfer', action='store_true')
 parser.add_argument('--analysis_mode', action='store_true')
@@ -89,7 +89,7 @@ if args.analysis_mode:
             dataset = args.target_space
             assert args.target_space == 'nb101', "Only nb101 is supported for analysis mode."
             ftype = repr_
-            expname = 'exp7' if tf_ else 'exp6'
+            expname = 'allnas_t' if tf_ else 'allnas'
             fpath = f'./search_results/{expname}/sample_idxs/{dataset}_{ftype}_samples.csv'
             slist = {}
             with open(fpath, mode='r') as file:
@@ -339,7 +339,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                 else:
                     adj_mat, op_mat = embedding_gen.get_adj_op(i, bin_space=True).values()
                     if space == 'tb101':
-                        accs.append(embedding_gen.get_valacc(i, task=args.task))
+                        accs.append(embedding_gen.get_valacc(i, space=space))
                     else:
                         accs.append(embedding_gen.get_valacc(i))
                     norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
@@ -370,7 +370,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     norm_w_d = embedding_gen.get_norm_w_d(i, space=space)
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     if space == 'tb101':
-                        accs.append(embedding_gen.get_valacc(i, task=args.task))
+                        accs.append(embedding_gen.get_valacc(i, space=space))
                     else:
                         accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat), torch.Tensor(op_mat), torch.Tensor(norm_w_d)))
@@ -396,7 +396,7 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     norm_w_d = np.asarray(norm_w_d).flatten()
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
                     if space == 'tb101':
-                        accs.append(embedding_gen.get_valacc(i, task=args.task))
+                        accs.append(embedding_gen.get_valacc(i, space=space))
                     else:
                         accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zcp_), torch.Tensor(norm_w_d)))
@@ -606,7 +606,8 @@ for tr_ in range(args.num_trials):
         model.dual_gcn = True
     if args.target_space in ["nb101", "nb201", "nb301", "tb101"]:
         model.dual_gcn = False
-    sample_cts = [(2,2),(2,2),(2,2),(2,2),(4,4),(2,2),(2,2),(8,8),(8,8),(16,16),(16,16),(32,32),(32,32),(32,32),(32,32),(32,32),(32,32)]
+    sample_cts = [(2,2),(2,2),(2,2),(2,2),(4,4),(2,2),(2,2),(8,8),(8,8),(16,16),(16,16)] # 32 + 8*4 + 16*4
+    # ,(32,32),(32,32),(32,32),(32,32),(32,32),(32,32)]
     # sample_cts = [(2,2),(2,2)]
     # 
     # for halv_rate, num_samps in enumerate(list(range(args.periter_samps, args.samp_lim, args.periter_samps))):
@@ -631,7 +632,7 @@ for tr_ in range(args.num_trials):
                 accuracy_predicted.append(cand[1])
                 if args.target_space in ["nb101", "nb201", "nb301", "tb101"]:
                     if args.target_space == 'tb101':
-                        accuracy_sampled.append(embedding_gen.get_valacc(cand[0], task=args.task))
+                        accuracy_sampled.append(embedding_gen.get_valacc(cand[0], space=args.target_space))
                     else:
                         accuracy_sampled.append(embedding_gen.get_valacc(cand[0], space=args.target_space))
                 else:
@@ -648,7 +649,7 @@ for tr_ in range(args.num_trials):
         for idx in rand_indx:
             if args.target_space in ["nb101", "nb201", "nb301", "tb101"]:
                 if args.target_space == 'tb101':
-                    accuracy_sampled.append(embedding_gen.get_valacc(idx, task=args.task))
+                    accuracy_sampled.append(embedding_gen.get_valacc(idx, space=args.target_space))
                 else:
                     accuracy_sampled.append(embedding_gen.get_valacc(idx, space=args.target_space))
             else:

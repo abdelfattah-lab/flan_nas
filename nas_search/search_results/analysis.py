@@ -8,10 +8,10 @@ from matplotlib.lines import Line2D
 import sys
 import numpy as np
 sys.path.append("./../..")
-from nas_embedding_suite.nb101_ss import NASBench101
-from nas_embedding_suite.nds_ss import NDS
-nb101_embgen = NASBench101(normalize_zcp=True, log_synflow=True)
-nds_embgen = NDS()
+# from nas_embedding_suite.nb101_ss import NASBench101
+# from nas_embedding_suite.nds_ss import NDS
+# nb101_embgen = NASBench101(normalize_zcp=True, log_synflow=True)
+# nds_embgen = NDS()
 # Set a consistent color palette
 sns.set_palette("tab10")
 # Enable LaTeX interpretation in matplotlib
@@ -21,27 +21,43 @@ fsize = 22
 plt.rcParams['font.size'] = 16  # Increase font size
 space_map = {'nb101': "NASBench-101", "nb201": "NASBench-201", "ENAS_fix-w-d": "ENAS$_{FixWD}$", "DARTS": "DARTS"}
 if True:
-    exp6_representations = {"nb101": ['adj_gin', 'adj_gin_a2vcatezcp'],
-                            "nb201": ['adj_gin', 'adj_gin_a2vcatezcp'],
-                            "ENAS_fix-w-d": ['adj_gin', 'adj_gin_a2vcatezcp'],
-                            "DARTS": ['adj_gin', 'adj_gin_a2vcatezcp']
-                            }
-    exp7_representations = {"nb101": ['adj_gin', 'adj_gin_a2vcatezcp'],
-                            "nb201": ['adj_gin', 'adj_gin_a2vcatezcp'],
-                            "ENAS_fix-w-d": ['adj_gin', 'adj_gin_a2vcatezcp'],
-                            "DARTS": ['adj_gin', 'adj_gin_a2vcatezcp']
-                            }
-    exp8_representations = {"nb101": ['adj_gin_zcp'],
-                            "nb201": ['adj_gin_cate'],
-                            "ENAS_fix-w-d": [],
-                            "DARTS": []
-                            }
+    spaces_to_analyze = [ "ENAS", "PNAS_fix-w-d", "NASNet", "DARTS_fix-w-d", "DARTS_lr-wd", "DARTS", "ENAS_fix-w-d", "Amoeba", "PNAS", "nb201", "tb101", "nb301"]
+    # space_map map each key to itself for items in spaces_to_analyze
+    # space_map = {space: space for space in spaces_to_analyze}
+    space_map = {'nb101': "NASBench-101", "nb201": "NASBench-201", "ENAS_fix-w-d": "ENAS$_{FixWD}$", "DARTS": "DARTS", "Amoeba": "Amoeba",
+    "DARTS_fix-w-d": "DARTS$_{FixWD}$", "DARTS_lr-wd": "DARTS$_{LRWD}$", "ENAS": "ENAS", "NASNet": "NASNet", "PNAS_fix-w-d": "PNAS$_{FixWD}$", "PNAS": "PNAS", "tb101": "TransNASBench101", "nb301": "NASBench-301"}
+    # exp6_representations = {"nb101": ['adj_gin', 'adj_gin_a2vcatezcp'],
+    #                         "nb201": ['adj_gin', 'adj_gin_a2vcatezcp'],
+    #                         "ENAS_fix-w-d": ['adj_gin', 'adj_gin_a2vcatezcp'],
+    #                         "DARTS": ['adj_gin', 'adj_gin_a2vcatezcp']
+    #                         }
+    # exp7_representations = {"nb101": ['adj_gin', 'adj_gin_a2vcatezcp'],
+    #                         "nb201": ['adj_gin', 'adj_gin_a2vcatezcp'],
+    #                         "ENAS_fix-w-d": ['adj_gin', 'adj_gin_a2vcatezcp'],
+    #                         "DARTS": ['adj_gin', 'adj_gin_a2vcatezcp']
+    #                         }
+    # exp8_representations = {"nb101": ['adj_gin_zcp'],
+    #                         "nb201": ['adj_gin_cate'],
+    #                         "ENAS_fix-w-d": [],
+    #                         "DARTS": []
+    #                         }
+    # Use each item from spaces_to_analyze and assign it ['adj_gin', 'adj_gin_a2vcatezcp'] in dict
+    exp6_representations = {space: ['adj_gin', 'adj_gin_arch2vec', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_a2vcatezcp'] for space in spaces_to_analyze}
+    exp7_representations = {space: ['adj_gin', 'adj_gin_arch2vec', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_a2vcatezcp'] for space in spaces_to_analyze}
+    exp8_representations = {space: ['adj_gin', 'adj_gin_arch2vec', 'adj_gin_zcp', 'adj_gin_cate', 'adj_gin_a2vcatezcp'] for space in spaces_to_analyze}
     representation_map = {
         'adj_gin': '',
         'adj_gin_zcp': '$_{ZCP}$',
         'adj_gin_cate': '$_{CATE}$',
         'adj_gin_arch2vec': '$_{Arch2Vec}$',
         'adj_gin_a2vcatezcp': '$_{CAZ}$',
+    }
+    representation_color_map = {
+        'adj_gin': 'red',
+        'adj_gin_arch2vec': 'blue',
+        'adj_gin_zcp': 'green',
+        'adj_gin_cate': 'purple',
+        'adj_gin_a2vcatezcp': 'orange'
     }
     lim_map = {
         "nb201": {"y": (0.90, 0.918), "x": (8, 32)},
@@ -52,32 +68,30 @@ if True:
     if not os.path.exists("search_graphs"):
         os.makedirs("search_graphs")
     experiments = {
-        "exp6": "",
-        "exp7": "$^{T}$"
+        "allnas": "",
+        "allnas_t": "$^{T}$"
     }
     reference_csv_files = [f for f in os.listdir(next(iter(experiments))) if f.endswith("_search_eff.csv")]
-    inv_tf = nb101_embgen.min_max_scaler.inverse_transform
-    ndsinv_tf = nds_embgen.minmax_sc['ENAS_fix-w-d'].inverse_transform
+    # inv_tf = nb101_embgen.min_max_scaler.inverse_transform
+    # ndsinv_tf = nds_embgen.minmax_sc['ENAS_fix-w-d'].inverse_transform
     plt.cla()
-    spaces_to_analyze = ['nb101', 'nb201', 'DARTS', 'ENAS_fix-w-d']  # Modify this list as needed
+    # spaces_to_analyze = ['nb101', 'nb201', 'DARTS', 'ENAS_fix-w-d']  # Modify this list as needed
     plt.clf()
     legend_handles = {}
     legend_artists = []
     legend_labels = []
-    fig, axes = plt.subplots(1, 4, figsize=(20, 5))
+    fig, axes = plt.subplots(4, 3, figsize=(15, 20))
     for idx, space in enumerate(spaces_to_analyze):
-        ax = axes[idx]
-        ax.set_xlim(lim_map[space]['x'])
-        ax.set_ylim(lim_map[space]['y'])
+        ax = axes[idx//3][idx%3]
         for exp, suffix in experiments.items():
             file_name = f"{space}_search_eff.csv"
             file_path = os.path.join(exp, file_name)
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path)
                 df = df.apply(lambda col: col.str.strip() if col.dtype == 'object' else col)
-                if exp == "exp6":
+                if exp == "allnas":
                     reps_to_plot = exp6_representations.get(space, [])
-                if exp == "exp7":
+                if exp == "allnas_t":
                     reps_to_plot = exp7_representations.get(space, [])
                 if exp == "exp8":
                     reps_to_plot = exp8_representations.get(space, [])
@@ -89,31 +103,15 @@ if True:
                     proxy_artist = Line2D([0], [0], color='black', marker='o', linestyle='-', label=legend_label)
                     legend_artists.append(proxy_artist)
                     legend_labels.append(legend_label)
-                    if space in ['nb101', 'ENAS_fix-w-d', 'DARTS']:
-                        old_subs = subset.copy()
-                        if space == 'nb101':
-                            subset['av_best_acc'] = inv_tf(subset[['av_best_acc']]).reshape(-1)
-                        else:
-                            subset['av_best_acc'] = ndsinv_tf(subset[['av_best_acc']]).reshape(-1)
-                        inverse_transformed_std_devs = []
-                        for index, row in subset.iterrows():
-                            synthetic_points = np.random.normal(loc=old_subs[old_subs.index==index]['av_best_acc'], scale=row['best_acc_std'], size=10000)
-                            if space == 'nb101':
-                                inverse_transformed_points = inv_tf(synthetic_points.reshape(-1, 1)).reshape(-1)
-                            else:
-                                inverse_transformed_points = ndsinv_tf(synthetic_points.reshape(-1, 1)).reshape(-1)
-                            inverse_transformed_std_dev = np.std(inverse_transformed_points)
-                            inverse_transformed_std_devs.append(inverse_transformed_std_dev)
-                        subset['best_acc_std'] = inverse_transformed_std_devs
-                    ls = '--' if exp=='exp6' else '-'
-                    if space in ['ENAS_fix-w-d', 'DARTS']:
+                    ls = '--' if exp=='allnas' else '-'
+                    if space in ['tb101', 'nb301']:
                         subset['best_acc_std'] = subset['best_acc_std']/100.
                         subset['av_best_acc'] = subset['av_best_acc']/100.
-                    handle, = ax.plot(subset['num_samps'], subset['av_best_acc'], label=f"FLAN{suffix}{mapped_representation}", marker='P', markersize=10, linewidth=3, linestyle=ls)
+                    handle, = ax.plot(subset['num_samps'], subset['av_best_acc'], label=f"FLAN{suffix}{mapped_representation}", color=representation_color_map[representation], marker='P', markersize=5, linewidth=1.3, linestyle=ls)
                     stmax = 0.945 if space=='nb101' else 1
                     stmax = 0.94 if space=='ENAS_fix-w-d' else stmax
-                    if idx==1:
-                        ax.legend(loc='center', ncol=4, fontsize=fsize, bbox_to_anchor=(1.2, 1.3))
+                    if idx==3:
+                        ax.legend(loc='top', ncol=5, fontsize=fsize-2, bbox_to_anchor=(3.9, 2.7))
                     ax.fill_between(subset['num_samps'],
                                     subset['av_best_acc'] - subset['best_acc_std'], 
                                     [min(stmax, x) for x in subset['av_best_acc'] + subset['best_acc_std']],
@@ -124,16 +122,16 @@ if True:
         ax.get_xaxis().set_minor_formatter(ticker.StrMethodFormatter("{x:.0f}"))
         ax.get_xaxis().set_major_formatter(ticker.StrMethodFormatter("{x:.0f}"))
         ax.tick_params(axis='x', which='both', bottom=True, top=False, labelbottom=True)
-        if idx==0:
+        if idx in [0,3,6,9]:
             ax.set_ylabel("Average Best Accuracy", fontsize=fsize, labelpad=15)
         ax.grid(True, which="both", ls="--", c='0.7')  # Add a grid for better readability
-    plt.subplots_adjust(bottom=0.16,top=0.70, left=0.07, right=0.99, wspace=0.3)  # Adjust as needed
-    fig.text(0.5, 0.03, 'Number of Trained Networks', ha='center', va='center', fontsize=fsize)
+    plt.subplots_adjust(wspace=0.3)  # Adjust as needed
+    fig.text(0.5, 0.076, 'Number of Trained Networks', ha='center', va='center', fontsize=fsize)
     plt.savefig("search_graphs/combined_spaces_dash_rbt.png")
     plt.savefig("search_graphs/combined_spaces_dash_rbt.pdf")
     print("Graphs saved in 'search_graphs' folder.")
         # ax.get_xaxis().set_major_formatter(ticker.StrMethodFormatter("{x:.0f}"))
-plt.subplots_adjust(top=0.75, wspace=0.3)  # Adjust the top value as needed
+plt.subplots_adjust(wspace=0.3)  # Adjust the top value as needed
     # fig.text(0.5, 0.023, 'Number of Trained Networks', ha='center', va='center', fontsize=fsize)
         # ax.text(0.98,.05,f"{space_map[space]}", fontsize=fsize,
         #     horizontalalignment='right', bbox=dict(facecolor='white', edgecolor='gray', boxstyle='round,pad=0.3'),

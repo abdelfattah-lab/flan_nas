@@ -7,6 +7,7 @@ from new_models import GIN_Model, FullyConnectedNN
 import argparse, sys, time, random, os
 import numpy as np
 from pprint import pprint
+import datetime
 import copy
 from tqdm import tqdm
 from utils import CustomDataset, get_tagates_sample_indices
@@ -39,6 +40,7 @@ parser.add_argument('--sample_size', type=int, default=512)
 parser.add_argument('--transfer_sample_sizes', nargs='+', type=int, default=[4, 8, 16, 32]) # Default NB101
 parser.add_argument('--device', type=str, default='cuda:0')
 parser.add_argument('--batch_size', type=int, default=16)
+parser.add_argument('--transfer_batchsize', type=int, default=None)
 parser.add_argument('--test_batch_size', type=int, default=128)
 parser.add_argument('--num_workers', type=int, default=4)
 parser.add_argument('--timesteps', type=int, default=2)
@@ -61,7 +63,12 @@ transfer_sample_tests = {}
 transfer_sample_tests[args.transfer_space] = args.transfer_sample_sizes
 args.modify_emb_pretransfer = not args.no_modify_emb_pretransfer
 
+if args.transfer_batchsize == None:
+    args.transfer_batchsize = args.batch_size
+
 assert args.name_desc is not None, "Please provide a name description for the experiment."
+
+start_prg_time = time.time()
 
 # Set random seeds
 def seed_everything(seed: int):
@@ -255,6 +262,9 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                 sample_indexes = remaining_indexes
         else:
             sample_indexes = remaining_indexes
+    if space == 'tb101':
+        # remove 4095 from sample_indexes
+        sample_indexes = [zlm for zlm in sample_indexes if zlm != 4095]
     if representation.__contains__("gin") == False: # adj_mlp, zcp, arch2vec, cate --> FullyConnectedNN
         if representation == "adj_mlp": # adj_mlp --> FullyConnectedNN
             for i in tqdm(sample_indexes):
@@ -328,7 +338,8 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zcp_), torch.Tensor(norm_w_d)))
 
     dataset = CustomDataset(representations, accs)
-    dataloader = DataLoader(dataset, batch_size=args.batch_size if mode in ['train', 'transfer'] else args.test_batch_size, shuffle=True if mode=='train' else False)
+    use_batch_size = args.batch_size if mode == 'train' else args.transfer_batchsize
+    dataloader = DataLoader(dataset, batch_size=use_batch_size if mode in ['train', 'transfer'] else args.test_batch_size, shuffle=True if mode in ['train', 'transfer'] else False)
     return dataloader, sample_indexes
     
 
@@ -405,10 +416,11 @@ for epoch in range(args.epochs):
         raise NotImplementedError
         # model, mse_loss, spr, kdt = train(args, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader, epoch)
     elif args.loss_type == "pwl":
-        if epoch > args.epochs - 5:
-            model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_full, epoch)
-        else:
-            model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_smallset, epoch)
+        # We skip the true kdt/spr measurement for transfer experiment, just for the sake of time.
+        # if epoch > args.epochs - 5:
+        #     model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_full, epoch)
+        # else:
+        model, num_test_items, mse_loss, spr, kdt = pwl_train(args, args.space, model, train_dataloader, criterion, optimizer, scheduler, test_dataloader_source_smallset, epoch)
     else:
         raise NotImplementedError
     # test_loss, num_test_items, test_spearmanr, test_kendalltau = test(args, model, test_dataloader, criterion)
@@ -503,14 +515,18 @@ if not os.path.exists(f'correlation_results/{args.name_desc}'):
     os.makedirs(f'correlation_results/{args.name_desc}')
 
 filename = f'correlation_results/{args.name_desc}/{args.space}_{args.transfer_space}_samp_eff.csv'
-header = "name_desc,seed,batch_size,transfer_lr,task,transfer_task,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std"
+header = "name_desc,seed,batch_size,transfer_lr,task,transfer_task,transfer_epochs,membtf,epochs,space,transfer_space,joint_repr,representation,timesteps,pwl_mse,test_tagates,gnn_type,back_dense,key,spr,kdt,spr_std,kdt_std,total_time"
 if not os.path.isfile(filename):
     with open(filename, 'w') as f:
         f.write(header + "\n")
 
+total_time = start_prg_time - time.time()
+# convert to hours.minutes
+total_time = str(total_time)
+
 with open(filename, 'a') as f:
     for key in samp_eff.keys():
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % 
                 (
                     str(args.name_desc),
                     str(args.seed),
@@ -534,7 +550,8 @@ with open(filename, 'a') as f:
                     str(record_[key][2]),
                     str(record_[key][0]),
                     str(record_[key][3]),
-                    str(record_[key][1])
+                    str(record_[key][1]),
+                    str(total_time)
                 )
         )
         

@@ -505,9 +505,9 @@ if not os.path.isfile(filename):
     with open(filename, 'w') as f:
         f.write(header + "\n")
 
-total_time = start_prg_time - time.time()
+total_time = time.time() - start_prg_time
 # convert to hours.minutes
-total_time = str(datetime.timedelta(seconds=total_time))
+total_time = str(total_time)
 
 with open(filename, 'a') as f:
     for key in samp_eff.keys():

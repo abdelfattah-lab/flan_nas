@@ -2,10 +2,6 @@
 
 This repository contains the implementation and necessary resources to reproduce the results presented in our paper "FLAN: Flow Attention for NAS." In this study, we investigate various neural network (NN) encoding methods to enhance the efficiency of Neural Architecture Search (NAS) accuracy predictors. We introduce a novel hybrid encoder, FLAN, and demonstrate its superior performance across multiple NAS benchmarks.
 
-## Abstract
-
-Predictor-based methods have significantly improved NAS optimization. The efficacy of these predictors hinges on the method of encoding neural network architectures. Traditional encodings utilized adjacency matrices, while recent encodings adopt diverse approaches including unsupervised pretraining and zero-cost proxies. We categorize neural encodings into structural, learned, and score-based. We introduce unified encodings, extending NAS predictors across multiple search spaces. Our analysis spans over 1.5 million architectures across various NAS benchmarks. FLAN leverages insights on predictor design, transfer learning, and unified encodings, substantially reducing the cost of training NAS accuracy predictors. Our encodings for all networks are open-sourced.
-
 ## Reproducing Results
 
 To replicate the findings of our paper, follow the setup and execution guidelines below:

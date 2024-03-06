@@ -76,3 +76,18 @@ To run NAS using a predictor that has been transferred and fine-tuned on a new s
 python search.py --seed 42 --name_desc allnas_t --source_space Amoeba --target_space PNAS_fix-w-d --gnn_type ensemble --periter_samps 8 --samp_lim 512 --representation adj_gin_arch2vec_cate --joint_repr --epochs 40
 ```
 
+## Citation
+
+If you use the code or data in your research, please use the following BibTex entry:
+
+```
+@misc{akhauri2024encodings,
+      title={Encodings for Prediction-based Neural Architecture Search}, 
+      author={Yash Akhauri and Mohamed S. Abdelfattah},
+      year={2024},
+      eprint={2403.02484},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
+

@@ -41,7 +41,8 @@ class AllSS:
         self.ss_mapper = {"nb101": 0, "nb201": 1, "nb301": 2, "Amoeba": 3, "PNAS_fix-w-d": 4, 
                      "ENAS_fix-w-d": 5, "NASNet": 6, "DARTS": 7, "ENAS": 8, "PNAS": 9, 
                      "DARTS_lr-wd": 10, "DARTS_fix-w-d": 11, "tb101": 12, 
-                     "Amoeba_in": 13, "DARTS_in": 14, "DARTS_lr-wd_in": 15, "ENAS_in": 16, "NASNet_in": 17, "PNAS_in": 18}
+                     "Amoeba_in": 13, "DARTS_in": 14, "DARTS_lr-wd_in": 15, "ENAS_in": 16, "NASNet_in": 17, "PNAS_in": 18,
+                     "GNPofa": 19, "GNPofa_resnet": 20, "GNPnb101": 21}
         self.arch2vec_ranges = {
                         0: "nb101",
                         423624: "nb201",
@@ -147,6 +148,8 @@ class AllSS:
     def get_ss_idxrange(self, space):
         if space in ["Amoeba_in", "DARTS_in", "DARTS_lr-wd_in", "ENAS_in", "NASNet_in", "PNAS_in"]:
             return list(range(self.nds_in.get_numitems(space=space)))
+        elif space.__contains__("GNP"):
+            return list(range(self.nds.get_numitems(space=space)))
         else:
             class_idx = self.ss_mapper[space]
             # from arch2vec_f_ss, get the indices where label == class_idx

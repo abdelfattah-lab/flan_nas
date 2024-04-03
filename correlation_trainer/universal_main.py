@@ -7,6 +7,7 @@ from new_models import GIN_Model, FullyConnectedNN
 import argparse, sys, time, random, os
 import numpy as np
 from pprint import pprint
+import pickle
 import datetime
 import copy
 from tqdm import tqdm
@@ -102,7 +103,9 @@ def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, t
     model.training = True
     model.train()
     running_loss = 0.0
-    for inputs, targets in dataloader:
+    # model.vertices = next(iter(dataloader))[0][1].shape[1]
+    for inputs, targets in tqdm(dataloader):
+        model.vertices = inputs[1].shape[1]
         if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
             if inputs.shape[0] == 1 and space in ['nb101', 'nb201', 'nb301', 'tb101']:
                 continue
@@ -160,6 +163,7 @@ def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, t
                         torch.stack(list((inputs[2][indx] for indx in ex_thresh_inds[0]))),
                         torch.stack(list((inputs[3][indx] for indx in ex_thresh_inds[0]))),
                         torch.stack(list((inputs[4][indx] for indx in ex_thresh_inds[0])))]
+                # import pdb; pdb.set_trace()
                 X_adj_a_1, X_ops_a_1, X_adj_b_1, X_ops_b_1, norm_w_d_1 = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device), archs_1[4].to(device)
                 s_1 = model(x_ops_1=X_ops_a_1, x_adj_1=X_adj_a_1.to(torch.long), x_ops_2=X_ops_b_1, x_adj_2=X_adj_b_1.to(torch.long), zcp=None, norm_w_d=norm_w_d_1).squeeze()
                 X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, norm_w_d_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device)
@@ -192,6 +196,7 @@ def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, t
                         torch.stack(list((inputs[4][indx] for indx in ex_thresh_inds[0]))),
                         torch.stack(list((inputs[5][indx] for indx in ex_thresh_inds[0])))]
                 X_adj_a_1, X_ops_a_1, X_adj_b_1, X_ops_b_1, zcp, norm_w_d_1 = archs_1[0].to(device), archs_1[1].to(device), archs_1[2].to(device), archs_1[3].to(device), archs_1[4].to(device), archs_1[5].to(device)
+                X_adj_a_1, X_ops_a_1, X_adj_b_1, X_ops_b_1, norm_w_d_1 = X_adj_a_1[:2], X_ops_a_1[:2], X_adj_b_1[:2], X_ops_b_1[:2], norm_w_d_1[:2]
                 s_1 = model(x_ops_1 = X_ops_a_1, x_adj_1 = X_adj_a_1.to(torch.long), x_ops_2 = X_ops_b_1, x_adj_2 = X_adj_b_1.to(torch.long), zcp = zcp, norm_w_d=norm_w_d_1).squeeze()
                 X_adj_a_2, X_ops_a_2, X_adj_b_2, X_ops_b_2, zcp, norm_w_d_2 = archs_2[0].to(device), archs_2[1].to(device), archs_2[2].to(device), archs_2[3].to(device), archs_2[4].to(device), archs_2[5].to(device)
                 s_2 = model(x_ops_1 = X_ops_a_2, x_adj_1 = X_adj_a_2.to(torch.long), x_ops_2 = X_ops_b_2, x_adj_2 = X_adj_b_2.to(torch.long), zcp = zcp, norm_w_d=norm_w_d_2).squeeze()
@@ -212,7 +217,9 @@ def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, t
     model.eval()
     pred_scores, true_scores = [], []
     repr_max = int(80/args.test_batch_size)
+    # model.vertices = next(iter(test_dataloader))[0][1].shape[1]
     for repr_idx, (reprs, scores) in enumerate(tqdm(test_dataloader)):
+        model.vertices = reprs[1].shape[1]
         if epoch < args.epochs - 5 and repr_idx > repr_max:
             break
         if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
@@ -236,6 +243,43 @@ def pwl_train(args, space, model, dataloader, criterion, optimizer, scheduler, t
     true_scores = flatten_mixed_list(true_scores)
     num_test_items = len(pred_scores)
     return model, num_test_items, running_loss / len(dataloader), spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
+
+def pwl_train_eval(args, space, model, dataloader, criterion, optimizer, scheduler, test_dataloader, epoch):
+    model.training = False
+    model.eval()
+    pred_scores, true_scores = [], []
+    repr_max = int(80/args.test_batch_size)
+    for repr_idx, (reprs, scores) in enumerate(tqdm(test_dataloader)):
+        # if epoch < args.epochs - 5 and repr_idx > repr_max:
+        #     break
+        if args.representation in ["adj_mlp", "zcp", "arch2vec", "cate"]:
+            pred_scores.append(model(reprs.to(device)).squeeze().detach().cpu().tolist())
+        elif args.representation in ["adj_gin"]:
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=None, norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
+            else:
+                pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=None, norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
+        elif args.representation in ["adj_gin_zcp", "adj_gin_arch2vec", "adj_gin_cate", "adj_gin_a2vcatezcp"]:
+            if space in ['nb101', 'nb201', 'nb301', 'tb101']:
+                pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=None, x_adj_2=None, zcp=reprs[2].to(device), norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
+            else:
+                pred_scores.append(model(x_ops_1=reprs[1].to(device), x_adj_1=reprs[0].to(torch.long), x_ops_2=reprs[3].to(device), x_adj_2=reprs[2].to(torch.long), zcp=reprs[4].to(device), norm_w_d=reprs[-1].to(device)).squeeze().detach().cpu().tolist())
+        else:
+            raise NotImplementedError
+        true_scores.append(scores.cpu().tolist())
+    # pred_scores = [t for sublist in pred_scores for t in sublist]
+    # true_scores = [t for sublist in true_scores for t in sublist]
+    pred_scores = flatten_mixed_list(pred_scores)
+    true_scores = flatten_mixed_list(true_scores)
+    # zip pred_scores and true_scores, sort the zipped list of tuples by true_scores
+    # Zip pred_scores and true_scores, sort by true_scores
+    sorted_results = sorted(zip(true_scores, pred_scores), key=lambda x: x[0])
+    # Save sorted results as a pickle file
+    filename = f'nb201_sorted_results_{args.representation}.pkl'
+    with open(filename, 'wb') as f:
+        pickle.dump(sorted_results, f)
+    num_test_items = len(pred_scores)
+    return model, num_test_items, 0, spearmanr(true_scores, pred_scores).correlation, kendalltau(true_scores, pred_scores).correlation
 
 sys.path.append("..")
 embgti = time.time()
@@ -336,6 +380,25 @@ def get_dataloader(args, embedding_gen, space, sample_count, representation, mod
                     op_mat = torch.Tensor(np.array(op_mat)).argmax(dim=1)
                     accs.append(embedding_gen.get_valacc(i, space=space))
                     representations.append((torch.Tensor(adj_mat), torch.LongTensor(op_mat), torch.Tensor(zcp_), torch.Tensor(norm_w_d)))
+    # if mode == "transfer":
+    #     import pdb; pdb.set_trace()
+    representations = list(list(sublist) for sublist in representations)
+
+    # Step 1: Find Nmax
+    Nmax = max(max(tensor.shape[0] for tensor in sublist if tensor.dim() > 1) for sublist in representations)
+
+    # Step 2: Pad the tensors
+    for sublist in representations:
+        if len(sublist) == 3:
+            sublist[0] = torch.nn.functional.pad(sublist[0], (0, Nmax - sublist[0].size(1), 0, Nmax - sublist[0].size(0)))
+            sublist[1] = torch.nn.functional.pad(sublist[1], (0, Nmax - sublist[1].size(0)))
+        elif len(sublist) == 5:
+            # Pad tensors at index 0 and 2
+            sublist[0] = torch.nn.functional.pad(sublist[0], (0, Nmax - sublist[0].size(1), 0, Nmax - sublist[0].size(0)))
+            sublist[2] = torch.nn.functional.pad(sublist[2], (0, Nmax - sublist[2].size(1), 0, Nmax - sublist[2].size(0)))
+            # Pad tensors at index 1 and 3
+            sublist[1] = torch.nn.functional.pad(sublist[1], (0, Nmax - sublist[1].size(0)))
+            sublist[3] = torch.nn.functional.pad(sublist[3], (0, Nmax - sublist[3].size(0)))
 
     dataset = CustomDataset(representations, accs)
     use_batch_size = args.batch_size if mode == 'train' else args.transfer_batchsize
@@ -410,6 +473,7 @@ params_optimize = list(model.parameters())
 optimizer = torch.optim.AdamW(params_optimize, lr = args.lr, weight_decay = args.weight_decay)
 scheduler = CosineAnnealingLR(optimizer, T_max = args.epochs, eta_min = args.eta_min)
 kdt_l5, spr_l5 = [], []
+# model.load_state_dict(torch.load("nb101_50ksamps_train_2.pt"))
 for epoch in range(args.epochs):
     start_time = time.time()
     if args.loss_type == "mse":
@@ -431,6 +495,7 @@ for epoch in range(args.epochs):
         print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
     else:
         print(f'Epoch {epoch + 1}/{args.epochs} | Train Loss: {mse_loss:.4f} | Epoch Time: {end_time - start_time:.2f}s | Spearman@{num_test_items}: {spr:.4f} | Kendall@{num_test_items}: {kdt:.4f}')
+# torch.save(model.state_dict(), "nb101_50ksamps_train_2.pt")
 preserved_state = copy.deepcopy(model.state_dict())
 
 if args.modify_emb_pretransfer:
@@ -466,6 +531,9 @@ for tr_ in range(args.num_trials):
         optimizer = torch.optim.AdamW(params_optimize, lr = args.transfer_lr, weight_decay = args.weight_decay)
         scheduler = CosineAnnealingLR(optimizer, T_max = args.transfer_epochs, eta_min = args.eta_min)
         kdt_l5, spr_l5 = [], []
+        # model, num_test_items, mse_loss, spr, kdt = pwl_train_eval(args, args.transfer_space, model, transfer_dataloader, criterion, optimizer, scheduler, test_dataloader_target_full, epoch)
+        # kdt_l5.append(kdt)
+        # spr_l5.append(spr)
         for epoch in range(args.transfer_epochs):
             start_time = time.time()
             if args.loss_type == "mse":
@@ -493,6 +561,7 @@ for tr_ in range(args.num_trials):
         across_trials[transfer_sample_count].append(samp_eff[transfer_sample_count])
 
 # print average across trials for each sample count
+# import pdb; pdb.set_trace()
 for transfer_sample_count in transfer_sample_counts:
     print("Average KDT: ", sum([across_trials[transfer_sample_count][i][1] for i in range(len(across_trials[transfer_sample_count]))])/len(across_trials[transfer_sample_count]))
     # Print variance of KDT across tests

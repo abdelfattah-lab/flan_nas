@@ -213,7 +213,9 @@ class GIN_Model(nn.Module):
             torch.zeros(1, self.op_embedding_dim),
             requires_grad = False
         )
-        self.op_emb = nn.Embedding(256, self.op_embedding_dim)
+        self.op_emb = nn.Embedding(1024, self.op_embedding_dim)
+        
+        # self.op_emb = nn.Embedding(256, self.op_embedding_dim)
         self.output_op_emb = nn.Embedding(1, self.op_embedding_dim)
         self.x_hidden = nn.Linear(self.node_embedding_dim, self.hid_dim)
 

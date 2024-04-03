@@ -200,23 +200,26 @@ class NASBench201:
         return [0, 0]
     
     def get_valacc(self, idx, space=None):
-        if self.cready:
+        # if self.cready:
+        if False:
             return self.cache[idx]['acc']
         else:
             arch_str = self.nb2_api.query_by_index(idx).arch_str
             arch_index = self.nb2_api.query_index_by_arch(arch_str)
             # acc_results = self.nb2_api.query_by_index(arch_index, 'cifar10-valid', use_12epochs_result=False)
-            try:
-                acc_results = sum([self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
-                                                        use_12epochs_result=False,
-                                                        is_random=seed)['valid-accuracy'] for seed in [777, 888, 999]])/3.
-                val_acc = acc_results['valid-accuracy'] / 100.
-            except:
-                # some architectures only contain 1 seed result
-                acc_results = self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
-                                                        use_12epochs_result=False,
-                                                        is_random=False)['valid-accuracy'] 
-                val_acc = acc_results / 100.
+            val_acc = self.nb2_api.query_meta_info_by_index(arch_index).get_metrics('cifar10-valid', 'ori-test')['accuracy'] / 100.
+            # if val_acc > 10: val_acc = val_acc / 100.
+            # try:
+            #     acc_results = sum([self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
+            #                                             use_12epochs_result=False,
+            #                                             is_random=seed)['valid-accuracy'] for seed in [777, 888, 999]])/3.
+            #     val_acc = acc_results['valid-accuracy'] / 100.
+            # except:
+            #     # some architectures only contain 1 seed result
+            #     acc_results = self.nb2_api.get_more_info(arch_index, 'cifar10-valid', None,
+            #                                             use_12epochs_result=False,
+            #                                             is_random=False)['valid-accuracy'] 
+            #     val_acc = acc_results / 100.
             return val_acc
 
     def get_arch2vec(self, idx, joint=None, space=None):

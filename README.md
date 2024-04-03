@@ -80,3 +80,30 @@ To run NAS using a predictor that has been transferred and fine-tuned on a new s
 python search.py --seed 42 --name_desc allnas_t --source_space Amoeba --target_space PNAS_fix-w-d --gnn_type ensemble --periter_samps 8 --samp_lim 512 --representation adj_gin_arch2vec_cate --joint_repr --epochs 40
 ```
 
+### Response to GENNAPE Comparison
+| Family   | k-GNN  | GENNAPE | FLANT  |
+|----------|--------|---------|--------|
+| NB-201   | 0.4930 | 0.8146  | 0.744  |
+| w/ FT    | 0.8606 | 0.9103  | 0.930  |
+| NB-301   | 0.0642 | 0.3214  | 0.4509 |
+| w/ FT    | 0.8584 | 0.8825  | 0.9461 |
+| OFA-MBv3 | 0.4345 | 0.8660  |        |
+| w/ FT    | 0.6862 | 0.9449  |        |
+| OFA-RN   | 0.5115 | 0.5115  |        |
+| w/ FT    | 0.9102 | 0.9114  |        |
+<!-- 
+\begin{table}[]
+\begin{tabular}{|l|l|l|l|}
+\hline
+Family   & k-GNN  & GENNAPE & FLANT  \\ \hline
+NB-201   & 0.4930 & 0.8146  & 0.744  \\ \hline
+w/ FT    & 0.8606 & 0.9103  & 0.930  \\ \hline
+NB-301   & 0.0642 & 0.3214  & 0.4509 \\ \hline
+w/ FT    & 0.8584 & 0.8825  & 0.9461 \\ \hline
+OFA-MBv3 & 0.4345 & 0.8660  &        \\ \hline
+w/ FT    & 0.6862 & 0.9449  &        \\ \hline
+OFA-RN   & 0.5115 & 0.5115  &        \\ \hline
+w/ FT    & 0.9102 & 0.9114  &        \\ \hline
+\end{tabular}
+\end{table}
+-->

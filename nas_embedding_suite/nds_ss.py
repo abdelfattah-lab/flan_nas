@@ -29,14 +29,18 @@ class NDS:
                                                                     'zcp']):
         adj_path = BASE_PATH + 'nds_adj_encoding/'
         # self.spaces = ['Amoeba.json', 'NASNet.json','DARTS.json','ENAS.json','PNAS.json']
-        self.spaces = ['Amoeba.json','PNAS_fix-w-d.json','ENAS_fix-w-d.json','NASNet.json','DARTS.json','ENAS.json','PNAS.json','DARTS_lr-wd.json','DARTS_fix-w-d.json']
+        # self.spaces = ["GNPnb101.json", "GNPnb201c10.json", "GNPnb201c100.json", "GNPnb201imgnet.json", "GNPnb301.json", "GNPofa.json", "GNPofa_resnet.json", 'Amoeba.json','PNAS_fix-w-d.json','ENAS_fix-w-d.json','NASNet.json','DARTS.json','ENAS.json','PNAS.json','DARTS_lr-wd.json','DARTS_fix-w-d.json']
+        self.spaces = ["GNPnb101.json", "GNPofa.json", "GNPofa_resnet.json", 'Amoeba.json','PNAS_fix-w-d.json','ENAS_fix-w-d.json','NASNet.json','DARTS.json','ENAS.json','PNAS.json','DARTS_lr-wd.json','DARTS_fix-w-d.json']
         self.cate_embeddings = {k.replace(".json", ""): torch.load(BASE_PATH + 'cate_embeddings/cate_nds_{}.pt'.format(k.replace(".json", ""))) for k in self.spaces}
         self.cate_embeddings['nb301'] = torch.load(BASE_PATH + 'cate_embeddings/cate_nb301.pt')
         self.arch2vec_embeddings = {k.replace(".json", ""): torch.load(BASE_PATH + "arch2vec_embeddings/arch2vec-model-dim_32_search_space_{}-nds.pt".format(k.replace(".json", ""))) for k in self.spaces}
         self.arch2vec_embeddings['nb301'] = torch.load(BASE_PATH + "arch2vec_embeddings/arch2vec-model-dim_32_search_space_nb301-nb301.pt")
         self.spaces = ['Amoeba.json','PNAS_fix-w-d.json','ENAS_fix-w-d.json','NASNet.json','DARTS.json','ENAS.json','PNAS.json','DARTS_lr-wd.json','DARTS_fix-w-d.json', 'nb301.json']
         self.space_dicts = {space.replace(".json", ""): json.load(open(NDS_DPATH + space, "r")) for space in self.spaces}
+        # self.spaces = ["GNPnb101.json", "GNPnb201c10.json", "GNPnb201c100.json", "GNPnb201imgnet.json", "GNPnb301.json", "GNPofa.json", "GNPofa_resnet.json", 'Amoeba.json','PNAS_fix-w-d.json','ENAS_fix-w-d.json','NASNet.json','DARTS.json','ENAS.json','PNAS.json','DARTS_lr-wd.json','DARTS_fix-w-d.json', 'nb301.json']
+        self.spaces = ["GNPnb101.json", "GNPofa.json", "GNPofa_resnet.json", 'Amoeba.json','PNAS_fix-w-d.json','ENAS_fix-w-d.json','NASNet.json','DARTS.json','ENAS.json','PNAS.json','DARTS_lr-wd.json','DARTS_fix-w-d.json', 'nb301.json']
         self.space_adj_mats = {space.replace(".json", ""): json.load(open(adj_path + space, "r")) for space in self.spaces}
+        self.gnpaccdict = {space.replace(".json", ""): json.load(open(BASE_PATH + "gnp_accs/{}.json".format(space.replace(".json", "")))) for space in self.spaces if space.__contains__("GNP")}
         self.zcps = ['epe_nas', 'fisher', 'flops', 'grad_norm', 'grasp', 'jacov', 'l2_norm', 'nwot', 'params', 'plain', 'snip', 'synflow', 'zen']
         self.normalize_zcp = normalize_zcp
         self.zcp_nds_norm = {}
@@ -68,11 +72,15 @@ class NDS:
         for space in self.spaces:
             space = space.replace(".json", "")
             self.all_accs[space] = []
-            for idx in range(len(self.space_dicts[space])):
-                if space == 'nb301':
-                    self.all_accs[space].append(float(self.space_dicts[space][str(idx)]['test_ep_top1'])/100.)
-                else:
-                    self.all_accs[space].append(float(100.-self.space_dicts[space][idx]['test_ep_top1'][-1])/100.)
+            if space.__contains__("GNP"):
+                for idx in range(len(self.gnpaccdict[space])):
+                    self.all_accs[space].append(self.gnpaccdict[space][str(idx)])
+            else:
+                for idx in range(len(self.space_dicts[space])):
+                    if space == 'nb301':
+                        self.all_accs[space].append(float(self.space_dicts[space][str(idx)]['test_ep_top1'])/100.)
+                    else:
+                        self.all_accs[space].append(float(100.-self.space_dicts[space][idx]['test_ep_top1'][-1])/100.)
             # RobustScaler normalize this space
             min_max_scaler = preprocessing.QuantileTransformer()
             _ = min_max_scaler.fit_transform(np.array(self.all_accs[space]).reshape(-1, 1)).flatten()
@@ -137,34 +145,46 @@ class NDS:
     def get_numitems(self, space="Amoeba"):
         if space=='nds_nb301':
             space = 'nb301'
-        if space == 'nb301':
-            return len(self.space_adj_mats[space])
+        if space.__contains__("GNP"):
+            return len(self.gnpaccdict[space])
         else:
-            return len(self.space_dicts[space])
+            if space == 'nb301':
+                return len(self.space_adj_mats[space])
+            else:
+                return len(self.space_dicts[space])
 
     def get_norm_w_d(self, idx, space="Amoeba"):
         if space=='nds_nb301':
             space = 'nb301'
         try:
-            if space == 'nb301':
+            if space.__contains__("GNP"):
                 return [0,0]
             else:
-                return [self.space_dicts[space][idx]['net']['width']/32., \
-                        self.space_dicts[space][idx]['net']['depth']/20.]
+                if space == 'nb301':
+                    return [0,0]
+                else:
+                    return [self.space_dicts[space][idx]['net']['width']/32., \
+                            self.space_dicts[space][idx]['net']['depth']/20.]
         except:
             print("WARNING: No width/depth information found for idx: ", idx, ",", space)
             exit(0)
     ##################### Key Functions End #####################
 
     def get_flops(self, idx, space="Amoeba"):
-        if space=='nds_nb301':
-            space = 'nb301'
-        return self.space_dicts[space][idx]["flops"]
+        if space.__contains__("GNP"):
+            return 0
+        else:
+            if space=='nds_nb301':
+                space = 'nb301'
+            return self.space_dicts[space][idx]["flops"]
 
     def get_params(self, idx, space="Amoeba"):
-        if space=='nds_nb301':
-            space = 'nb301'
-        return self.space_dicts[space][idx]["params"]
+        if space.__contains__("GNP"):
+            return 0
+        else:
+            if space=='nds_nb301':
+                space = 'nb301'
+            return self.space_dicts[space][idx]["params"]
     
 
 if __name__ == "__main__":
